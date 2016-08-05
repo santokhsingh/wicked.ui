@@ -1,0 +1,54 @@
+extends layout
+
+block content
+    .jumbotron.wicked-api-title
+        .container.wicked-title-container
+            h1= title
+            
+            p Please select which plan you want to subscribe to the current API with. Some plans may need manual approval by an administrator.
+    
+    .container.wicked-container
+    
+        h3 Application '#{application.name}'
+    
+        p.
+            Specify which plan you want to subscribe to for the selected application.
+        
+        form(role='form' action='/applications/#{application.id}/subscribe/#{apiInfo.id}' method='post')
+            if apiPlans && apiPlans.length > 0
+                table(class='table table-striped')
+                    thead
+                        tr
+                            th Select
+                            th Plan Name
+                            th Description
+                            th Needs Approval
+
+                    tbody
+                        each plan, index in apiPlans
+                            tr
+                                td
+                                    if index == 0
+                                        input(type='radio' name='plan' value='#{plan.id}' checked='checked')
+                                    else
+                                        input(type='radio' name='plan' value='#{plan.id}')
+                                td
+                                    p= plan.name
+                                td
+                                    p= plan.desc
+                                td
+                                    if plan.needsApproval
+                                        p Yes
+                                    else
+                                        p No
+            else
+                i There are no subscription plans available for you to this API. Please contact your API Portal administrator in case you feel this is wrong.
+
+            if (application._links.addSubscription)
+                button(id='subscribeButton').btn.btn-success Subscribe!
+            else
+                p I'm sorry, you don't have sufficient rights to subscribe to this API. Please ask your API Portal administrator to either
+                ul
+                    li Make you an owner of this application, or
+                    li Subscribe to the application for you
+                    li Assign the appropriate user group for you to be able to subscribe to the API.

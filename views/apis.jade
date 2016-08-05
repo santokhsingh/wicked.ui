@@ -1,0 +1,45 @@
+extends layout
+
+mixin apiDef(anApi)
+    .col-md-4
+        .panel.panel-default
+            .panel-body.wicked-api-body
+                img(src='/images/api-icon.png')
+                if anApi.auth == 'oauth2'
+                    a(href='/help/apis' target='_blank')
+                        img(src='/images/oauth2-icon-32.png' align='right' title='API is secured over OAuth 2.0 Client Credentials Flow')
+                else if anApi.auth == 'none'
+                else
+                    a(href='/help/apis' target='_blank')
+                        img(src='/images/key-icon-32.png' align='right' title='API is secured over API keys')
+                a(href='/apis/#{anApi.id}')
+                    h4= anApi.name
+                p!= anApi.desc
+                a(class="btn btn-default" href="/apis/#{anApi.id}" role="button") Information &raquo;
+
+block content
+    .jumbotron.wicked-api-title
+        .container.wicked-title-container
+            h1= title
+            
+            p This is the index of APIs which are available for this API Portal.
+        
+    .container.wicked-container
+        if desc
+            p!= desc
+            
+        p &nbsp;
+
+        - var length = apilist.length
+
+        each api, i in apilist
+            if (i % 3 == 0)
+                .row
+                    +apiDef(apilist[i])
+                    if (i+1) < length
+                        +apiDef(apilist[i+1])
+                    if (i+2) < length
+                        +apiDef(apilist[i+2])
+                .row
+                    .col-md-1
+                        p &nbsp;

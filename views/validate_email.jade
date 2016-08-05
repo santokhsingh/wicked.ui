@@ -1,0 +1,22 @@
+extends auth_layout
+
+block content
+    h2 Validate Email Adress
+    
+    if userInfo.validated
+        p Your email address is already validated.
+        
+        h5
+            a(href='/') Go to home page.
+    else
+        p Click the button, and we will send you an email with instructions on how to validate your email address.
+        
+        form(role='form' action='/validateemail' method='post')
+            button(class='btn btn-lg btn-primary btn-block' type='submit') 
+                span(aria-hidden="true").glyphicon.glyphicon-envelope
+                | &nbsp; Send validation link
+        
+        h5
+            a(href='/') Go to home page.
+        h5
+            a(href='/users/me') Your User Profile.

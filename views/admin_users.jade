@@ -1,0 +1,29 @@
+extends layout
+
+block content
+    .jumbotron.wicked-admin-title
+        .container.wicked-title-container
+            h1 All Users
+            
+            p Index of all users of the API Portal.
+    
+    .container.wicked-container
+        br
+        table(class='table table-striped')
+            thead
+                tr
+                    th ID
+                    th Name
+                    th Email
+                    th Custom ID
+            tbody
+                for user in users
+                    tr
+                        td= user.id
+                        td
+                            a(href='/users/#{user.id}')= user.name
+                        td= user.email
+                        if user.customId
+                            td= user.customId
+                        else
+                            td ---

@@ -1,0 +1,24 @@
+extends layout
+
+block content
+
+    if showTitle
+        .jumbotron.wicked-index-title
+            .container.wicked-title-container
+                h1= title
+                
+                p!= subTitle
+
+                if !authUser
+                    p
+                        a(class="btn btn-primary btn-lg" href="/signup" role="button") Sign up &raquo;
+                        span &nbsp;
+                        a(class="btn btn-primary btn-lg" href="/login" role="button") Log in &raquo;
+                else
+                    p Good to see you, #{authUser.name}!
+
+    if !omitContainer
+        .container.wicked-container
+            != content
+    else
+        != content

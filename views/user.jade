@@ -1,0 +1,194 @@
+extends layout
+
+block scripts
+    script(type='text/javascript').
+        function verifyContent() {
+            var firstName = $('#firstname').val();
+            var lastName = $('#lastname').val();
+            var password = $('#password').val();
+            var password2 = $('#password2').val();
+
+            var firstnameError = '';
+            var lastnameError = '';
+            var passwordError = '';
+            var password2Error = '';
+            if (!firstName)
+                firstnameError = 'Please enter a value for the first name.';
+            if (!lastName)
+                lastnameError = 'Please enter a value for the last name.';
+            if (password) {
+                if (password.length < 6 || password.length > 24)
+                    passwordError = 'Please enter a password, more than 5, less than 25 characters long.';
+                if (password != password2)
+                    password2Error = 'Passwords do not match.';
+            }
+                
+            try {
+                $('#errorFirstname').text(firstnameError);
+                $('#errorLastname').text(lastnameError);
+                $('#errorPassword').text(passwordError);
+                $('#errorPassword2').text(password2Error);
+            } catch (err) {
+                alert('Validation errored! Check your input values.');
+                return false;
+            }
+            
+            var somethingBad = 
+                !!firstnameError
+                || !!lastnameError
+                || !!passwordError
+                || !!password2Error;
+                
+            return !somethingBad;
+        }
+        
+        function setAction(thisAction) {
+            $('#__action').val(thisAction);
+        }
+
+        function confirmDelete() {
+            if (!confirm("This will delete the user. Are you really sure you want to do this?"))
+                return false;
+            return confirm("Last chance: Are you sure you want to delete the user?");
+        }
+
+block content
+    .jumbotron.wicked-admin-title
+        .container.wicked-title-container
+            h1= userInfo.name
+            
+            p Review and edit user information.
+            
+    .container.wicked-container
+    
+        br
+        br
+        form(role='form' action='/users/#{userInfo.id}' method='post' onsubmit='return verifyContent()')
+        
+            input(type='hidden' name='__action' id='__action' value='none')
+            
+            .form-group
+                label(for='firstname') First name:
+                input(id='firstname' name='firstname' value='#{userInfo.firstName}').form-control
+                small 
+                    span(id='errorFirstname' style='color:red')
+            .form-group
+                label(for='lastname') Last name:
+                input(id='lastname' name='lastname' value='#{userInfo.lastName}').form-control
+                small
+                    span(id='errorLastname' style='color:red')
+            .form-group
+                label(for='email') Email:
+                input(id='email' name='email' value='#{userInfo.email}' readonly).form-control
+                if (!userInfo.validated)
+                    small Email address has not yet been validated. <a href="/validateemail">Validate email address.</a>
+                else
+                    small Email address is valid.
+            if userInfo.customId
+                .form-group
+                    label(for='customid') External ID:
+                    input(id='customid' name='customid' value='#{userInfo.customId}' readonly).form-control
+            if !userInfo.customId
+                br
+                .panel.panel-default
+                    .panel-heading
+                        h4.panel-title
+                            table(width='100%')
+                                tr
+                                    td
+                                        h5.panel-title 
+                                            a(data-toggle='collapse' href='#collapse') Change/Set Password
+                                    td(style='text-align:right')
+                                        if userInfo.hasPassword
+                                            button(type='submit' onclick='setAction("deletePassword");').btn.btn-danger Remove Password
+                                        else
+                                            i User does not have password
+                    div(id='collapse' class='panel-collapse collapse')
+                        .panel-body
+                            .form-group
+                                label(for='password') New password:
+                                input(style='width: 30%' id='password' name='password' type='password').form-control
+                                small
+                                    span(id='errorPassword' style='color:red')
+                            .form-group
+                                label(for='password2') Confirm new password:
+                                input(style='width: 30%' id='password2' name='password2' type='password').form-control
+                                small
+                                    span(id='errorPassword2' style='color:red')
+            br
+            .panel.panel-default
+                .panel-heading
+                    +panelTitle('Applications', null, 'collapse2')
+                div(id='collapse2' class='panel-collapse collapse')
+                    .panel-body
+                        if userInfo.applications.length == 0
+                            i No applications associated
+                        else
+                            ul
+                                for app in userInfo.applications
+                                    li
+                                        a(href='/applications/#{app.id}')= app.id
+
+            br
+            if authUser.admin
+                input(type='hidden' name='__updategroups' value='true')
+                .panel.panel-default
+                    .panel-heading
+                        h4.panel-title User Groups
+                    .panel-body
+                        for group in groups
+                            .checkbox
+                                label
+                                    if group.isMember
+                                        input(type='checkbox' name='#{group.id}' value='#{group.id}' checked)
+                                        | #{group.name}
+                                    else
+                                        input(type='checkbox' name='#{group.id}' value='#{group.id}')
+                                        | #{group.name}
+                                    if glob.validatedUserGroup && glob.validatedUserGroup == group.id
+                                        small &nbsp;<i>This is the default group for users with a validated email address.</i>
+                                    if group.adminGroup
+                                        strong &nbsp;Admin group
+                br
+            
+            if glob.api && glob.api.portal && glob.api.portal.enableApi && authUser.clientId && authUser.clientSecret
+                .panel.panel-default
+                    .panel-heading
+                        +panelTitle('OAuth 2.0 Client Credentials', null, 'clientcredentials')
+                    #clientcredentials.collapse.panel-collapse
+                        .panel-body
+                            p.
+                                For automation purposes, client credentials for accessing the API Portal in your
+                                name have been issued to your user. Use the below button to open the Swagger
+                                definition for exploring the API Portal API.
+                            .form-group
+                                label Client ID:
+                                input(type='password' readonly data-toggle='password' value=authUser.clientId).form-control
+                            .form-group
+                                label Client Secret:
+                                input(type='password' readonly data-toggle='password' value=authUser.clientSecret).form-control
+
+                            a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{authUser.clientId}&client_secret=#{authUser.clientSecret}&url=#{glob.network.schema}://#{glob.network.portalHost}/apis/_portal/swagger' target='_blank').btn.btn-default View Swagger &raquo;
+                br
+
+            button(class='btn btn-primary' type='submit') Update user &raquo;
+
+        br
+        br
+        .panel.panel-danger
+            .panel-heading
+                +panelTitle('Danger Zone', null, 'dangerzone')
+            div(id='dangerzone').collapse.panel-collapse
+                .panel-body
+                    p.
+                        In case you do longer need the user account on this API portal, you may delete it
+                        entirely here. Prerequisite for deleting the user is that it does not have any
+                        <a href='/applications'>applications</a> assigned to it/owned by it anymore.
+                    if userInfo.applications.length > 0
+                        h5.
+                            The account still has applications assigned; please delete those/transfer the owner rights
+                            for these applications first.
+                    else
+                        form(role='form' action='/users/#{userInfo.id}/delete' onsubmit='return confirmDelete();' method='post')
+                            button(type='submit').btn.btn-danger Delete User
+    

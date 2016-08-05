@@ -1,0 +1,30 @@
+extends ../layout
+
+mixin helpItem(anchor, title)
+  if (toc.length > 0)
+    br
+  - toc.push({ anchor: anchor, title: title })
+  a(name='#{anchor}')
+  h4= title  
+
+block content
+  - var toc = []
+
+  .container(style='padding-top: 50px')
+    .row
+      .col-md-8
+
+        block help_content
+    
+      .col-md-4.col-md-push-8(style='position:fixed')
+
+        h3
+          a(href='/help') Help Index
+
+        h4 Table of Content
+
+        ul
+          for tocItem in toc
+            li
+              a(href='##{tocItem.anchor}')= tocItem.title
+

@@ -1,0 +1,151 @@
+extends layout
+
+block scripts
+    script(type='text/javascript').
+        function confirmUnregister() {
+            if (!confirm("This will delete this application and its corresponding subscriptions. Are you really sure you want to do this? The operation CANNOT BE UNDONE!"))
+                return false;
+            return confirm("Last chance: THIS CANNOT BE UNDONE!");
+        }
+        
+block content
+    .jumbotron.wicked-application-title
+        .container.wicked-title-container
+            h1= application.name
+            
+            p.
+                This page lets you administer the owners of this application. You can add and remove
+                co-owners of the application. New co-owners must be already be registered in the portal
+                in order to make them co-owners of the application.
+
+
+    .container.wicked-container
+        .panel.panel-default
+            .panel-heading
+                +panelTitle('Subscriptions', '/help/application')
+            .panel-body
+                if subscriptions.length == 0
+                    p.
+                        Your application does not have any API subscriptions currently. You may add
+                        subscriptions on the API pages. 
+                    a(href='/apis').btn.btn-default View APIs &raquo;
+                else
+                    p.
+                        Your application has the following API subscriptions:
+                    
+                    table.table.table-striped
+                        thead
+                            tr
+                                th API
+                                th Auth Type
+                                th(colspan=2) Secrets (API Key or Client ID/Secret)
+                        tbody
+                            each sub, i in subscriptions
+                                tr
+                                    td(style='vertical-align: middle')
+                                        a(href='/apis/#{sub.api}')= sub.api
+                                    td(style='vertical-align: middle')= sub.auth
+                                    if (sub.approved)
+                                        if ('oauth2' == sub.auth)
+                                            td(style='max-width: 250px')
+                                                input(readonly type='password' data-toggle='password' value='#{sub.clientId}').form-control
+                                            td(style='max-width: 250px')
+                                                input(readonly type='password' data-toggle='password' value='#{sub.clientSecret}').form-control
+                                        else
+                                            td(colspan=2)
+                                                input(readonly type='password' data-toggle='password' value='#{sub.apikey}').form-control
+                                    else
+                                        td(style='vertical-align: middle;' colspan=2)
+                                            i Subscription approval is pending
+
+        .panel.panel-default
+            .panel-heading
+                +panelTitle('Application Name', '/help/application', '#applicationname')
+            #applicationname.collapse.panel-collapse
+                .panel-body
+                    if application._links.patchApplication
+                        p.
+                            You may update the application "friendly" name here; it is not possible to update
+                            the application ID.
+
+                        form(role='form' action='/applications/#{application.id}/patch' method='post')
+                            input(value='#{application.name}' name='appname').form-control
+                            br
+                            button(style='display:inline;' class='btn btn-warning' type='submit') Update
+                    else
+                        p.
+                            This is the application's friendly name. Administrators and Collaborators may update
+                            the name:
+                        input(type='string' value='#{application.name}' readonly).form-control
+
+        .panel.panel-default
+            .panel-heading
+                +panelTitle('Owners', '/help/application-ownership', '#ownerpanel')
+            div(id='ownerpanel').collapse.panel-collapse
+                .panel-body
+                    p.
+                        These are the application owners:
+                    table.table.table-striped
+                        thead
+                            tr
+                                th Owner
+                                th Role
+                                th Actions
+                        tbody
+                            each owner, index in application.owners
+                                if (authUser.admin)
+                                    td(style='vertical-align: middle;')
+                                        a(href='/users/#{owner.userId}')= owner.email
+                                else
+                                    td(style='vertical-align: middle;')= owner.email
+                                td(style='vertical-align: middle;')= owner.role
+                                td
+                                    if owner._links.deleteOwner
+                                        form(style='display:inline;' role='form' action='/applications/#{application.id}/owners/delete' method='post')
+                                            input(type='hidden' value='#{owner.email}' name='owneremail')
+                                            button(class='btn btn-default btn-warning' type='submit') Remove &raquo;
+                                    else
+                                        span &nbsp;
+
+                    if application._links.addOwner
+                        if application.owners.length == 1
+                            p If you want to transfer ownership of the application, add a new owner, and then (if needed), remove yourself from the list of owners.
+                        .panel-group
+                            div(class='panel panel-default')
+                                .panel-heading
+                                    h4.panel-title
+                                        a(data-toggle='collapse' href='#collapse') Register Additional Owner
+                                div(id='collapse' class='panel-collapse collapse')
+                                    .panel-body
+                                        form(role='form' action='/applications/#{application.id}/owners/add' method='post')
+                                            .form-group
+                                                label(for='owneremail') Owner Email:
+                                                input(type='email' name='owneremail').form-control
+                                                p 
+                                                    small Additional owners must already be registered with this API Portal.
+                                            label(for='ownerrole') Owner Role:
+                                            select(name='ownerrole').form-control
+                                                for role in roles
+                                                    option(value='#{role.role}')= role.desc
+                                            p
+                                                small If the added owner is member of an admin group, he will have owner access to the application regardless of the role you assign.
+                                            p
+                                                button(class='btn btn-primary' type='submit') Register Co-Owner &raquo;
+                    else
+                        i Only owners and admins may add and delete owners.                        
+        
+        if application._links.deleteApplication
+            .panel.panel-danger
+                .panel-heading
+                    h5.panel-title
+                        a(data-toggle='collapse' data-target='#dangerzone') Danger Zone
+                div(id='dangerzone').collapse.panel-collapse
+                    .panel-body
+                        p.
+                            If you do not need this application anymore, you can unregister it completely.
+                            Please note that this operation is not undoable, and that unregistering an
+                            application also means that all current subscriptions of the application will
+                            also be purged (all API keys will be rendered invalid).
+
+                        form(role='form' action='/applications/#{application.id}/unregister' method='post' onsubmit='return confirmUnregister();')
+                            button(type='submit').btn.btn-danger Unregister &raquo;

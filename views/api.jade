@@ -1,0 +1,131 @@
+extends layout
+
+block scripts
+    script(type='text/javascript').
+        function confirmUnsubscribe() {
+            return confirm("This action will render the current API key unusable. Are you sure you want to unsubscribe from the API?");
+        }
+
+block bodyScripts
+    script(type='text/javascript').
+        // Enable Popovers
+        $(document).ready(function(){
+            $('[data-toggle="popover"]').popover(); 
+        });
+
+block content
+    .jumbotron.wicked-api-title
+        .container.wicked-title-container
+            .row
+                .col-md-8
+                    h1= title
+                    p!= apiInfo.desc
+                .col-md-4
+                    br
+                    if (apiInfo.auth == 'oauth2')
+                        img(src="/images/oauth2-icon-64.png" align="right" title="API is secured via OAuth 2.0 - Client Credentials Flow")
+                    else if (!apiInfo.auth || apiInfo.auth == 'key-auth')
+                        img(src="/images/key-icon-64.png" align="right" title="API is secured with API keys")
+    
+    .container.wicked-container
+
+        .panel.panel-default
+            .panel-heading
+                +panelTitle('API Settings', '/help/api')
+            .panel-body
+                label API URL:
+                br
+                input(readonly value='#{apiUri}' style='font-family: monospace;').form-control
+
+        .panel.panel-default
+            .panel-heading
+                +panelTitle('Description', '/help/api', '#apidescription')
+            #apidescription.collapse.panel-collapse
+                .panel-body
+                    != apiDesc
+
+                    a(href="/swagger-ui/?url=/apis/#{apiInfo.id}/swagger" role="button").btn.btn-default View Swagger definition &raquo;
+
+        
+        if !authUser
+            .panel.panel-danger
+                .panel-heading
+                    h4.panel-title Not logged in
+                .panel-body
+                    p.
+                        You are currently not logged in, so we can't display your registered applications.
+                        Please log in first.
+                    p                    
+                        a(href="/login").btn.btn-default Log in &raquo;
+
+        else
+            .panel.panel-default
+                .panel-heading
+                    +panelTitle('Applications', '/help/api')
+                .panel-body
+            
+                    if applications.length == 0
+                        p You do not have any registered applications yet. Please create an application first.
+                    else
+                        table.table.table-striped
+                            thead
+                                tr
+                                    th Application
+                                    th Plan
+                                    if apiInfo.auth == "key-auth"
+                                        th(colspan=2) API Key (Header <code>#{glob.api.headerName}</code>)
+                                    else
+                                        th Client ID
+                                        th Client Secret
+                                    th Action
+                                    th Try it!
+                            tbody
+                                for app in applications
+                                    tr
+                                        // Application
+                                        td(style='vertical-align:middle;')
+                                            a(href='/applications/#{app.id}')= app.name
+                                        // Plan, API Key or Client ID/Secret
+                                        if app.hasSubscription
+                                            td(style='vertical-align:middle;')
+                                                a(href='#' data-toggle='popover' data-trigger='hover' title='#{app.plan.name}' data-content='#{app.plan.desc}')= app.plan.name
+                                            if app.subscriptionApproved
+                                                if apiInfo.auth == "key-auth"
+                                                    td(colspan=2 style='max-width:400px')
+                                                        input(readonly type='password' data-toggle='password' value='#{app.apiKey}').form-control
+                                                else if apiInfo.auth == "oauth2"
+                                                    td(style='max-width:250px')
+                                                        input(readonly type='password' data-toggle='password' value='#{app.clientId}').form-control
+                                                    td(style='max-width:250px')
+                                                        input(readonly type='password' data-toggle='password' value='#{app.clientSecret}').form-control
+                                            else
+                                                td(colspan=2 style='vertical-align:middle;')
+                                                    i Subscription approval is pending
+                                        else
+                                            td ---
+                                            td(colspan=2 style='vertical-align:middle;')
+                                                i Application currently not subscribed
+                                        // Action
+                                        if app.mayUnsubscribe
+                                            td
+                                                form(role='form' action='/applications/#{app.id}/unsubscribe/#{apiInfo.id}' method='POST' onsubmit='return confirmUnsubscribe();')
+                                                    button(type='submit').btn.btn-danger.btn-block Unsubscribe &raquo;
+                                        else if app.maySubscribe
+                                            td
+                                                a(href='/applications/#{app.id}/subscribe/#{apiInfo.id}').btn.btn-success.btn-block Subscribe &raquo;
+                                        else
+                                            td &nbsp;
+                                        // Try it!
+                                        if app.hasSubscription && app.subscriptionApproved
+                                            td
+                                                if apiInfo.auth == "key-auth"
+                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=#{app.apiKey}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
+                                                else if apiInfo.auth == "oauth2"
+                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
+                                        else
+                                            td(style='vertical-align:middle;') ---
+
+
+                    p Need an additional application? Click the button below.
+
+                    a(href="/applications?register=true").btn.btn-default Register Application &raquo;

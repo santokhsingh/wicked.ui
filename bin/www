@@ -1,0 +1,144 @@
+#!/usr/bin/env node
+
+'use strict';
+
+/**
+ * Module dependencies.
+ */
+
+var debug = require('debug')('portal:www');
+var http = require('http');
+var request = require('request');
+var fs = require('fs');
+var path = require('path');
+
+var envReader = require('portal-env');
+
+var reqUtils = require('../routes/requestUtils');
+var portalGlobals = require('../portalGlobals');
+
+var environment = process.env.NODE_ENV;
+if (!environment)
+    throw new Error('Environment variable NODE_ENV must be set.');
+
+console.log("Portal environment: " + environment);
+
+var apiUrl = envReader.resolveApiUrl();
+if (apiUrl.endsWith('/')) // Strip trailing slash
+    apiUrl = apiUrl.substring(0, apiUrl.length - 1);
+
+var app = require('../app');
+
+/**
+ * Get port from environment and store in Express.
+ */
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+app.set('api_url', apiUrl);
+
+/**
+ * Create HTTP server.
+ */
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+// Wait for Portal API to be available
+debug('Waiting for API to be available.');
+envReader.awaitUrl(apiUrl + '/ping', -1, 1000, function(err, response) {
+    if (err) {
+        console.error(err);        
+        throw Error('Could not retrieve globals from API! API not running?');
+    }
+
+    debug('API is responding. Finishing initialization.');
+
+    request({ url: apiUrl + '/globals' }, function (err, apiResponse, apiBody) {
+        if (err || 200 != apiResponse.statusCode)
+            throw Error("Could not retrieve globals from API! API not running?");
+        debug('Retrieved API globals.');
+        var retrievedPortalGlobals = reqUtils.getJson(apiBody);
+        portalGlobals.glob = retrievedPortalGlobals;
+        app.portalGlobals = retrievedPortalGlobals;
+        app.portalGlobals.buildDate = getBuildDate();
+        
+        app.initialize(function() {
+            app.initialized = true;
+        });
+    });
+});
+
+function getBuildDate() {
+    debug('getBuildDate()');
+    var buildDatePath = path.join(__dirname, '..', 'build_date');
+    debug('Looking for build date file at: ' + buildDatePath);
+    if (!fs.existsSync(buildDatePath))
+        return "(no build date found)";
+    return fs.readFileSync(buildDatePath, 'utf8');
+}
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+    var port = parseInt(val, 10);
+
+    if (isNaN(port)) {
+        // named pipe
+        return val;
+    }
+
+    if (port >= 0) {
+        // port number
+        return port;
+    }
+
+    return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
+
+    var bind = typeof port === 'string' ?
+        'Pipe ' + port :
+        'Port ' + port;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+    var addr = server.address();
+    var bind = typeof addr === 'string' ?
+        'pipe ' + addr :
+        'port ' + addr.port;
+    debug('Listening on ' + bind);
+}

@@ -1,0 +1,64 @@
+extends layout
+
+block content
+    .jumbotron.wicked-application-title
+        .container.wicked-title-container
+            h1 Your Applications
+            
+            p.
+                 This page displays all your registered applications. It also allows you to register
+                 a new application.
+    
+    .container.wicked-container
+        
+        p.
+            An application is the entity to which you attach your API subscriptions. You can own or co-own
+            applications with other developers.
+            
+        if !authUser
+            h3 You are not logged in
+            
+            p Applications can only be created if you are logged in.
+            
+            p Please <a href="/login">log in</a> or <a href="/signup">sign up</a>.
+            
+        else
+            .panel-group
+                div(class='panel panel-default')
+                    .panel-heading
+                        +panelTitle('Register a new Application', '/help/applications', '#collapse')
+                    div(id='collapse' class='panel-collapse collapse #{showRegister}')
+                        .panel-body
+                            form(role='form' action='/applications/register' method='POST')
+                                .form-group
+                                    label(for='appid') App ID:
+                                    input(type='string' name='appid').form-control
+                                    small Application IDs must be all lower case, and may only contain the following characters: a-z, 0-9, -, _
+                                .form-group
+                                    label(for='appname') App Name:
+                                    input(type='string' name='appname').form-control
+                                    small A human readable description/name of the your application, e.g. 'My Awesome Application'
+                                p
+                                    button(type='submit').btn.btn-success Register Application
+            
+            hr
+            
+            if applications.length == 0
+                br
+                h4 You don't have any registered applications
+            else
+                p To review owners, view API keys for this application or to unregister an application, please click the application name.
+
+                table.table.table-striped
+                    thead
+                        tr
+                            th ID
+                            th Name
+                            th Role
+                    tbody
+                        each app, i in applications
+                            tr
+                                td= app.id
+                                td
+                                    a(href='/applications/#{app.id}')= app.name
+                                td= app.userRole

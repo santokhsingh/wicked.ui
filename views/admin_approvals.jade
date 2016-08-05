@@ -1,0 +1,43 @@
+extends layout
+
+block content
+    .jumbotron.wicked-admin-title
+        .container.wicked-title-container
+            h1 Pending Subscription Approvals
+            
+            p Please review the pending subscription approvals. You may either approve of or decline the subscription.
+    
+    .container.wicked-container
+        if approvals.length == 0
+            h3 No pending approvals
+        else
+            table(class='table table-striped')
+                thead
+                    tr
+                        th User Name
+                        th Email
+                        th Application
+                        th API
+                        th Plan
+                        th Actions
+                tbody
+                    for approval in approvals
+                        tr
+                            td
+                                a(href='/users/#{approval.user.id}')= approval.user.name
+                            td= approval.user.email
+                            td
+                                a(href='/applications/#{approval.application.id}')= approval.application.name
+                            td
+                                a(href='/apis/#{approval.api.id}')= approval.api.name
+                            td= approval.plan.name
+                            td
+                                form(style='display:inline;' role='form' action='/admin/approvals/approve' method='post')
+                                    input(type='hidden' name='api' value='#{approval.api.id}')
+                                    input(type='hidden' name='app' value='#{approval.application.id}')
+                                    button(style='display:inline;' class='btn btn-sm btn-success' type='submit') Approve
+                                span &nbsp;
+                                form(style='display:inline;' role='form' action='/admin/approvals/decline' method='post')
+                                    input(type='hidden' name='api' value='#{approval.api.id}')
+                                    input(type='hidden' name='app' value='#{approval.application.id}')
+                                    button(style='display:inline;' class='btn btn-sm btn-danger' type='submit') Decline

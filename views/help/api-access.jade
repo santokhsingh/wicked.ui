@@ -1,0 +1,44 @@
+extends help_layout
+
+block help_content
+  +helpItem('key_access', 'Accessing using an API Key')
+
+  p.
+    If the API you subscribe to is secured via an API Key, you will have to pass on this API Key to the API Gateway in a HTTP Header. Using <code>curl</code>, this will look as follows:
+
+  pre.
+    $ curl -H '#{glob.api.headerName}: (your API Key)' #{glob.network.schema}://#{glob.network.apiHost}/desired_api/some_endpoint
+
+  p.
+    If you pass on a correct API Key, the API Gateway will let you call the backend API, using the plan you selected when subscribing to the API, for your application.
+
+  p.
+    <strong>Note:</strong> Please be aware that the API key is bound to the <a href='/help/application'>application</a> it was generated for. You should have different API keys for different applications. Do not re-use the API Keys, even if it is possible (the API Gateway cannot notice).
+
+  +helpItem('oauth2_access', 'Accessing using OAuth 2.0')
+
+  p.
+    If the API you have subscribed to is secured via the <a href='https://tools.ietf.org/html/rfc6749' target='_blank'>OAuth 2.0 Client Credentials Flow</a>, you will first need to acquire an Access Token for the API before you can call any of the API end points.
+
+  p.
+    Leveraging <code>curl</code>, the call has to look as follows:
+  
+  pre.
+    $ curl -X POST --header 'Content-Type: application/x-www-form-urlencoded' -d 'grant_type=client_credentials&client_id=(your client id)&client_secret=(your client secret)' '#{glob.network.schema}://#{glob.network.apiHost}/desired_api/oauth2/token'
+
+  p.
+    Please note that the same kind of request has to be used regardless of the API in the backend. The <code>/oauth2/token</code> end point is not actually provided by the backend API, but by the API Gateway. This means the authorization calls will always look the same, no matter which API (here e.g. <code>/desired_api/</code>) is to be used.
+
+  p.
+    If the <code>POST</code> request was successful, you will receive an access token which is valid for a certain period of time:
+  p
+    code {"token_type":"bearer","access_token": "<strong style='color:#0a0'>db530d89558843a99ec80f639434faa8</strong>","expires_in": 3600}
+  
+  p.
+    In green above, the access token is highlighted. This can in turn be used for real calls to the API in the background, using the same example URL as above, this would be:
+
+  pre.
+    $ curl --header 'Authorization: Bearer db530d89558843a99ec80f639434faa8' #{glob.network.schema}://#{glob.network.apiHost}/desired_api/some_endpoint
+
+  p.
+    Chances are good that this kind of authorization is automatically supported in case you are using common frameworks when implementing your application, such as Java Spring. For you, calling an API would be transparent, as long as you provide your framework with Client ID and Client Secret. This is though very implementation specific and is not covered further here.

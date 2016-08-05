@@ -1,0 +1,31 @@
+extends layout
+
+block content
+    .jumbotron.wicked-admin-title
+        .container.wicked-title-container
+            h1= title
+            
+            p Pending email verifications and lost passwords
+    
+    .container.wicked-container
+        br
+        table.table.table-striped
+            thead
+                tr
+                    th ID
+                    th Type
+                    th Email
+                    th User ID
+                    th Timestamp
+                    th Actions
+            tbody
+                for v in verifications
+                    tr
+                        td= v.id
+                        td= v.type
+                        td= v.email
+                        td
+                            a(href='/users/#{v.userId}')= v.userId
+                        td= new Date(v.utc * 1000).toLocaleString()
+                        td
+                            a.btn.btn-sm.btn-danger Delete
