@@ -23,6 +23,7 @@ var validateemail = require('./routes/validateemail');
 var swaggerUi = require('./routes/swaggerUi');
 var ping = require('./routes/ping');
 var help = require('./routes/help');
+var kill = require('./routes/kill');
 var reqUtils = require('./routes/requestUtils');
 var portalGlobals = require('./portalGlobals');
 var correlationIdHandler = require('portal-env').CorrelationIdHandler();
@@ -141,6 +142,7 @@ app.initialize = function (done) {
     app.use('/swagger-ui', express.static(path.join(__dirname, 'swagger-ui')));
     app.use('/swagger-ui', express.static(path.join(__dirname, 'node_modules/swagger-ui/dist')));
     app.use('/help', help);
+    app.use('/kill', kill);
 
     // Late loading as it requires things from portalGlobals!
     var login = require('./routes/login');
