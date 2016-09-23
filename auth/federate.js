@@ -8,12 +8,12 @@ var reqUtils = require('../routes/requestUtils');
 var federate = function () { };
 
 federate.userLogin = function (req, userCreateInfo, done) {
-    debug('userLogin()');
+    debug('userLogin(): ' + userCreateInfo.customId);
     // Do we know this user?
     reqUtils.get(req, '/users?customId=' + userCreateInfo.customId, function (err, apiResponse, apiBody) {
         if (err)
             return done(err);
-
+        debug('GET /users?customId=' + userCreateInfo.customId + ' returned ' + apiResponse.statusCode);
         if (200 == apiResponse.statusCode) {
             // Yes, we know him.
             var userId = reqUtils.getJson(apiBody)[0].id;

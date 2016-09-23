@@ -64,6 +64,7 @@ if (portalGlobals.glob.auth.adfs &&
                 email: decodedProfile[adfsGlob.emailField]
             };
 
+            debug('Calling federate.userLogin()');
             return federate.userLogin(req, userCreateInfo, done);
         });
 
