@@ -24,6 +24,8 @@ block content
                     br
                     if (apiInfo.auth == 'oauth2')
                         img(src="/images/oauth2-icon-64.png" align="right" title="API is secured via OAuth 2.0 - Client Credentials Flow")
+                    else if (apiInfo.auth == 'oauth2-implicit')
+                        img(src="/images/oauth2-icon-64.png" align="right" title="API is secured via OAuth 2.0 - Implicit Grant Flow")
                     else if (!apiInfo.auth || apiInfo.auth == 'key-auth')
                         img(src="/images/key-icon-64.png" align="right" title="API is secured with API keys")
     
@@ -35,7 +37,11 @@ block content
             .panel-body
                 label API URL:
                 br
-                input(readonly value='#{apiUri}' style='font-family: monospace;').form-control
+                input(readonly type='string' value='#{apiUri}' style='font-family: monospace;').form-control
+                if apiInfo.auth == 'oauth2-implicit'
+                    br
+                    label Authorization Server:
+                    input(readonly type='string' value=authServer.url style='font-family: monospace;').form-control
 
         .panel.panel-default
             .panel-heading
@@ -74,9 +80,13 @@ block content
                                     th Plan
                                     if apiInfo.auth == "key-auth"
                                         th(colspan=2) API Key (Header <code>#{glob.api.headerName}</code>)
-                                    else
+                                    else if apiInfo.auth == "oauth2"
                                         th Client ID
                                         th Client Secret
+                                    else if apiInfo.auth == "oauth2-implicit"
+                                        th(colspan=2) Client ID
+                                    else
+                                        th n/a
                                     th Action
                                     th Try it!
                             tbody
@@ -98,6 +108,9 @@ block content
                                                         input(readonly type='password' data-toggle='password' value='#{app.clientId}').form-control
                                                     td(style='max-width:250px')
                                                         input(readonly type='password' data-toggle='password' value='#{app.clientSecret}').form-control
+                                                else if apiInfo.auth == "oauth2-implicit"
+                                                    td(colspan=2 style='max-width:400px')
+                                                        input(readonly type='password' data-toggle='password' value='#{app.clientId}').form-control
                                             else
                                                 td(colspan=2 style='vertical-align:middle;')
                                                     i Subscription approval is pending
@@ -113,6 +126,9 @@ block content
                                         else if app.maySubscribe
                                             td
                                                 a(href='/applications/#{app.id}/subscribe/#{apiInfo.id}').btn.btn-success.btn-block Subscribe &raquo;
+                                        else if app.subscribeError
+                                            td
+                                                i= app.subscribeError
                                         else
                                             td &nbsp;
                                         // Try it!
@@ -122,6 +138,8 @@ block content
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=#{app.apiKey}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
                                                 else if apiInfo.auth == "oauth2"
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
+                                                else if apiInfo.auth == "oauth2-implicit"
+                                                    | ---
                                         else
                                             td(style='vertical-align:middle;') ---
 

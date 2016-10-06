@@ -7,6 +7,7 @@ var reqUtils = require('./requestUtils');
 var marked = require('marked');
 var async = require('async');
 var cors = require('cors');
+var mustache = require('mustache');
 
 router.get('/', function (req, res, next) {
     debug("get('/')");
@@ -63,21 +64,18 @@ router.get('/:api', function (req, res, next) {
     // /apis/:api/desc
     // /users/:userId
     // For all the user's applications:
+    // /applications/:appId
     // /applications/:appId/subscriptions/:apiId
+    // And possibly also the Auth Server of the API:
+    // /auth-servers/:serverId
 
     var apiId = req.params.api;
     var loggedInUserId = reqUtils.getLoggedInUserId(req);
 
     async.parallel({
-        getApi: function (callback) {
-            reqUtils.getFromAsync(req, res, '/apis/' + apiId, 200, callback);
-        },
-        getApiDesc: function (callback) {
-            reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/desc', 200, callback);
-        },
-        getApiConfig: function (callback) {
-            reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/config', 200, callback);
-        },
+        getApi: callback => reqUtils.getFromAsync(req, res, '/apis/' + apiId, 200, callback),
+        getApiDesc: callback => reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/desc', 200, callback),
+        getApiConfig: callback => reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/config', 200, callback),
         getUser: function (callback) {
             if (loggedInUserId)
                 reqUtils.getFromAsync(req, res, '/users/' + loggedInUserId, 200, callback);
@@ -88,9 +86,7 @@ router.get('/:api', function (req, res, next) {
                 callback(null, nullUser);
             }
         },
-        getPlans: function (callback) {
-            reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/plans', 200, callback);
-        }
+        getPlans: callback => reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/plans', 200, callback)
     }, function (err, results) {
         if (err)
             return next(err);
@@ -105,6 +101,8 @@ router.get('/:api', function (req, res, next) {
         // TODO: This makes me a little unhappy, as this is Kong specific.
         // The "right" thing to do here would be to have the API, and more specific
         // even the Kong Adapter (or something) translate this into this Request URI.
+        // Idea: Make this part of the generic configuration, as it would be a 
+        // necessary configuration option for any API gateway.
         var apiRequestUri = apiConfig.api.request_path;
         var nw = req.app.portalGlobals.network;
         var apiUri = nw.schema + '://' + nw.apiHost + apiRequestUri;
@@ -120,81 +118,127 @@ router.get('/:api', function (req, res, next) {
                 appIds.push(userInfo.applications[i].id);
         }
 
-        async.map(appIds,
-            function (appId, callback) {
-                reqUtils.get(req, '/applications/' + appId + '/subscriptions/' + apiId, function (err, apiResponse, apiBody) {
+        // Note: callback and results are used all the time, but in the end, all's
+        // good, as the variable scopes are playing nice with us. Just watch out.
+        async.parallel({
+            getSubs: function (callback) {
+                async.map(appIds, function (appId, callback) {
+                    reqUtils.get(req, '/applications/' + appId + '/subscriptions/' + apiId, function (err, apiResponse, apiBody) {
+                        if (err)
+                            return callback(err);
+                        if (200 == apiResponse.statusCode) {
+                            const jsonBody = reqUtils.getJson(apiBody);
+                            debug('Found subscriptions for application ' + appId + ' for API ' + apiId + ':');
+                            debug(jsonBody);
+                            return callback(null, jsonBody);
+                        }
+                        debug('No subscriptions found for application ' + appId + ' for API ' + apiId);
+                        // We got a 404, most probably; let's return null for this
+                        callback(null, null);
+                    });
+                }, function (err, results) {
                     if (err)
                         return callback(err);
-                    if (200 == apiResponse.statusCode)
-                        return callback(null, reqUtils.getJson(apiBody));
-                    // We got a 404, most probably; let's return null for this
-                    callback(null, null);
+                    debug('Results of getting subscriptions for API ' + apiId + ':');
+                    debug(results);
+                    callback(null, results);
                 });
-            }, function (err, subsResults) {
-                if (err)
-                    return next(err);
-
+            },
+            getApps: function (callback) {
                 async.map(appIds, function (appId, callback) {
                     reqUtils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
-                }, function (err, appsResults) {
+                }, function (err, results) {
                     if (err)
-                        return next(err);
+                        return callback(err);
+                    callback(null, results);
+                });
+            },
+            getAuthServer: function (callback) {
+                if (!apiInfo.authServer)
+                    callback(null, null);
+                else
+                    reqUtils.getFromAsync(req, res, '/auth-servers/' + apiInfo.authServer, 200, callback);
+            }
+        }, function (err, results) {
+            if (err)
+                return next(err);
 
-                    var apps = [];
-                    for (var i = 0; i < userInfo.applications.length; ++i) {
-                        var thisApp = userInfo.applications[i];
-                        thisApp.name = appsResults[i].name;
-                        if (appsResults[i]._links.addSubscription)
-                            thisApp.maySubscribe = true;
-                        thisApp.hasSubscription = false;
-                        if (subsResults[i]) {
-                            thisApp.hasSubscription = true;
-                            thisApp.plan = plansMap[subsResults[i].plan];
-                            thisApp.apiKey = subsResults[i].apikey;
-                            thisApp.clientId = subsResults[i].clientId;
-                            thisApp.clientSecret = subsResults[i].clientSecret;
-                            thisApp.mayUnsubscribe = false;
-                            thisApp.maySubscribe = false;
-                            thisApp.subscriptionApproved = subsResults[i].approved;
-                            if (subsResults[i]._links.deleteSubscription)
-                                thisApp.mayUnsubscribe = true;
-                            thisApp.swaggerLink = req.app.portalGlobals.network.schema + '://' +
-                                req.app.portalGlobals.network.portalHost +
-                                '/apis/' + apiId + '/swagger?forUser=' + loggedInUserId;
-                        }
-                        apps.push(thisApp);
-                        debug(thisApp);
-                    }
+            debug('Results from querying apps, subscriptions and auth-server:');
+            const appsResults = results.getApps;
+            debug('appsResults:');
+            debug(appsResults);
+            const subsResults = results.getSubs;
+            debug('subsResults:');
+            debug(subsResults);
+            const authServer = results.getAuthServer;
+            debug(authServer);
 
-                    // See also views/models/api.json for how this looks
-                    if (!reqUtils.acceptJson(req)) {
-                        res.render('api',
-                            {
-                                authUser: req.user,
-                                glob: req.app.portalGlobals,
-                                route: '/apis/' + apiId,
-                                title: apiInfo.name,
-                                apiInfo: apiInfo,
-                                apiDesc: marked(apiDesc),
-                                applications: apps,
-                                apiPlans: plans,
-                                apiUri: apiUri
-                            });
-                    } else {
-                        res.json({
-                            title: apiInfo.name,
-                            apiInfo: apiInfo,
-                            apiPlans: plans,
-                            applications: apps,
-                            apiUri: apiUri
-                        });
-                    }
+            var apps = [];
+            for (var i = 0; i < userInfo.applications.length; ++i) {
+                var thisApp = userInfo.applications[i];
+                thisApp.name = appsResults[i].name;
+                if (appsResults[i]._links.addSubscription)
+                    thisApp.maySubscribe = true;
+                // Special case oauth2-implicit
+                if (apiInfo.auth === 'oauth2-implicit' &&
+                    !appsResults[i].redirectUri) {
+                    thisApp.maySubscribe = false;
+                    thisApp.subscribeError = 'App needs Redirect URI for this API';
+                }
+
+                thisApp.hasSubscription = false;
+                if (subsResults[i]) {
+                    thisApp.hasSubscription = true;
+                    thisApp.plan = plansMap[subsResults[i].plan];
+                    thisApp.apiKey = subsResults[i].apikey;
+                    thisApp.clientId = subsResults[i].clientId;
+                    thisApp.clientSecret = subsResults[i].clientSecret;
+                    thisApp.mayUnsubscribe = false;
+                    thisApp.maySubscribe = false;
+                    thisApp.subscriptionApproved = subsResults[i].approved;
+                    if (subsResults[i]._links.deleteSubscription)
+                        thisApp.mayUnsubscribe = true;
+                    thisApp.swaggerLink = req.app.portalGlobals.network.schema + '://' +
+                        req.app.portalGlobals.network.portalHost +
+                        '/apis/' + apiId + '/swagger?forUser=' + loggedInUserId;
+                }
+                apps.push(thisApp);
+                debug(thisApp);
+            }
+
+            if (authServer) {
+                authServer.url = mustache.render(authServer.url, {
+                    apiId: apiInfo.id
                 });
             }
-        );
 
+            // See also views/models/api.json for how this looks
+            if (!reqUtils.acceptJson(req)) {
+                res.render('api',
+                    {
+                        authUser: req.user,
+                        glob: req.app.portalGlobals,
+                        route: '/apis/' + apiId,
+                        title: apiInfo.name,
+                        apiInfo: apiInfo,
+                        apiDesc: marked(apiDesc),
+                        applications: apps,
+                        apiPlans: plans,
+                        apiUri: apiUri,
+                        authServer: authServer
+                    });
+            } else {
+                res.json({
+                    title: apiInfo.name,
+                    apiInfo: apiInfo,
+                    apiPlans: plans,
+                    applications: apps,
+                    apiUri: apiUri
+                });
+            }
+        });
     });
-}); // /apis/:apiId
+});// /apis/:apiId
 
 // Dynamically allow CORS for this end point. Otherwise: No.
 var corsOptions = null;

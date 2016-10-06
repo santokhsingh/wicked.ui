@@ -38,6 +38,21 @@ block content
                                     label(for='appname') App Name:
                                     input(type='string' name='appname').form-control
                                     small A human readable description/name of the your application, e.g. 'My Awesome Application'
+
+                                .checkbox
+                                    label
+                                        input(type='checkbox' name='hasredirecturi' data-toggle='collapse' data-target='#redirecturipanel')
+                                        strong This application will use OAuth2.0 Flows
+                                        | &nbsp;(other than the Client Credentials flow, i.e. using redirects)
+
+                                div(id='redirecturipanel' class='panel-collapse collapse')
+                                    .form-group
+                                        label(for='redirecturi') Redirect URI:
+                                        input(type='string' name='redirecturi' value='https://').form-control
+                                        small.
+                                            The callback under which your web application can be called back, passing the access token in the fragment.
+                                            <b>Must be an <code>https://</code> URI</b>, except for testing purposes, for which also <code>http://localhost</code> is accepted.
+
                                 p
                                     button(type='submit').btn.btn-success Register Application
             

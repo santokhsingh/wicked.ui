@@ -203,6 +203,12 @@ paths:
               appname:
                 type: string
                 description: Friendly name of application to create
+              hasredirecturi:
+                type: boolean
+                description: Pass true if application has/needs a redirect URI
+              redirecturi:
+                type: string
+                description: The redirect URI of the application (for OAuth2 implicit flow)
                 
       responses:
         201:

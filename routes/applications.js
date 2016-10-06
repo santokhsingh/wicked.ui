@@ -129,12 +129,14 @@ function findUserRole(appInfo, userInfo) {
 
 router.post('/register', function (req, res, next) {
     debug("post('/register')");
-    var appId = req.body.appid;
-    var appName = req.body.appname;
+    const appId = req.body.appid;
+    const appName = req.body.appname;
+    const hasRedirectUri = req.body.hasredirecturi;
+    const redirectUri = req.body.redirecturi;
 
     if (!appId ||
         !appName) {
-        var err = new Error('Both an application ID and an application name has to be supplied.');
+        const err = new Error('Both an application ID and an application name has to be supplied.');
         err.status = 400;
         return next(err);
     }
@@ -143,6 +145,8 @@ router.post('/register', function (req, res, next) {
         id: appId,
         name: appName
     };
+    if (hasRedirectUri)
+        newApp.redirectUri = redirectUri;
 
     reqUtils.post(req, '/applications', newApp,
         function (err, apiResponse, apiBody) {
@@ -250,6 +254,7 @@ router.post('/:appId/patch', function (req, res, next) {
     debug("post('/:appId/patch')");
     var appId = req.params.appId;
     var appName = req.body.appname;
+    var redirectUri = req.body.redirecturi;
 
     if (!appName) {
         var err = new Error('Application name cannot be empty.');
@@ -257,21 +262,23 @@ router.post('/:appId/patch', function (req, res, next) {
         return next(err);
     }
 
-    reqUtils.patch(req, '/applications/' + appId,
-        {
-            id: appId,
-            name: appName
-        }, function (err, apiResponse, apiBody) {
-            if (err)
-                return next(err);
-            if (200 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
-            // Yay!
-            if (!reqUtils.acceptJson(req))
-                res.redirect('/applications/' + appId);
-            else
-                res.json(reqUtils.getJson(apiBody));
-        });
+    const appData = {
+        id: appId,
+        name: appName,
+        redirectUri: redirectUri
+    };
+
+    reqUtils.patch(req, '/applications/' + appId, appData, function (err, apiResponse, apiBody) {
+        if (err)
+            return next(err);
+        if (200 != apiResponse.statusCode)
+            return reqUtils.handleError(res, apiResponse, apiBody, next);
+        // Yay!
+        if (!reqUtils.acceptJson(req))
+            res.redirect('/applications/' + appId);
+        else
+            res.json(reqUtils.getJson(apiBody));
+    });
 });
 
 // Subscribe to an API
@@ -299,6 +306,21 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
         var apiInfo = results.getApi;
         var apiPlans = results.getPlans;
 
+        var allowSubscribe = true;
+        var subscribeError = null;
+        var subscribeWarning = null;
+        if (apiInfo.auth === 'oauth2-implicit' &&
+            !application.redirectUri) {
+            allowSubscribe = false;
+            subscribeError = 'You cannot subscribe to an OAuth 2.0 Implicit Grant API with an application which does not have a valid Redirect URI. Please specify a Redirect URI on the Application page';
+        }
+
+        if ((apiInfo.auth === 'oauth2' ||
+            apiInfo.auth === 'key-auth') &&
+            application.redirectUri) {
+            subscribeWarning = 'You are about to subscribe to an API which is intended only for machine to machine communication with an application with a registered Redirect URI. Please note that API Keys and/or Client Credentials (such as the Client Secret) must NEVER be deployed to a public client, such as a JavaScript SPA or Mobile Application.';
+        }
+
         if (!reqUtils.acceptJson(req)) {
             res.render('subscribe',
                 {
@@ -307,7 +329,10 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
                     title: 'Subscribe to ' + apiInfo.name,
                     apiInfo: apiInfo,
                     apiPlans: apiPlans,
-                    application: application
+                    application: application,
+                    allowSubscribe: allowSubscribe,
+                    subscribeError: subscribeError,
+                    subscribeWarning: subscribeWarning
                 });
         } else {
             res.json({

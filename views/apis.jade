@@ -8,6 +8,9 @@ mixin apiDef(anApi)
                 if anApi.auth == 'oauth2'
                     a(href='/help/apis' target='_blank')
                         img(src='/images/oauth2-icon-32.png' align='right' title='API is secured over OAuth 2.0 Client Credentials Flow')
+                else if anApi.auth == 'oauth2-implicit'
+                    a(href='/help/apis' target='_blank')
+                        img(src='/images/oauth2-icon-32.png' align='right' title='API is secured over OAuth 2.0 Implict Grant Flow')
                 else if anApi.auth == 'none'
                 else
                     a(href='/help/apis' target='_blank')

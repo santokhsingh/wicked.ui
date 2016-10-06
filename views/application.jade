@@ -51,6 +51,9 @@ block content
                                                 input(readonly type='password' data-toggle='password' value='#{sub.clientId}').form-control
                                             td(style='max-width: 250px')
                                                 input(readonly type='password' data-toggle='password' value='#{sub.clientSecret}').form-control
+                                        else if ('oauth2-implicit' == sub.auth)
+                                            td(colspan=2)
+                                                input(readonly type='password' data-toggle='password' value='#{sub.clientId}').form-control
                                         else
                                             td(colspan=2)
                                                 input(readonly type='password' data-toggle='password' value='#{sub.apikey}').form-control
@@ -60,23 +63,30 @@ block content
 
         .panel.panel-default
             .panel-heading
-                +panelTitle('Application Name', '/help/application', '#applicationname')
-            #applicationname.collapse.panel-collapse
+                +panelTitle('Application Info', '/help/application', '#applicationinfo')
+            #applicationinfo.collapse.panel-collapse
                 .panel-body
                     if application._links.patchApplication
-                        p.
-                            You may update the application "friendly" name here; it is not possible to update
-                            the application ID.
 
                         form(role='form' action='/applications/#{application.id}/patch' method='post')
-                            input(value='#{application.name}' name='appname').form-control
+                            p.
+                                You may update the application "friendly" name and redirect URI here; it is not possible to update
+                                the application ID.
+                            .form-group
+                                label(for='appname') Application Name:
+                                input(value=application.name name='appname').form-control
+                            .form-group
+                                label(for='redirecturi') Redirect URI:
+                                input(value=application.redirectUri name='redirecturi').form-control
+                                small Once you have added a redirect URI, it's not possible to remove it, just change it. <b>Has to be a <code>https://</code> URI</b>, or start with <code>http://localhost</code> (for testing purposes).
                             br
                             button(style='display:inline;' class='btn btn-warning' type='submit') Update
                     else
                         p.
-                            This is the application's friendly name. Administrators and Collaborators may update
-                            the name:
-                        input(type='string' value='#{application.name}' readonly).form-control
+                            This is the application's friendly name and optionally redirect URI. Administrators and Collaborators may update:
+                        input(type='string' value=application.name readonly).form-control
+                        if application.redirectUri
+                            input(type='string' value=application.redirectUri readonly).form-control
 
         .panel.panel-default
             .panel-heading
