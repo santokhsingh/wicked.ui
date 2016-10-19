@@ -39,7 +39,7 @@ if (portalGlobals.glob.auth.github &&
             debug('Github Email retrieved.');
             debug(apiBody);
             
-            var nameGuess = splitName(profile.displayName);
+            var nameGuess = splitName(profile.displayName, profile.username);
             var email = getEmailData(reqUtils.getJson(apiBody));
             var userCreateInfo = {
                 customId: 'Github:' + profile.id,
@@ -56,12 +56,18 @@ if (portalGlobals.glob.auth.github &&
     });
 }
 
-function splitName(fullName) {
+function splitName(fullName, username) {
     debug('splitName()');
     var name = {
         firstName: null,
         lastName: fullName
     };
+    if (!fullName) {
+        if (username)
+            name.lastName = username;
+        else
+            name.lastName = 'Unknown';
+    }
     var spaceIndex = fullName.indexOf(' ');
     if (spaceIndex < 0)
         return name;
