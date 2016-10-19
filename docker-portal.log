@@ -1,99 +1,0 @@
-Sending build context to Docker daemon 557.1 kBSending build context to Docker daemon 1.114 MBSending build context to Docker daemon  1.15 MB
-Step 1 : FROM local_portal-env:dev-onbuild
-[91m# Executing 2 build triggers...
-[0mStep 1 : RUN date -u "+%Y-%m-%d %H:%M:%S" > /usr/src/app/build_date
- ---> Using cache
-Step 1 : COPY . /usr/src/app
- ---> 34b305a113fc
-Removing intermediate container 8007520e2ccb
-Step 2 : EXPOSE 3000
- ---> Running in 8bbeb25d763a
- ---> 537e49204465
-Removing intermediate container 8bbeb25d763a
-Successfully built 537e49204465
-Sending build context to Docker daemon 557.1 kBSending build context to Docker daemon 1.114 MBSending build context to Docker daemon  1.15 MB
-Step 1 : FROM local_portal-env:dev-onbuild
-[91m# Executing 2 build triggers...
-[0mStep 1 : RUN date -u "+%Y-%m-%d %H:%M:%S" > /usr/src/app/build_date
- ---> Using cache
-Step 1 : COPY . /usr/src/app
- ---> Using cache
- ---> 34b305a113fc
-Step 2 : EXPOSE 3000
- ---> Using cache
- ---> 537e49204465
-Successfully built 537e49204465
-Sending build context to Docker daemon 557.1 kBSending build context to Docker daemon 1.114 MBSending build context to Docker daemon  1.15 MB
-Step 1 : FROM local_portal-env:dev-onbuild
-[91m# Executing 2 build triggers...
-[0mStep 1 : RUN date -u "+%Y-%m-%d %H:%M:%S" > /usr/src/app/build_date
- ---> Using cache
-Step 1 : COPY . /usr/src/app
- ---> Using cache
- ---> 34b305a113fc
-Step 2 : EXPOSE 3000
- ---> Using cache
- ---> 537e49204465
-Successfully built 537e49204465
-Sending build context to Docker daemon 557.1 kBSending build context to Docker daemon 1.114 MBSending build context to Docker daemon  1.15 MB
-Step 1 : FROM local_portal-env:dev-onbuild
-[91m# Executing 2 build triggers...
-[0mStep 1 : RUN date -u "+%Y-%m-%d %H:%M:%S" > /usr/src/app/build_date
- ---> Using cache
-Step 1 : COPY . /usr/src/app
- ---> Using cache
- ---> 34b305a113fc
-Step 2 : EXPOSE 3000
- ---> Using cache
- ---> 537e49204465
-Successfully built 537e49204465
-Sending build context to Docker daemon 557.1 kBSending build context to Docker daemon 1.114 MBSending build context to Docker daemon  1.15 MB
-Step 1 : FROM local_portal-env:dev-onbuild
-[91m# Executing 2 build triggers...
-[0mStep 1 : RUN date -u "+%Y-%m-%d %H:%M:%S" > /usr/src/app/build_date
- ---> Using cache
-Step 1 : COPY . /usr/src/app
- ---> Using cache
- ---> 34b305a113fc
-Step 2 : EXPOSE 3000
- ---> Using cache
- ---> 537e49204465
-Successfully built 537e49204465
-Sending build context to Docker daemon 557.1 kBSending build context to Docker daemon 1.114 MBSending build context to Docker daemon 1.163 MB
-Step 1 : FROM local_portal-env:dev-onbuild
-[91m# Executing 2 build triggers...
-[0mStep 1 : RUN date -u "+%Y-%m-%d %H:%M:%S" > /usr/src/app/build_date
- ---> Using cache
-Step 1 : COPY . /usr/src/app
- ---> a72dff716964
-Removing intermediate container ca377fbee561
-Step 2 : EXPOSE 3000
- ---> Running in 3fc4e7e3078f
- ---> 42bcd7c9c0ea
-Removing intermediate container 3fc4e7e3078f
-Successfully built 42bcd7c9c0ea
-Sending build context to Docker daemon 557.1 kBSending build context to Docker daemon 1.114 MBSending build context to Docker daemon 1.163 MB
-Step 1 : FROM local_portal-env:dev-onbuild
-[91m# Executing 2 build triggers...
-[0mStep 1 : RUN date -u "+%Y-%m-%d %H:%M:%S" > /usr/src/app/build_date
- ---> Using cache
-Step 1 : COPY . /usr/src/app
- ---> Using cache
- ---> a72dff716964
-Step 2 : EXPOSE 3000
- ---> Using cache
- ---> 42bcd7c9c0ea
-Successfully built 42bcd7c9c0ea
-Sending build context to Docker daemon 557.1 kBSending build context to Docker daemon 1.114 MBSending build context to Docker daemon 1.163 MB
-Step 1 : FROM local_portal-env:dev-onbuild
-[91m# Executing 2 build triggers...
-[0mStep 1 : RUN date -u "+%Y-%m-%d %H:%M:%S" > /usr/src/app/build_date
- ---> Using cache
-Step 1 : COPY . /usr/src/app
- ---> ad256bd66d2b
-Removing intermediate container 59bf083d2508
-Step 2 : EXPOSE 3000
- ---> Running in 5dd5b3629068
- ---> 3b7873a3aa01
-Removing intermediate container 5dd5b3629068
-Successfully built 3b7873a3aa01
