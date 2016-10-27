@@ -26,7 +26,8 @@ var help = require('./routes/help');
 var kill = require('./routes/kill');
 var utils = require('./routes/utils');
 var portalGlobals = require('./portalGlobals');
-var correlationIdHandler = require('portal-env').CorrelationIdHandler();
+var wicked = require('wicked-sdk');
+var correlationIdHandler = wicked.correlationIdHandler();
 
 var passport = require('passport');
 var fs = require('fs');
@@ -51,14 +52,8 @@ var sessionArgs = {
 
 var app = express();
 app.initialized = false;
-
-var isProduction = false;
-// TODO: This is crap. NODE_ENV is used in a different way here.
-if (app.get('env') === 'production') {
-    app.set('trust proxy', 1);
-    sessionArgs.cookie.secure = true;
-    isProduction = true;
-}
+app.initState = 'Starting up...';
+app.isProduction = true;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -92,34 +87,58 @@ app.use('/ping', ping);
 app.use(function (req, res, next) {
     if (app.initialized)
         return next();
-    res.status(503).render('ready_in_a_second', {});
+    res.status(503).render('ready_in_a_second', { state: app.initState });
 });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser(SECRET));
-app.use(session(sessionArgs));
-app.use(flash());
-app.use(passport.initialize());
-app.use(passport.session());
-app.disable('x-powered-by'); // Remove powered by Express
-
-// "production" mode sanity checking. If we're on "production" mode,
-// we will have set (see above) cookie.secure to true, and thus cookies
-// will not be sent to the backend in case the protocol in the front end
-// is not https. This will result in super strange behaviour, like not
-// being able to log in, and creating new sessions for each http request.
-app.use(function (req, res, next) {
-    if (isProduction && 
-        !req.path.startsWith('/swagger-ui') &&
-        req.get('x-forwarded-proto') != 'https')
-        return next(new Error('You are running in "production" (NODE_ENV) mode, but not on https. This is not supported.'));
-    next();
-});
 
 // This will be called as soon as the globals are present.
+// Some settings rely on things we read from the globals.json,
+// which needs to be served by the API first. This is why the
+// the rest of the initialization is deferred like this.
 app.initialize = function (done) {
     debug('initialize()');
+
+    if (!wicked.isDevelopmentMode()) {
+        app.isProduction = true;
+        app.set('trust proxy', 1);
+        sessionArgs.cookie.secure = true;
+    } else {
+        console.log('*************************************');
+        console.log('*************************************');
+        console.log('');
+        console.log('PORTAL IS RUNNING IN DEVELOPMENT MODE');
+        console.log('');
+        console.log('If you see this in your production');
+        console.log('logs, you have done something wrong.');
+        console.log('');
+        console.log('*************************************');
+        console.log('*************************************');
+        app.isProduction = false;
+    }
+
+    app.portalGlobals.isProduction = app.isProduction;
+
+    app.use(cookieParser(SECRET));
+    app.use(session(sessionArgs));
+    app.use(flash());
+    app.use(passport.initialize());
+    app.use(passport.session());
+    app.disable('x-powered-by'); // Remove powered by Express
+
+    // "production" mode sanity checking. If we're on "production" mode,
+    // we will have set (see above) cookie.secure to true, and thus cookies
+    // will not be sent to the backend in case the protocol in the front end
+    // is not https. This will result in super strange behaviour, like not
+    // being able to log in, and creating new sessions for each http request.
+    app.use(function (req, res, next) {
+        if (app.isProduction &&
+            !req.path.startsWith('/swagger-ui') &&
+            req.get('x-forwarded-proto') != 'https')
+            return next(new Error('You are running in "production" (NODE_ENV) mode, but not on https. This is not supported.'));
+        next();
+    });
 
     if (app.get('env') === 'production' &&
         portalGlobals.glob.network.schema != 'https') {
@@ -191,7 +210,7 @@ app.initialize = function (done) {
 
     // development error handler
     // will print stacktrace
-    if ((app.get('env') === 'development') ) { // TODO: || !process.env.WICKED_IN_DOCKER) {
+    if ((app.get('env') === 'development')) { // TODO: || !process.env.WICKED_IN_DOCKER) {
         app.use(function (err, req, res, next) {
             debug(err);
             res.status(err.status || 500);
@@ -227,7 +246,7 @@ app.initialize = function (done) {
                 case 403: errorTemplate = 'error_403'; break;
                 case 404: errorTemplate = 'error_404'; break;
             }
-            
+
             res.render(errorTemplate, {
                 authUser: req.user,
                 title: 'Error',

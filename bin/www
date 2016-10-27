@@ -12,20 +12,11 @@ var request = require('request');
 var fs = require('fs');
 var path = require('path');
 
-var envReader = require('portal-env');
+//var envReader = require('portal-env');
+var wicked = require('wicked-sdk');
 
 var utils = require('../routes/utils');
 var portalGlobals = require('../portalGlobals');
-
-var environment = process.env.NODE_ENV;
-if (!environment)
-    throw new Error('Environment variable NODE_ENV must be set.');
-
-console.log("Portal environment: " + environment);
-
-var apiUrl = envReader.resolveApiUrl();
-if (apiUrl.endsWith('/')) // Strip trailing slash
-    apiUrl = apiUrl.substring(0, apiUrl.length - 1);
 
 var app = require('../app');
 
@@ -34,8 +25,6 @@ var app = require('../app');
  */
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
-
-app.set('api_url', apiUrl);
 
 /**
  * Create HTTP server.
@@ -51,26 +40,29 @@ server.on('listening', onListening);
 
 // Wait for Portal API to be available
 debug('Waiting for API to be available.');
-envReader.awaitUrl(apiUrl + '/ping', -1, 1000, function(err, response) {
+app.initState = 'Waiting for API...';
+wicked.initialize(function (err) {
     if (err) {
-        console.error(err);        
+        console.error(err);
         throw Error('Could not retrieve globals from API! API not running?');
     }
 
-    debug('API is responding. Finishing initialization.');
+    let apiUrl = wicked.getInternalApiUrl();
+    if (apiUrl.endsWith('/')) // Strip trailing slash
+        apiUrl = apiUrl.substring(0, apiUrl.length - 1);
+    app.set('api_url', apiUrl);
 
-    request({ url: apiUrl + '/globals' }, function (err, apiResponse, apiBody) {
-        if (err || 200 != apiResponse.statusCode)
-            throw Error("Could not retrieve globals from API! API not running?");
-        debug('Retrieved API globals.');
-        var retrievedPortalGlobals = utils.getJson(apiBody);
-        portalGlobals.glob = retrievedPortalGlobals;
-        app.portalGlobals = retrievedPortalGlobals;
-        app.portalGlobals.buildDate = getBuildDate();
-        
-        app.initialize(function() {
-            app.initialized = true;
-        });
+    debug('API is responding. Finishing initialization.');
+    app.initState = 'Finishing initialization...';
+
+    portalGlobals.glob = wicked.getGlobals();
+
+    app.portalGlobals = wicked.getGlobals();
+    app.portalGlobals.buildDate = getBuildDate();
+
+    app.initialize(function () {
+        app.initialized = true;
+        app.initState = 'Initialized';
     });
 });
 
