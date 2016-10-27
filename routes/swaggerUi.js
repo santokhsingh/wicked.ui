@@ -4,7 +4,7 @@ var express = require('express');
 var debug = require('debug')('portal:swagger-ui');
 var router = express.Router();
 //var request = require('request');
-//var reqUtils = require('./requestUtils');
+//var utils = require('./utils');
 //var passport = require('passport');
 
 /* GET home page. */

@@ -1,18 +1,20 @@
 'use strict';
 
 var request = require('request');
-var debug = require('debug')('portal:requtils');
+var debug = require('debug')('portal:utils');
+var fs = require('fs');
+var path = require('path');
 
-var requestUtils = function () { };
+var utils = function () { };
 
-requestUtils.getLoggedInUserId = function (req) {
+utils.getLoggedInUserId = function (req) {
     //debug('getLoggedInUserId()');
     if (!req.user)
         return null;
     return req.user.id;
 };
 
-requestUtils.getLoggedInUserEmail = function (req) {
+utils.getLoggedInUserEmail = function (req) {
     //debug('getLoggedInUserEmail()');
     if (!req.user)
         return null;
@@ -22,7 +24,7 @@ requestUtils.getLoggedInUserEmail = function (req) {
 function makeHeaders(req, userId) {
     if (!userId) {
         var headers = { 'Correlation-Id': req.correlationId };
-        var loggedInUserId = requestUtils.getLoggedInUserId(req);
+        var loggedInUserId = utils.getLoggedInUserId(req);
         if (loggedInUserId)
             headers['X-UserId'] = loggedInUserId;
         return headers;
@@ -33,7 +35,7 @@ function makeHeaders(req, userId) {
     };
 }
 
-requestUtils.get = function (req, uri, callback) {
+utils.get = function (req, uri, callback) {
     debug('get(): ' + uri);
     var baseUrl = req.app.get('api_url');
 
@@ -45,7 +47,7 @@ requestUtils.get = function (req, uri, callback) {
         callback);
 };
 
-requestUtils.getAsUser = function (req, uri, userId, callback) {
+utils.getAsUser = function (req, uri, userId, callback) {
     debug('getAsUser(): ' + uri + ', userId = ' + userId);
     var baseUrl = req.app.get('api_url');
 
@@ -57,13 +59,13 @@ requestUtils.getAsUser = function (req, uri, userId, callback) {
         callback);
 };
 
-requestUtils.handleError = function (res, apiResponse, apiBody, next) {
+utils.handleError = function (res, apiResponse, apiBody, next) {
     debug('handleError()');
     debug(apiResponse);
     debug(apiBody);
-    var errorText = requestUtils.getText(apiBody);
+    var errorText = utils.getText(apiBody);
     try {
-        var jsonBody = requestUtils.getJson(apiBody);
+        var jsonBody = utils.getJson(apiBody);
         if (jsonBody.message)
             errorText = jsonBody.message;
     } catch (err) {
@@ -79,24 +81,24 @@ requestUtils.handleError = function (res, apiResponse, apiBody, next) {
 
 // Use this function from within async constructions to shorten
 // boiler plate code.
-requestUtils.getFromAsync = function (req, res, uri, expectedStatus, callback) {
+utils.getFromAsync = function (req, res, uri, expectedStatus, callback) {
     debug('getFromAsync(): ' + uri + ', expectedStatus = ' + expectedStatus);
-    requestUtils.get(req, uri, function (err, apiResponse, apiBody) {
+    utils.get(req, uri, function (err, apiResponse, apiBody) {
         if (err)
             return callback(err);
         if (expectedStatus != apiResponse.statusCode)
-            return requestUtils.handleError(res, apiResponse, apiBody, callback);
+            return utils.handleError(res, apiResponse, apiBody, callback);
         var contentType = apiResponse.headers['content-type'];
         var returnValue = null;
         if (contentType.startsWith('text'))
-            returnValue = requestUtils.getText(apiBody);
+            returnValue = utils.getText(apiBody);
         else
-            returnValue = requestUtils.getJson(apiBody);
+            returnValue = utils.getJson(apiBody);
         callback(null, returnValue);
     });
 };
 
-requestUtils.post = function (req, uri, body, callback) {
+utils.post = function (req, uri, body, callback) {
     debug('post(): ' + uri);
     debug(body);
     var baseUrl = req.app.get('api_url');
@@ -111,7 +113,7 @@ requestUtils.post = function (req, uri, body, callback) {
         callback);
 };
 
-requestUtils.patch = function (req, uri, body, callback) {
+utils.patch = function (req, uri, body, callback) {
     debug('patch(): ' + uri);
     debug(body);
     var baseUrl = req.app.get('api_url');
@@ -126,7 +128,7 @@ requestUtils.patch = function (req, uri, body, callback) {
         callback);
 };
 
-requestUtils.patchAsUser = function (req, uri, userId, body, callback) {
+utils.patchAsUser = function (req, uri, userId, body, callback) {
     debug('patchAsUser(): ' + uri + ', userId = ' + userId);
     debug(body);
     var baseUrl = req.app.get('api_url');
@@ -141,7 +143,7 @@ requestUtils.patchAsUser = function (req, uri, userId, body, callback) {
         callback);
 };
 
-requestUtils.delete = function (req, uri, callback) {
+utils.delete = function (req, uri, callback) {
     debug('delete(): ' + uri);
     var baseUrl = req.app.get('api_url');
 
@@ -153,23 +155,23 @@ requestUtils.delete = function (req, uri, callback) {
         callback);
 };
 
-requestUtils.getUtc = function () {
+utils.getUtc = function () {
     return Math.floor((new Date()).getTime() / 1000);
 };
 
-requestUtils.getJson = function (ob) {
+utils.getJson = function (ob) {
     if (ob instanceof String || typeof ob === "string")
         return JSON.parse(ob);
     return ob;
 };
 
-requestUtils.getText = function (ob) {
+utils.getText = function (ob) {
     if (ob instanceof String || typeof ob === "string")
         return ob;
     return JSON.stringify(ob, null, 2);
 };
 
-requestUtils.acceptJson = function (req) {
+utils.acceptJson = function (req) {
     if (!req.headers || !req.headers.accept)
         return false;
     var headers = req.headers.accept.split(',');
@@ -178,4 +180,59 @@ requestUtils.acceptJson = function (req) {
     return false;
 };
 
-module.exports = requestUtils;
+utils._packageVersion = null;
+utils.getVersion = function () {
+    if (!utils._packageVersion) {
+        const packageFile = path.join(__dirname, '..', 'package.json');
+        if (fs.existsSync(packageFile)) {
+            try {
+                const packageInfo = JSON.parse(fs.readFileSync(packageFile, 'utf8'));
+                if (packageInfo.version)
+                    utils._packageVersion = packageInfo.version;
+            } catch (ex) {
+                console.error(ex);
+            }
+        }
+        if (!utils._packageVersion) // something went wrong
+            utils._packageVersion = "0.0.0";
+    }
+    return utils._packageVersion;
+};
+
+utils._gitLastCommit = null;
+utils.getGitLastCommit = function () {
+    if (!utils._gitLastCommit) {
+        const lastCommitFile = path.join(__dirname, '..', 'git_last_commit');
+        if (fs.existsSync(lastCommitFile))
+            utils._gitLastCommit = fs.readFileSync(lastCommitFile, 'utf8');
+        else
+            utils._gitLastCommit = '(no last git commit found - running locally?)';
+    }
+    return utils._gitLastCommit;
+};
+
+utils._gitBranch = null;
+utils.getGitBranch = function () {
+    if (!utils._gitBranch) {
+        const gitBranchFile = path.join(__dirname, '..', 'git_branch');
+        if (fs.existsSync(gitBranchFile))
+            utils._gitBranch = fs.readFileSync(gitBranchFile, 'utf8');
+        else
+            utils._gitBranch = '(unknown)';
+    }
+    return utils._gitBranch;
+};
+
+utils._buildDate = null;
+utils.getBuildDate = function () {
+    if (!utils._buildDate) {
+        const buildDateFile = path.join(__dirname, '..', 'build_date');
+        if (fs.existsSync(buildDateFile))
+            utils._buildDate = fs.readFileSync(buildDateFile, 'utf8');
+        else
+            utils._buildDate = '(unknown build date)';
+    }
+    return utils._buildDate;
+};
+
+module.exports = utils;

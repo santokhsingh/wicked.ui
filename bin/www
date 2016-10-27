@@ -14,7 +14,7 @@ var path = require('path');
 
 var envReader = require('portal-env');
 
-var reqUtils = require('../routes/requestUtils');
+var utils = require('../routes/utils');
 var portalGlobals = require('../portalGlobals');
 
 var environment = process.env.NODE_ENV;
@@ -63,7 +63,7 @@ envReader.awaitUrl(apiUrl + '/ping', -1, 1000, function(err, response) {
         if (err || 200 != apiResponse.statusCode)
             throw Error("Could not retrieve globals from API! API not running?");
         debug('Retrieved API globals.');
-        var retrievedPortalGlobals = reqUtils.getJson(apiBody);
+        var retrievedPortalGlobals = utils.getJson(apiBody);
         portalGlobals.glob = retrievedPortalGlobals;
         app.portalGlobals = retrievedPortalGlobals;
         app.portalGlobals.buildDate = getBuildDate();

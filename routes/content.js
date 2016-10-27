@@ -5,7 +5,7 @@ var request = require('request');
 var debug = require('debug')('portal:content');
 var router = express.Router();
 var contentRenderer = require('./renderContent');
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 
 function isPublic(uriName) {
     return uriName.endsWith('jpg') ||
@@ -30,25 +30,25 @@ router.get('/*', function (req, res, next) {
         debug('Normal content');
         var contentPath = '/content' + req.path;
         // Let's do dis
-        reqUtils.get(req, contentPath,
+        utils.get(req, contentPath,
             function (err, apiResponse, apiBody) {
                 if (err)
                     return next(err);
                 if (200 != apiResponse.statusCode)
-                    return reqUtils.handleError(res, apiResponse, apiBody, next);
+                    return utils.handleError(res, apiResponse, apiBody, next);
                 contentRenderer.renderContent(req, res, contentPath, 'content', apiResponse, apiBody);
             });
     } else {
         debug('Table of contents');
         // Table of contents, special case
-        reqUtils.get(req, '/content/toc',
+        utils.get(req, '/content/toc',
             function (err, apiResponse, apiBody) {
                 if (err)
                     return next(err);
                 if (200 != apiResponse.statusCode)
-                    return reqUtils.handleError(res, apiResponse, apiBody, next);
+                    return utils.handleError(res, apiResponse, apiBody, next);
                 debug(apiBody);
-                var jsonBody = reqUtils.getJson(apiBody);
+                var jsonBody = utils.getJson(apiBody);
                 var toc = categorize(jsonBody);
                 res.render('content_toc', {
                     authUser: req.user,

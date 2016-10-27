@@ -1,5 +1,12 @@
 extends layout
 
+block bodyScripts
+    script(type='text/javascript').
+        // Enable Popovers
+        $(document).ready(function(){
+            $('[data-toggle="popover"]').popover(); 
+        });
+
 block content
     .jumbotron.wicked-admin-title
         .container.wicked-title-container
@@ -20,7 +27,11 @@ block content
             tbody
                 for info in health
                     tr
-                        td= info.name
+                        td
+                            if info.version
+                                a(href='#' data-toggle='popover' data-trigger='hover' data-html="true" data-content='<b>Version:</b> #{info.version}<br/><b>Branch:</b> #{info.gitBranch}<br/><b>Build date:</b> #{info.buildDate}<br><pre>#{info.gitLastCommit}</pre>')= info.name
+                            else
+                                | #{info.name}
                         td
                             if info.healthy == 1
                                 span.label.label-success Healthy

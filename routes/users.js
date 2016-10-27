@@ -4,18 +4,18 @@ var express = require('express');
 var debug = require('debug')('portal:users');
 var router = express.Router();
 var async = require('async');
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 
 router.get('/me', function (req, res, next) {
     debug("get('/me')");
-    var loggedInUserId = reqUtils.getLoggedInUserId(req);
+    var loggedInUserId = utils.getLoggedInUserId(req);
     var userId = loggedInUserId;
     return getUser(loggedInUserId, userId, req, res, next);
 });
 
 router.get('/:userId', function (req, res, next) {
     debug("get('/:userId')");
-    var loggedInUserId = reqUtils.getLoggedInUserId(req);
+    var loggedInUserId = utils.getLoggedInUserId(req);
     var userId = req.params.userId;
     return getUser(loggedInUserId, userId, req, res, next);
 });
@@ -30,10 +30,10 @@ function getUser(loggedInUserId, userId, req, res, next) {
 
     async.parallel({
         getUser: function (callback) {
-            reqUtils.getFromAsync(req, res, '/users/' + userId, 200, callback);
+            utils.getFromAsync(req, res, '/users/' + userId, 200, callback);
         },
         getGroups: function (callback) {
-            reqUtils.getFromAsync(req, res, '/groups', 200, callback);
+            utils.getFromAsync(req, res, '/groups', 200, callback);
         }
     }, function (err, results) {
         if (err)
@@ -48,7 +48,7 @@ function getUser(loggedInUserId, userId, req, res, next) {
             }
         }
 
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('user',
                 {
                     authUser: req.user,
@@ -69,7 +69,7 @@ function getUser(loggedInUserId, userId, req, res, next) {
 
 router.post('/:userId', function (req, res, next) {
     debug("post('/:userId')");
-    var loggedInUserId = reqUtils.getLoggedInUserId(req);
+    var loggedInUserId = utils.getLoggedInUserId(req);
     if (!loggedInUserId) {
         var err = new Error('You cannot update a user profile when not logged in.');
         err.status = 403;
@@ -82,13 +82,13 @@ router.post('/:userId', function (req, res, next) {
     var userId = req.params.userId;
 
     if ("deletePassword" == b.__action) {
-        reqUtils.delete(req, '/users/' + userId + '/password', function (err, apiResponse, apiBody) {
+        utils.delete(req, '/users/' + userId + '/password', function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
             if (204 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
+                return utils.handleError(res, apiResponse, apiBody, next);
             // Woo hoo
-            if (!reqUtils.acceptJson(req))
+            if (!utils.acceptJson(req))
                 return res.redirect('/users/' + userId);
             else
                 return res.status(204).json({});
@@ -97,7 +97,7 @@ router.post('/:userId', function (req, res, next) {
     }
 
     // We need the groups, perhaps
-    reqUtils.getFromAsync(req, res, '/groups', 200, function (err, groupsResponse) {
+    utils.getFromAsync(req, res, '/groups', 200, function (err, groupsResponse) {
         var apiGroups = groupsResponse.groups;
 
         var userPatch = {};
@@ -121,25 +121,25 @@ router.post('/:userId', function (req, res, next) {
             }
         }
 
-        reqUtils.patch(req, '/users/' + userId, userPatch, function (err, apiResponse, apiBody) {
+        utils.patch(req, '/users/' + userId, userPatch, function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
             if (200 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
+                return utils.handleError(res, apiResponse, apiBody, next);
             // Yay!
-            if (!reqUtils.acceptJson(req))
+            if (!utils.acceptJson(req))
                 if (userId === loggedInUserId)
                     res.redirect('/users/me');
                 else
                     res.redirect('/users/' + userId);
             else
-                res.json(reqUtils.getJson(apiBody));
+                res.json(utils.getJson(apiBody));
         });
     });
 });
 
 router.post('/:userId/delete', function (req, res, next) {
-    var loggedInUserId = reqUtils.getLoggedInUserId(req);
+    var loggedInUserId = utils.getLoggedInUserId(req);
     if (!loggedInUserId) {
         var err = new Error('You cannot delete a user profile when not logged in.');
         err.status = 403;
@@ -149,14 +149,14 @@ router.post('/:userId/delete', function (req, res, next) {
     var userToDelete = req.params.userId;
     var selfDeletion = (userToDelete.toLowerCase() == loggedInUserId.toLowerCase());
 
-    reqUtils.delete(req, '/users/' + userToDelete, function (err, apiResponse, apiBody) {
+    utils.delete(req, '/users/' + userToDelete, function (err, apiResponse, apiBody) {
         if (err)
             return next(err);
         if (204 != apiResponse.statusCode)
-            return reqUtils.handleError(res, apiResponse, apiBody, next);
+            return utils.handleError(res, apiResponse, apiBody, next);
         // Yay!
 
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             if (selfDeletion)
                 return res.redirect('/login/logout');
             return res.redirect('/admin/users');

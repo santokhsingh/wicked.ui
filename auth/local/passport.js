@@ -3,7 +3,7 @@
 var passport = require('passport');
 var debug = require('debug')('portal:auth:local');
 var LocalStrategy = require('passport-local').Strategy;
-var reqUtils = require('../../routes/requestUtils');
+var utils = require('../../routes/utils');
 var portalGlobals = require('../../portalGlobals');
 
 var localStrategy = new LocalStrategy({
@@ -14,7 +14,7 @@ var localStrategy = new LocalStrategy({
     function (req, email, password, done) {
         debug('Local Authentication');
         
-        reqUtils.post(req, '/login', { email: email, password: password }, function (err, res, body) {
+        utils.post(req, '/login', { email: email, password: password }, function (err, res, body) {
             var userLoadFinished = function (userResponse, callback) {
                 var user = userResponse[0];
                 debug('User logged in locally successfully.');
@@ -27,13 +27,13 @@ var localStrategy = new LocalStrategy({
             }
             // User known?
             if (res.statusCode === 200) {
-                var findUserResponse = reqUtils.getJson(body); // Make sure it's JSON
+                var findUserResponse = utils.getJson(body); // Make sure it's JSON
                 debug(findUserResponse);
                 // Yes, pass this to the callback:
                 userLoadFinished(findUserResponse, done);
             } else {
                 debug('Status code not 200 when logging in locally. User probably unknown oder password wrong.');
-                return done(null, false, { message: reqUtils.getJson(res.body).message });
+                return done(null, false, { message: utils.getJson(res.body).message });
             }
         });
     }
@@ -50,7 +50,7 @@ var signupStrategy = new LocalStrategy({
         var requireValidation = !portalGlobals.glob.auth.local.trustLocal;
         if (portalGlobals.glob.auth.local.trustLocal)
             req.body.validated = !requireValidation;
-        reqUtils.post(req, '/users', req.body, function (err, res, body) {
+        utils.post(req, '/users', req.body, function (err, res, body) {
             if (err) {
                 return done(err);
             }
@@ -61,7 +61,7 @@ var signupStrategy = new LocalStrategy({
                         type: 'email',
                         email: req.body.email
                     };
-                    reqUtils.post(req, '/verifications', newVerif, function(err2, res2, body2) {
+                    utils.post(req, '/verifications', newVerif, function(err2, res2, body2) {
                         if (err2)
                             return done(err2);
                         if (204 != res2.statusCode) {
@@ -77,7 +77,7 @@ var signupStrategy = new LocalStrategy({
                 
             }
             else {
-                return done(null, false, { message: reqUtils.getJson(res.body).message });
+                return done(null, false, { message: utils.getJson(res.body).message });
             }
         });
     }

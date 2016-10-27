@@ -4,7 +4,7 @@ var express = require('express');
 var debug = require('debug')('portal:signup');
 var router = express.Router();
 var request = require('request');
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 var passport = require('passport');
 
 /* GET home page. */
@@ -48,7 +48,7 @@ router.post('/', function (req, res, next) {
         }, function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
-            var recaptchaBody = reqUtils.getJson(apiBody);
+            var recaptchaBody = utils.getJson(apiBody);
             if (!recaptchaBody.success) {
                 let err = new Error('ReCAPTCHA response invalid - Please try again');
                 err.status = 403;

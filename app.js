@@ -24,7 +24,7 @@ var swaggerUi = require('./routes/swaggerUi');
 var ping = require('./routes/ping');
 var help = require('./routes/help');
 var kill = require('./routes/kill');
-var reqUtils = require('./routes/requestUtils');
+var utils = require('./routes/utils');
 var portalGlobals = require('./portalGlobals');
 var correlationIdHandler = require('portal-env').CorrelationIdHandler();
 
@@ -69,11 +69,11 @@ app.use(correlationIdHandler);
 
 // Configure logger; log in JSON format.
 logger.token('user-id', function (req, res) {
-    var userId = reqUtils.getLoggedInUserId(req);
+    var userId = utils.getLoggedInUserId(req);
     return userId ? userId : '-';
 });
 logger.token('user-email', function (req, res) {
-    var email = reqUtils.getLoggedInUserEmail(req);
+    var email = utils.getLoggedInUserEmail(req);
     return email ? email : '-';
 });
 logger.token('correlation-id', function (req, res) {
@@ -195,7 +195,7 @@ app.initialize = function (done) {
         app.use(function (err, req, res, next) {
             debug(err);
             res.status(err.status || 500);
-            if (!reqUtils.acceptJson(req)) {
+            if (!utils.acceptJson(req)) {
                 res.render('error', {
                     title: 'Error',
                     glob: app.portalGlobals,
@@ -220,7 +220,7 @@ app.initialize = function (done) {
         debug(err);
         var status = err.status || 500;
         res.status(status);
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             var errorTemplate = 'error'; // default error template
 
             switch (status) {

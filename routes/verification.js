@@ -5,14 +5,14 @@ var debug = require('debug')('portal:verification');
 var router = express.Router();
 //var async = require('async');
 var request = require('request');
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 
 router.get('/:verificationId', function (req, res, next) {
     debug("get('/:verificationId')");
     var verificationId = req.params.verificationId;
     if (!/^[a-zA-Z0-9]+$/.test(verificationId))
         return res.status(400).jsonp({ message: 'Invalid verification ID.' });
-    reqUtils.getFromAsync(req, res, '/verifications/' + verificationId, 200, function (err, verifInfo) {
+    utils.getFromAsync(req, res, '/verifications/' + verificationId, 200, function (err, verifInfo) {
         if (err)
             return next(err);
         if ("email" == verifInfo.type)
@@ -34,12 +34,12 @@ router.post('/:verificationId', function (req, res, next) {
         return res.status(400).jsonp({ message: 'Bad Password patch request.' });
     if (password != password2)
         return res.status(400).jsonp({ message: 'Bad password update request. Passwords do not match.' });
-    reqUtils.get(req, '/verifications/' + verificationId, function (err, apiResponse, apiBody) {
+    utils.get(req, '/verifications/' + verificationId, function (err, apiResponse, apiBody) {
         if (err)
             return next(err);
         if (200 != apiResponse.statusCode)
-            return reqUtils.handleError(res, apiResponse, apiBody, next);
-        var verifInfo = reqUtils.getJson(apiBody);
+            return utils.handleError(res, apiResponse, apiBody, next);
+        var verifInfo = utils.getJson(apiBody);
         // Update the user's password now. Use the verification ID to authorize (special case).
         var apiUrl = req.app.get('api_url');
         request.patch({
@@ -54,8 +54,8 @@ router.post('/:verificationId', function (req, res, next) {
             if (patchErr)
                 return next(patchErr);
             if (patchResponse.statusCode > 299)
-                return reqUtils.handleError(res, patchResponse, patchBody, next);
-            if (!reqUtils.acceptJson(req)) {
+                return utils.handleError(res, patchResponse, patchBody, next);
+            if (!utils.acceptJson(req)) {
                 res.render('verification_update_password_success', {
                     title: 'Password Updated',
                     authUser: req.user,
@@ -69,7 +69,7 @@ router.post('/:verificationId', function (req, res, next) {
             }
 
             // And delete the verification
-            reqUtils.delete(req, '/verifications/' + verificationId, function (err) {
+            utils.delete(req, '/verifications/' + verificationId, function (err) {
                 if (err) {
                     debug(err);
                     return;
@@ -94,7 +94,7 @@ function handleEmailVerification(req, res, verifInfo, next) {
     }, function (err, apiResponse, apiBody) {
         if (err)
             return next(err);
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('verification_email_success', {
                 title: 'Verification Successful',
                 authUser: req.user,
@@ -110,7 +110,7 @@ function handleEmailVerification(req, res, verifInfo, next) {
         }
 
         // Delete the verification, but ignore what happens with the result
-        reqUtils.delete(req, '/verifications/' + verifInfo.id, function (err, apiResponse, apiBody) {
+        utils.delete(req, '/verifications/' + verifInfo.id, function (err, apiResponse, apiBody) {
             // Just log any errors in case we have some.
             if (err) {
                 debug(err);

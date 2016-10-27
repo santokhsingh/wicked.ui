@@ -3,9 +3,9 @@
 var express = require('express');
 var debug = require('debug')('portal:ping');
 var router = express.Router();
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 
-var _startupSeconds = reqUtils.getUtc();
+var _startupSeconds = utils.getUtc();
 router.get('/', function (req, res, next) {
     debug("get('/')");
     if (!req.app.initialized) {
@@ -13,7 +13,11 @@ router.get('/', function (req, res, next) {
             name: 'portal',
             message: 'Initializing',
             uptime: 0,
-            healthy: false
+            healthy: false,
+            version: utils.getVersion(),
+            gitLastCommit: utils.getGitLastCommit(),
+            gitBranch: utils.getGitBranch(),
+            buildDate: utils.getBuildDate()
         });
     }
 
@@ -22,9 +26,13 @@ router.get('/', function (req, res, next) {
     res.json({
         name: 'portal',
         message: 'Up and running',
-        uptime: (reqUtils.getUtc() - _startupSeconds),
+        uptime: (utils.getUtc() - _startupSeconds),
         healthy: true,
-        pingUrl: portalUrl + '/ping'
+        pingUrl: portalUrl + '/ping',
+        version: utils.getVersion(),
+        gitLastCommit: utils.getGitLastCommit(),
+        gitBranch: utils.getGitBranch(),
+        buildDate: utils.getBuildDate()
     });
 });
 

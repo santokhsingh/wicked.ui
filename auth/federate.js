@@ -3,21 +3,21 @@
 
 var debug = require('debug')('portal:auth');
 
-var reqUtils = require('../routes/requestUtils');
+var utils = require('../routes/utils');
 
 var federate = function () { };
 
 federate.userLogin = function (req, userCreateInfo, done) {
     debug('userLogin(): ' + userCreateInfo.customId);
     // Do we know this user?
-    reqUtils.get(req, '/users?customId=' + userCreateInfo.customId, function (err, apiResponse, apiBody) {
+    utils.get(req, '/users?customId=' + userCreateInfo.customId, function (err, apiResponse, apiBody) {
         if (err)
             return done(err);
         debug('GET /users?customId=' + userCreateInfo.customId + ' returned ' + apiResponse.statusCode);
         if (200 == apiResponse.statusCode) {
             // Yes, we know him.
-            var userId = reqUtils.getJson(apiBody)[0].id;
-            reqUtils.getAsUser(req, '/users/' + userId, userId, function (err, apiResponse, apiBody) {
+            var userId = utils.getJson(apiBody)[0].id;
+            utils.getAsUser(req, '/users/' + userId, userId, function (err, apiResponse, apiBody) {
                 if (err)
                     return done(err);
                 if (200 != apiResponse.statusCode) {
@@ -25,16 +25,16 @@ federate.userLogin = function (req, userCreateInfo, done) {
                     userGetErr.status = apiResponse.statusCode;
                     return done(err);
                 }
-                var user = reqUtils.getJson(apiBody); // Make sure it's JSON
+                var user = utils.getJson(apiBody); // Make sure it's JSON
 
                 // Group check; do we need to assign any new groups?
                 var groupCheck = checkMissingGroups(userCreateInfo.groups, user.groups);
                 if (groupCheck.updateNeeded) {
                     user.groups = groupCheck.groups;
-                    reqUtils.patchAsUser(req, '/users/' + userId, userId, user, function (patchErr, patchResponse, patchBody) {
+                    utils.patchAsUser(req, '/users/' + userId, userId, user, function (patchErr, patchResponse, patchBody) {
                         if (patchErr || 200 != patchResponse.statusCode)
                             return done(null, false, { message: 'Could not update User\'s groups. Login failed. Status: ' + patchResponse.statusCode });
-                        user = reqUtils.getJson(patchBody);
+                        user = utils.getJson(patchBody);
                         done(null, user);
                     });
                 } else {
@@ -42,11 +42,11 @@ federate.userLogin = function (req, userCreateInfo, done) {
                 }
             });
         } else {
-            reqUtils.post(req, '/users', userCreateInfo, function (err, res, body) {
+            utils.post(req, '/users', userCreateInfo, function (err, res, body) {
                 if (res.statusCode === 201) {
                     //var localUserResponse = [body];
                     //userLoadFinished(localUserResponse, done);
-                    done(null, reqUtils.getJson(body));
+                    done(null, utils.getJson(body));
                 } else {
                     debug(body);
                     done(null, false, { message: res.body.message });

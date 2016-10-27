@@ -5,14 +5,14 @@ var router = express.Router();
 var async = require('async');
 var debug = require('debug')('portal:admin');
 var util = require('util');
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 
 router.get('/approvals', function (req, res, next) {
     debug('get("/approvals")');
-    reqUtils.getFromAsync(req, res, '/approvals', 200, function (err, apiResponse) {
+    utils.getFromAsync(req, res, '/approvals', 200, function (err, apiResponse) {
         if (err)
             return next(err);
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
 
             res.render('admin_approvals',
                 {
@@ -41,17 +41,17 @@ router.post('/approvals/approve', function (req, res, next) {
     }
 
     // Hit the API
-    reqUtils.patch(req, '/applications/' + appId + '/subscriptions/' + apiId, { approved: true },
+    utils.patch(req, '/applications/' + appId + '/subscriptions/' + apiId, { approved: true },
         function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
             if (200 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
+                return utils.handleError(res, apiResponse, apiBody, next);
             // Woohoo
-            if (!reqUtils.acceptJson(req))
+            if (!utils.acceptJson(req))
                 res.redirect('/admin/approvals');
             else
-                res.json(reqUtils.getJson(apiBody));
+                res.json(utils.getJson(apiBody));
         });
 });
 
@@ -66,14 +66,14 @@ router.post('/approvals/decline', function (req, res, next) {
     }
 
     // Then delete the subscription. Should we notify the user? Nah.
-    reqUtils.delete(req, '/applications/' + appId + '/subscriptions/' + apiId,
+    utils.delete(req, '/applications/' + appId + '/subscriptions/' + apiId,
         function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
             if (204 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
+                return utils.handleError(res, apiResponse, apiBody, next);
             // Booyakasha
-            if (!reqUtils.acceptJson(req))
+            if (!utils.acceptJson(req))
                 res.redirect('/admin/approvals');
             else
                 res.status(204).json({});
@@ -86,14 +86,14 @@ function byName(a, b) {
 
 router.get('/users', function (req, res, next) {
     debug("get('/users')");
-    reqUtils.getFromAsync(req, res, '/users', 200, function (err, apiResponse) {
+    utils.getFromAsync(req, res, '/users', 200, function (err, apiResponse) {
         if (err)
             return next(err);
 
         // Sort by name
         apiResponse.sort(byName);
 
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('admin_users',
                 {
                     authUser: req.user,
@@ -113,7 +113,7 @@ router.get('/users', function (req, res, next) {
 router.get('/applications', function (req, res, next) {
     debug("get('/applications')");
     // This is not super good; this is expensive. Lots of calls.
-    reqUtils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
+    utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
         if (err)
             return next(err);
         var appIds = [];
@@ -122,7 +122,7 @@ router.get('/applications', function (req, res, next) {
 
         // This is the expensive part:
         async.map(appIds, function (appId, callback) {
-            reqUtils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
+            utils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
         }, function (err, appsInfos) {
             if (err)
                 return next(err);
@@ -142,7 +142,7 @@ router.get('/applications', function (req, res, next) {
             // Sort by Application name
             appsInfos.sort(byName);
 
-            if (!reqUtils.acceptJson(req)) {
+            if (!utils.acceptJson(req)) {
                 res.render('admin_applications',
                     {
                         authUser: req.user,
@@ -164,10 +164,10 @@ router.get('/subscribe', function (req, res, next) {
     debug("get('/subscribe')");
     async.parallel({
         getApplications: function (callback) {
-            reqUtils.getFromAsync(req, res, '/applications', 200, callback);
+            utils.getFromAsync(req, res, '/applications', 200, callback);
         },
         getApis: function (callback) {
-            reqUtils.getFromAsync(req, res, '/apis', 200, callback);
+            utils.getFromAsync(req, res, '/apis', 200, callback);
         }
     }, function (err, results) {
         if (err)
@@ -188,10 +188,10 @@ router.get('/subscribe', function (req, res, next) {
 
 router.get('/listeners', function (req, res, next) {
     debug("get('/listeners')");
-    reqUtils.getFromAsync(req, res, '/webhooks/listeners', 200, function (err, appsResponse) {
+    utils.getFromAsync(req, res, '/webhooks/listeners', 200, function (err, appsResponse) {
         if (err)
             return next(err);
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('admin_listeners', {
                 authUser: req.user,
                 glob: req.app.portalGlobals,
@@ -213,10 +213,10 @@ router.get('/listeners/:listenerId', function (req, res, next) {
     var regex = /^[a-zA-Z0-9\-_]+$/;
     if (!regex.test(listenerId))
         return req.status(400).jsonp({ message: 'Bad Request.' });
-    reqUtils.getFromAsync(req, res, '/webhooks/events/' + listenerId, 200, function (err, appsResponse) {
+    utils.getFromAsync(req, res, '/webhooks/events/' + listenerId, 200, function (err, appsResponse) {
         if (err)
             return next(err);
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('admin_events', {
                 authUser: req.user,
                 glob: req.app.portalGlobals,
@@ -234,10 +234,10 @@ router.get('/listeners/:listenerId', function (req, res, next) {
 
 router.get('/verifications', function (req, res, next) {
     debug("get('/verifications'");
-    reqUtils.getFromAsync(req, res, '/verifications', 200, function (err, verifResponse) {
+    utils.getFromAsync(req, res, '/verifications', 200, function (err, verifResponse) {
         if (err)
             return next(err);
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('admin_verifications', {
                 authUser: req.user,
                 glob: req.app.portalGlobals,
@@ -282,11 +282,11 @@ function fixUptimes(healths) {
 
 router.get('/health', function (req, res, next) {
     debug("get('/health')");
-    reqUtils.getFromAsync(req, res, '/systemhealth', 200, function (err, healthResponse) {
+    utils.getFromAsync(req, res, '/systemhealth', 200, function (err, healthResponse) {
         if (err)
             return next(err);
         fixUptimes(healthResponse);
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('admin_systemhealth', {
                 authUser: req.user,
                 glob: req.app.portalGlobals,

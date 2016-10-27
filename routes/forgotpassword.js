@@ -5,7 +5,7 @@ var debug = require('debug')('portal:forgotpassword');
 var router = express.Router();
 var passport = require('passport');
 var request = require('request');
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -35,7 +35,7 @@ router.post('/', function (req, res, next) {
         }, function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
-            var recaptchaBody = reqUtils.getJson(apiBody);
+            var recaptchaBody = utils.getJson(apiBody);
             if (!recaptchaBody.success) {
                 let err = new Error('ReCAPTCHA response invalid - Please try again');
                 err.status = 403;
@@ -56,11 +56,11 @@ function postEmailAndRenderConfirm(req, res, email, next) {
         type: 'lostpassword',
         email: email
     };
-    reqUtils.post(req, '/verifications', verif, function (err, apiResponse, apiBody) {
+    utils.post(req, '/verifications', verif, function (err, apiResponse, apiBody) {
         if (err)
             return next(err);
         if (204 != apiResponse.statusCode)
-            return reqUtils.handleError(res, apiResponse, apiBody);
+            return utils.handleError(res, apiResponse, apiBody);
             
         res.render('forgotpassword_confirm',
             {

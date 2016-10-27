@@ -8,7 +8,7 @@ var OAuth2Strategy = require('passport-oauth').OAuth2Strategy;
 //var refresh = require('passport-oauth2-refresh');
 var jwt = require('jsonwebtoken');
 var fs = require('fs');
-var reqUtils = require('../../routes/requestUtils');
+var utils = require('../../routes/utils');
 var portalGlobals = require('../../portalGlobals');
 var federate = require('../federate');
 
@@ -43,7 +43,7 @@ if (portalGlobals.glob.auth.adfs &&
 
         debug(decodedProfile);
 
-        reqUtils.get(req, '/groups', function (err, apiResponse, apiBody) {
+        utils.get(req, '/groups', function (err, apiResponse, apiBody) {
             if (err) {
                 debug('Could not retrieve groups.');
                 return done(null, false, { message: err.message });
@@ -51,7 +51,7 @@ if (portalGlobals.glob.auth.adfs &&
             if (200 != apiResponse.statusCode)
                 return done(null, false, { message: 'Could not retrieve Group information from API. Login not possible. Status: ' + apiResponse.statusCode });
 
-            var apiGroups = reqUtils.getJson(apiBody).groups;
+            var apiGroups = utils.getJson(apiBody).groups;
             // Group matching?
             var defaultGroups = matchGroups(decodedProfile.group, apiGroups);
 

@@ -6,7 +6,7 @@ var debug = require('debug')('portal:auth:google');
 
 var GoogleStrategy = require('passport-google-oauth20').Strategy;
 
-var reqUtils = require('../../routes/requestUtils');
+var utils = require('../../routes/utils');
 var portalGlobals = require('../../portalGlobals');
 
 var federate = require('../federate');

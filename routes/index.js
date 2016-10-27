@@ -5,7 +5,7 @@ var debug = require('debug')('portal:index');
 var contentRenderer = require('./renderContent');
 var request = require('request');
 var router = express.Router();
-var reqUtils = require('./requestUtils'); 
+var utils = require('./utils'); 
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -19,7 +19,7 @@ router.get('/', function (req, res, next) {
         if (err)
             return next(err);
         if (200 != apiResponse.statusCode)
-            return reqUtils.handleError(res, apiResponse, apiBody, next);
+            return utils.handleError(res, apiResponse, apiBody, next);
         contentRenderer.renderContent(req, res, '/', 'index', apiResponse, apiBody);
     });
 });

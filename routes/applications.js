@@ -4,7 +4,7 @@ var express = require('express');
 var router = express.Router();
 var async = require('async');
 var debug = require('debug')('portal:applications');
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 
 router.get('/:appId', function (req, res, next) {
     debug("get('/:appId')");
@@ -12,13 +12,13 @@ router.get('/:appId', function (req, res, next) {
     //var registerOpen = req.query.register;
     async.parallel({
         getApplication: function (callback) {
-            reqUtils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
+            utils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
         },
         getRoles: function (callback) {
-            reqUtils.getFromAsync(req, res, '/applications/roles', 200, callback);
+            utils.getFromAsync(req, res, '/applications/roles', 200, callback);
         },
         getSubscriptions: function (callback) {
-            reqUtils.getFromAsync(req, res, '/applications/' + appId + '/subscriptions', 200, callback);
+            utils.getFromAsync(req, res, '/applications/' + appId + '/subscriptions', 200, callback);
         }
     }, function (err, results) {
         if (err)
@@ -29,7 +29,7 @@ router.get('/:appId', function (req, res, next) {
 
         debug(appSubs);
 
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('application', {
                 authUser: req.user,
                 glob: req.app.portalGlobals,
@@ -52,10 +52,10 @@ router.get('/:appId', function (req, res, next) {
 
 router.get('/', function (req, res, next) {
     debug("get('/')");
-    var loggedInUserId = reqUtils.getLoggedInUserId(req);
+    var loggedInUserId = utils.getLoggedInUserId(req);
     if (!loggedInUserId) {
         // Not logged in
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('applications', {
                 glob: req.app.portalGlobals,
                 route: '/applications',
@@ -73,14 +73,14 @@ router.get('/', function (req, res, next) {
     }
 
     // In /users/:userId, you get the user's applications back
-    reqUtils.getFromAsync(req, res, '/users/' + reqUtils.getLoggedInUserId(req), 200, function (err, userInfo) {
+    utils.getFromAsync(req, res, '/users/' + utils.getLoggedInUserId(req), 200, function (err, userInfo) {
         if (err)
             return next(err);
         var appIds = [];
         for (var i = 0; i < userInfo.applications.length; ++i)
             appIds.push(userInfo.applications[i].id);
         async.map(appIds, function (appId, callback) {
-            reqUtils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
+            utils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
         }, function (err, appInfos) {
             if (err)
                 return next(err);
@@ -93,7 +93,7 @@ router.get('/', function (req, res, next) {
             if (req.query.register || userInfo.applications.length === 0)
                 showRegister = 'in';
 
-            if (!reqUtils.acceptJson(req)) {
+            if (!utils.acceptJson(req)) {
                 res.render('applications', {
                     authUser: req.user,
                     glob: req.app.portalGlobals,
@@ -148,17 +148,17 @@ router.post('/register', function (req, res, next) {
     if (hasRedirectUri)
         newApp.redirectUri = redirectUri;
 
-    reqUtils.post(req, '/applications', newApp,
+    utils.post(req, '/applications', newApp,
         function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
             if (201 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
+                return utils.handleError(res, apiResponse, apiBody, next);
             // Yay!
-            if (!reqUtils.acceptJson(req))
+            if (!utils.acceptJson(req))
                 res.redirect('/applications?highlightApp=' + appId);
             else
-                res.status(201).json(reqUtils.getJson(apiBody));
+                res.status(201).json(utils.getJson(apiBody));
         });
 });
 
@@ -168,14 +168,14 @@ router.post('/:appId/unregister', function (req, res, next) {
     debug("post('/:appId/unregister')");
     var appId = req.params.appId;
 
-    reqUtils.delete(req, '/applications/' + appId,
+    utils.delete(req, '/applications/' + appId,
         function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
             if (204 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
+                return utils.handleError(res, apiResponse, apiBody, next);
             // Yay!
-            if (!reqUtils.acceptJson(req))
+            if (!utils.acceptJson(req))
                 res.redirect('/applications');
             else
                 res.status(204).send('');
@@ -201,7 +201,7 @@ router.post('/:appId/owners/add', function (req, res, next) {
         return next(err);
     }
 
-    reqUtils.post(req, '/applications/' + appId + '/owners',
+    utils.post(req, '/applications/' + appId + '/owners',
         {
             email: ownerEmail,
             role: ownerRole
@@ -209,11 +209,11 @@ router.post('/:appId/owners/add', function (req, res, next) {
             if (err)
                 return next(err);
             if (201 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
-            if (!reqUtils.acceptJson(req))
+                return utils.handleError(res, apiResponse, apiBody, next);
+            if (!utils.acceptJson(req))
                 res.redirect('/applications/' + appId);
             else
-                res.status(201).json(reqUtils.getJson(apiBody));
+                res.status(201).json(utils.getJson(apiBody));
         });
 });
 
@@ -234,17 +234,17 @@ router.post('/:appId/owners/delete', function (req, res, next) {
         return next(err);
     }
 
-    reqUtils.delete(req, '/applications/' + appId + '/owners?userEmail=' + userEmail,
+    utils.delete(req, '/applications/' + appId + '/owners?userEmail=' + userEmail,
         function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
             if (200 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
+                return utils.handleError(res, apiResponse, apiBody, next);
             // Success
-            if (!reqUtils.acceptJson(req))
+            if (!utils.acceptJson(req))
                 res.redirect('/applications/' + appId);
             else
-                res.json(reqUtils.getJson(apiBody));
+                res.json(utils.getJson(apiBody));
         });
 });
 
@@ -268,16 +268,16 @@ router.post('/:appId/patch', function (req, res, next) {
         redirectUri: redirectUri
     };
 
-    reqUtils.patch(req, '/applications/' + appId, appData, function (err, apiResponse, apiBody) {
+    utils.patch(req, '/applications/' + appId, appData, function (err, apiResponse, apiBody) {
         if (err)
             return next(err);
         if (200 != apiResponse.statusCode)
-            return reqUtils.handleError(res, apiResponse, apiBody, next);
+            return utils.handleError(res, apiResponse, apiBody, next);
         // Yay!
-        if (!reqUtils.acceptJson(req))
+        if (!utils.acceptJson(req))
             res.redirect('/applications/' + appId);
         else
-            res.json(reqUtils.getJson(apiBody));
+            res.json(utils.getJson(apiBody));
     });
 });
 
@@ -290,13 +290,13 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
 
     async.parallel({
         getApplication: function (callback) {
-            reqUtils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
+            utils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
         },
         getApi: function (callback) {
-            reqUtils.getFromAsync(req, res, '/apis/' + apiId, 200, callback);
+            utils.getFromAsync(req, res, '/apis/' + apiId, 200, callback);
         },
         getPlans: function (callback) {
-            reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/plans', 200, callback);
+            utils.getFromAsync(req, res, '/apis/' + apiId + '/plans', 200, callback);
         }
     }, function (err, results) {
         if (err)
@@ -321,7 +321,7 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
             subscribeWarning = 'You are about to subscribe to an API which is intended only for machine to machine communication with an application with a registered Redirect URI. Please note that API Keys and/or Client Credentials (such as the Client Secret) must NEVER be deployed to a public client, such as a JavaScript SPA or Mobile Application.';
         }
 
-        if (!reqUtils.acceptJson(req)) {
+        if (!utils.acceptJson(req)) {
             res.render('subscribe',
                 {
                     authUser: req.user,
@@ -357,7 +357,7 @@ router.post('/:appId/subscribe/:apiId', function (req, res, next) {
         return next(err);
     }
 
-    reqUtils.post(req, '/applications/' + appId + '/subscriptions',
+    utils.post(req, '/applications/' + appId + '/subscriptions',
         {
             application: appId,
             api: apiId,
@@ -366,11 +366,11 @@ router.post('/:appId/subscribe/:apiId', function (req, res, next) {
             if (err)
                 return next(err);
             if (201 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
-            if (!reqUtils.acceptJson(req))
+                return utils.handleError(res, apiResponse, apiBody, next);
+            if (!utils.acceptJson(req))
                 res.redirect('/apis/' + apiId);
             else
-                res.status(201).json(reqUtils.getJson(apiBody));
+                res.status(201).json(utils.getJson(apiBody));
         });
 });
 
@@ -379,14 +379,14 @@ router.post('/:appId/unsubscribe/:apiId', function (req, res, next) {
     var appId = req.params.appId;
     var apiId = req.params.apiId;
 
-    reqUtils.delete(req, '/applications/' + appId + '/subscriptions/' + apiId,
+    utils.delete(req, '/applications/' + appId + '/subscriptions/' + apiId,
         function (err, apiResponse, apiBody) {
             if (err)
                 return next(err);
             if (204 != apiResponse.statusCode)
-                return reqUtils.handleError(res, apiResponse, apiBody, next);
+                return utils.handleError(res, apiResponse, apiBody, next);
             // Yay!
-            if (!reqUtils.acceptJson(req))
+            if (!utils.acceptJson(req))
                 res.redirect('/apis/' + apiId);
             else
                 res.status(204).json({});

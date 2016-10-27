@@ -3,7 +3,7 @@
 var express = require('express');
 var router = express.Router();
 var debug = require('debug')('portal:apis');
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 var marked = require('marked');
 var async = require('async');
 var cors = require('cors');
@@ -15,10 +15,10 @@ router.get('/', function (req, res, next) {
 
     async.parallel({
         getApis: function (callback) {
-            reqUtils.getFromAsync(req, res, '/apis', 200, callback);
+            utils.getFromAsync(req, res, '/apis', 200, callback);
         },
         getDesc: function (callback) {
-            reqUtils.getFromAsync(req, res, '/apis/desc', 200, callback);
+            utils.getFromAsync(req, res, '/apis/desc', 200, callback);
         }
     },
         function (err, results) {
@@ -32,7 +32,7 @@ router.get('/', function (req, res, next) {
             }
             var desc = results.getDesc;
 
-            if (!reqUtils.acceptJson(req)) {
+            if (!utils.acceptJson(req)) {
                 res.render('apis',
                     {
                         authUser: req.user,
@@ -70,15 +70,15 @@ router.get('/:api', function (req, res, next) {
     // /auth-servers/:serverId
 
     var apiId = req.params.api;
-    var loggedInUserId = reqUtils.getLoggedInUserId(req);
+    var loggedInUserId = utils.getLoggedInUserId(req);
 
     async.parallel({
-        getApi: callback => reqUtils.getFromAsync(req, res, '/apis/' + apiId, 200, callback),
-        getApiDesc: callback => reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/desc', 200, callback),
-        getApiConfig: callback => reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/config', 200, callback),
+        getApi: callback => utils.getFromAsync(req, res, '/apis/' + apiId, 200, callback),
+        getApiDesc: callback => utils.getFromAsync(req, res, '/apis/' + apiId + '/desc', 200, callback),
+        getApiConfig: callback => utils.getFromAsync(req, res, '/apis/' + apiId + '/config', 200, callback),
         getUser: function (callback) {
             if (loggedInUserId)
-                reqUtils.getFromAsync(req, res, '/users/' + loggedInUserId, 200, callback);
+                utils.getFromAsync(req, res, '/users/' + loggedInUserId, 200, callback);
             else {
                 var nullUser = {
                     applications: []
@@ -86,7 +86,7 @@ router.get('/:api', function (req, res, next) {
                 callback(null, nullUser);
             }
         },
-        getPlans: callback => reqUtils.getFromAsync(req, res, '/apis/' + apiId + '/plans', 200, callback)
+        getPlans: callback => utils.getFromAsync(req, res, '/apis/' + apiId + '/plans', 200, callback)
     }, function (err, results) {
         if (err)
             return next(err);
@@ -123,11 +123,11 @@ router.get('/:api', function (req, res, next) {
         async.parallel({
             getSubs: function (callback) {
                 async.map(appIds, function (appId, callback) {
-                    reqUtils.get(req, '/applications/' + appId + '/subscriptions/' + apiId, function (err, apiResponse, apiBody) {
+                    utils.get(req, '/applications/' + appId + '/subscriptions/' + apiId, function (err, apiResponse, apiBody) {
                         if (err)
                             return callback(err);
                         if (200 == apiResponse.statusCode) {
-                            const jsonBody = reqUtils.getJson(apiBody);
+                            const jsonBody = utils.getJson(apiBody);
                             debug('Found subscriptions for application ' + appId + ' for API ' + apiId + ':');
                             debug(jsonBody);
                             return callback(null, jsonBody);
@@ -146,7 +146,7 @@ router.get('/:api', function (req, res, next) {
             },
             getApps: function (callback) {
                 async.map(appIds, function (appId, callback) {
-                    reqUtils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
+                    utils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
                 }, function (err, results) {
                     if (err)
                         return callback(err);
@@ -157,7 +157,7 @@ router.get('/:api', function (req, res, next) {
                 if (!apiInfo.authServer)
                     callback(null, null);
                 else
-                    reqUtils.getFromAsync(req, res, '/auth-servers/' + apiInfo.authServer, 200, callback);
+                    utils.getFromAsync(req, res, '/auth-servers/' + apiInfo.authServer, 200, callback);
             }
         }, function (err, results) {
             if (err)
@@ -213,7 +213,7 @@ router.get('/:api', function (req, res, next) {
             }
 
             // See also views/models/api.json for how this looks
-            if (!reqUtils.acceptJson(req)) {
+            if (!utils.acceptJson(req)) {
                 res.render('api',
                     {
                         authUser: req.user,
@@ -251,7 +251,7 @@ var corsOptionsDelegate = function (req, callback) {
             credentials: true
         };
     }
-    debug(reqUtils.getText(corsOptions));
+    debug(utils.getText(corsOptions));
     callback(null, corsOptions);
 };
 
@@ -263,10 +263,10 @@ router.get('/:api/swagger', cors(corsOptionsDelegate), function (req, res, next)
         if (err)
             return next(err);
         if (200 != response.statusCode)
-            return reqUtils.handleError(res, response, body, next);
+            return utils.handleError(res, response, body, next);
 
         try {
-            var swaggerJson = reqUtils.getJson(body);
+            var swaggerJson = utils.getJson(body);
             // Pipe it
             return res.json(swaggerJson);
         } catch (err) {
@@ -285,9 +285,9 @@ router.get('/:api/swagger', cors(corsOptionsDelegate), function (req, res, next)
         forUser = null;
     }
     if (forUser) {
-        reqUtils.getAsUser(req, swaggerUri, forUser, apiCallback);
+        utils.getAsUser(req, swaggerUri, forUser, apiCallback);
     } else {
-        reqUtils.get(req, swaggerUri, apiCallback);
+        utils.get(req, swaggerUri, apiCallback);
     }
 }); // /apis/:apiId/swagger
 

@@ -6,7 +6,7 @@ var debug = require('debug')('portal:auth:github');
 
 var GithubStrategy = require('passport-github2');
 
-var reqUtils = require('../../routes/requestUtils');
+var utils = require('../../routes/utils');
 var portalGlobals = require('../../portalGlobals');
 
 var federate = require('../federate');
@@ -40,7 +40,7 @@ if (portalGlobals.glob.auth.github &&
             debug(apiBody);
 
             var nameGuess = splitName(profile.displayName, profile.username);
-            var email = getEmailData(reqUtils.getJson(apiBody));
+            var email = getEmailData(utils.getJson(apiBody));
             var userCreateInfo = {
                 customId: 'Github:' + profile.id,
                 firstName: nameGuess.firstName,

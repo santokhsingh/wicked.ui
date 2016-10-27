@@ -4,7 +4,7 @@ var express = require('express');
 var debug = require('debug')('portal:login');
 var router = express.Router();
 var passport = require('passport');
-var reqUtils = require('./requestUtils');
+var utils = require('./utils');
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
