@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo This is currently unmaintained and will be moved to portal-test in the future.
+exit 1
+
 export TMP_TEST=`mktemp -d -t portal.XXXXX`
 cp -R ../portal-api/test/test-config/* $TMP_TEST
 echo Temp dir: $TMP_TEST
