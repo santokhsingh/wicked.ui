@@ -309,14 +309,21 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
         var allowSubscribe = true;
         var subscribeError = null;
         var subscribeWarning = null;
-        if (apiInfo.auth === 'oauth2-implicit' &&
-            !application.redirectUri) {
+        if (apiInfo.auth === 'oauth2' &&
+            !application.redirectUri &&
+            apiInfo.settings &&
+            !apiInfo.settings.enable_client_credentials &&
+            !apiInfo.settings.enable_password_grant) {
             allowSubscribe = false;
-            subscribeError = 'You cannot subscribe to an OAuth 2.0 Implicit Grant API with an application which does not have a valid Redirect URI. Please specify a Redirect URI on the Application page';
+            subscribeError = 'You cannot subscribe to an OAuth 2.0 Implicit Grant/Authorization Code Grant API with an application which does not have a valid Redirect URI. Please specify a Redirect URI on the Application page';
         }
 
-        if ((apiInfo.auth === 'oauth2' ||
-            apiInfo.auth === 'key-auth') &&
+        if (((apiInfo.auth === 'oauth2' && 
+              apiInfo.settings && 
+              apiInfo.settings.enable_client_credentials && 
+              !apiInfo.settings.enable_authorization_code && 
+              !apiInfo.settings.enable_implicit_grant) ||
+             apiInfo.auth === 'key-auth') &&
             application.redirectUri) {
             subscribeWarning = 'You are about to subscribe to an API which is intended only for machine to machine communication with an application with a registered Redirect URI. Please note that API Keys and/or Client Credentials (such as the Client Secret) must NEVER be deployed to a public client, such as a JavaScript SPA or Mobile Application.';
         }

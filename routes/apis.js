@@ -171,6 +171,8 @@ router.get('/:api', function (req, res, next) {
             debug('subsResults:');
             debug(subsResults);
             const authServer = results.getAuthServer;
+            if (authServer && authServer.urlDescription)
+                authServer.urlDescription = marked(authServer.urlDescription); // May be markdown.
             debug(authServer);
 
             var apps = [];
@@ -179,8 +181,11 @@ router.get('/:api', function (req, res, next) {
                 thisApp.name = appsResults[i].name;
                 if (appsResults[i]._links.addSubscription)
                     thisApp.maySubscribe = true;
-                // Special case oauth2-implicit
-                if (apiInfo.auth === 'oauth2-implicit' &&
+                // Special case oauth2 with Authorization Code or Implicit Grant
+                if (apiInfo.auth === 'oauth2' &&
+                    apiInfo.settings &&
+                    !apiInfo.settings.enable_client_credentials &&
+                    !apiInfo.settings.enable_password_grant &&
                     !appsResults[i].redirectUri) {
                     thisApp.maySubscribe = false;
                     thisApp.subscribeError = 'App needs Redirect URI for this API';

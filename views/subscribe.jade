@@ -13,11 +13,7 @@ block content
     
         p.
             Specify which plan you want to subscribe to for the selected application.
-
-        if apiInfo.auth == 'oauth2-implicit'
-            p.
-                <b>Note:</b> For APIs secured via the OAuth 2.0 implicit grant, the Plan applies <b>per end user consumer</b>, not per application per se.
-        
+       
         if subscribeError
             .panel.panel-danger
                 .panel-heading

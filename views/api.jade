@@ -23,9 +23,7 @@ block content
                 .col-md-4
                     br
                     if (apiInfo.auth == 'oauth2')
-                        img(src="/images/oauth2-icon-64.png" align="right" title="API is secured via OAuth 2.0 - Client Credentials Flow")
-                    else if (apiInfo.auth == 'oauth2-implicit')
-                        img(src="/images/oauth2-icon-64.png" align="right" title="API is secured via OAuth 2.0 - Implicit Grant Flow")
+                        img(src="/images/oauth2-icon-64.png" align="right" title="API is secured via OAuth 2.0")
                     else if (!apiInfo.auth || apiInfo.auth == 'key-auth')
                         img(src="/images/key-icon-64.png" align="right" title="API is secured with API keys")
     
@@ -38,10 +36,12 @@ block content
                 label API URL:
                 br
                 input(readonly type='string' value='#{apiUri}' style='font-family: monospace;').form-control
-                if apiInfo.auth == 'oauth2-implicit'
+                if authServer && apiInfo.auth == 'oauth2' && apiInfo.settings && (apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code || apiInfo.settings.enable_password_grant) 
                     br
                     label Authorization Server:
                     input(readonly type='string' value=authServer.url style='font-family: monospace;').form-control
+                    if authServer.urlDescription
+                        p!= authServer.urlDescription
 
         .panel.panel-default
             .panel-heading
@@ -83,8 +83,6 @@ block content
                                     else if apiInfo.auth == "oauth2"
                                         th Client ID
                                         th Client Secret
-                                    else if apiInfo.auth == "oauth2-implicit"
-                                        th(colspan=2) Client ID
                                     else
                                         th n/a
                                     th Action
@@ -108,9 +106,6 @@ block content
                                                         input(readonly type='password' data-toggle='password' value='#{app.clientId}').form-control
                                                     td(style='max-width:250px')
                                                         input(readonly type='password' data-toggle='password' value='#{app.clientSecret}').form-control
-                                                else if apiInfo.auth == "oauth2-implicit"
-                                                    td(colspan=2 style='max-width:400px')
-                                                        input(readonly type='password' data-toggle='password' value='#{app.clientId}').form-control
                                             else
                                                 td(colspan=2 style='vertical-align:middle;')
                                                     i Subscription approval is pending
@@ -136,9 +131,9 @@ block content
                                             td
                                                 if apiInfo.auth == "key-auth"
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=#{app.apiKey}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
-                                                else if apiInfo.auth == "oauth2"
+                                                else if apiInfo.auth == "oauth2" && apiInfo.setting && apiInfo.settings.enable_client_credentials
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
-                                                else if apiInfo.auth == "oauth2-implicit"
+                                                else
                                                     | ---
                                         else
                                             td(style='vertical-align:middle;') ---

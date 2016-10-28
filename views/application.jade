@@ -51,9 +51,6 @@ block content
                                                 input(readonly type='password' data-toggle='password' value='#{sub.clientId}').form-control
                                             td(style='max-width: 250px')
                                                 input(readonly type='password' data-toggle='password' value='#{sub.clientSecret}').form-control
-                                        else if ('oauth2-implicit' == sub.auth)
-                                            td(colspan=2)
-                                                input(readonly type='password' data-toggle='password' value='#{sub.clientId}').form-control
                                         else
                                             td(colspan=2)
                                                 input(readonly type='password' data-toggle='password' value='#{sub.apikey}').form-control
