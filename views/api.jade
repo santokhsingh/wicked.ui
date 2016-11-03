@@ -5,6 +5,11 @@ block scripts
         function confirmUnsubscribe() {
             return confirm("This action will render the current API key unusable. Are you sure you want to unsubscribe from the API?");
         }
+        function confirmDeleteSubscriptions() {
+            if (confirm("This action will delete ALL subscriptions to the current API. Are you 100% sure you want to do this?"))
+                return confirm("Please confirm once more that you really want to delete all current subscriptions.");
+            return false;
+        }
 
 block bodyScripts
     script(type='text/javascript').
@@ -28,6 +33,15 @@ block content
                         img(src="/images/key-icon-64.png" align="right" title="API is secured with API keys")
     
     .container.wicked-container
+
+        if apiInfo.deprecated
+            .panel.panel-danger
+                .panel-heading
+                    h4.panel-title API deprecated
+                .panel-body
+                    p.
+                        This API has been deprecated by the API Portal maintainers. This means it can no longer be subscribed to.
+                        Existing subscriptions are still valid.
 
         .panel.panel-default
             .panel-heading
@@ -142,3 +156,39 @@ block content
                     p Need an additional application? Click the button below.
 
                     a(href="/applications?register=true").btn.btn-default Register Application &raquo;
+
+            if authUser.admin
+                .panel.panel-success
+                    .panel-heading
+                        +panelTitle('All Subscriptions (Admin only)', null, '#admin_subscriptions')
+                    #admin_subscriptions.collapse.panel-collapse
+                        .panel-body
+                            if apiSubscriptions && apiSubscriptions.length > 0
+                                p This is a global list of all applications subscribed to this API:
+
+                                ul
+                                    for subscribedApp in apiSubscriptions
+                                        li <a href="/applications/#{subscribedApp.application}">#{subscribedApp.application}</a> (Plan: #{subscribedApp.plan})
+
+                                p
+                                    a(href='/admin/apis/#{apiInfo.id}/subscriptions_csv').btn.btn-success Download as CSV
+
+                                br
+
+                                .panel.panel-danger
+                                    .panel-heading
+                                        +panelTitle('Super Danger Zone', null, '#admin_superdanger')
+                                    #admin_superdanger.collapse.panel-collapse
+                                        .panel-body
+                                            p.
+                                                In preparation of a retraction of an API, you may (as an Admin) here delete all subscriptions to this API.
+                                                Please be aware of the consequense for your users: <b>Applications using the API will no longer function</b>
+                                                (as the subscription is no longer available).
+                                            if apiInfo.deprecated
+                                                form(role='form' method='POST' action='/admin/apis/#{apiInfo.id}/delete_subscriptions' onsubmit='return confirmDeleteSubscriptions();')
+                                                    button(type='submit').btn.btn-danger Delete Subscriptions
+                                            else
+                                                p(style='color:red')
+                                                    strong This is only possible for APIs already marked as <code>deprecated</code>.
+                            else
+                                p <i>There are no subscriptions to this API.</i>

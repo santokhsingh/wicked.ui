@@ -4,6 +4,8 @@ var express = require('express');
 var router = express.Router();
 var async = require('async');
 var debug = require('debug')('portal:admin');
+var tmp = require('tmp');
+var fs = require('fs');
 var util = require('util');
 var utils = require('./utils');
 
@@ -299,6 +301,74 @@ router.get('/health', function (req, res, next) {
                 health: healthResponse
             });
         }
+    });
+});
+
+router.get('/apis/:apiId/subscriptions_csv', function (req, res, next) {
+    const apiId = req.params.apiId;
+    debug("get('/apis/" + apiId + "/subscriptions_csv')");
+    utils.getFromAsync(req, res, '/apis/' + apiId + '/subscriptions', 200, function (err, applicationList) {
+        if (err)
+            return next(err);
+        tmp.file(function (err, path, fd, cleanup) {
+            if (err)
+                return next(err);
+            async.mapLimit(applicationList, 10, function (appEntry, callback) {
+                utils.getFromAsync(req, res, '/applications/' + appEntry.application, 200, callback);
+            }, function (err, results) {
+                if (err) {
+                    cleanup();
+                    return next(err);
+                }
+                const outStream = fs.createWriteStream(path);
+                outStream.write('api_id;application_id;application_name;plan;owner_id;owner_email;owner_role\n');
+                for (let i = 0; i < results.length; ++i) {
+                    const thisApp = results[i];
+                    for (let owner = 0; owner < thisApp.owners.length; ++owner) {
+                        const thisOwner = thisApp.owners[owner];
+                        const ownerLine = apiId + ';' +
+                            thisApp.id + ';' +
+                            thisApp.name + ';' +
+                            applicationList[i].plan + ';' +
+                            thisOwner.userId + ';' +
+                            thisOwner.email + ';' +
+                            thisOwner.role + '\n';
+                        debug(ownerLine);
+                        outStream.write(ownerLine);
+                    }
+                }
+                outStream.end(function (err) {
+                    if (err) {
+                        cleanup();
+                        return next(err);
+                    }
+                    res.download(path, 'subscriptions-' + apiId + '.csv', function (err) {
+                        cleanup();
+                        if (err) {
+                            return next(err);
+                        }
+                    });
+                });
+            });
+        });
+    });
+});
+
+router.post('/apis/:apiId/delete_subscriptions', function (req, res, next) {
+    // This thing could use CSRF
+    const apiId = req.params.apiId;
+    debug("post('/apis/" + apiId + "/delete_subscriptions')");
+    utils.getFromAsync(req, res, '/apis/' + apiId + '/subscriptions', 200, function (err, applicationList) {
+        if (err) {
+            return next(err);
+        }
+        async.eachSeries(applicationList, function (appEntry, callback) {
+            utils.delete(req, '/applications/' + appEntry.application + '/subscriptions/' + apiId, callback);
+        }, function (err, results) {
+            if (err)
+                return next(err);
+            res.redirect('/apis/' + apiId);
+        });
     });
 });
 

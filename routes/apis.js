@@ -62,6 +62,7 @@ router.get('/:api', function (req, res, next) {
 
     // /apis/:api
     // /apis/:api/desc
+    // /apis/:api/subscriptions (if user is admin)
     // /users/:userId
     // For all the user's applications:
     // /applications/:appId
@@ -75,6 +76,12 @@ router.get('/:api', function (req, res, next) {
     async.parallel({
         getApi: callback => utils.getFromAsync(req, res, '/apis/' + apiId, 200, callback),
         getApiDesc: callback => utils.getFromAsync(req, res, '/apis/' + apiId + '/desc', 200, callback),
+        getSubscriptions: function (callback) {
+            if (loggedInUserId && req.user && req.user.admin) // Don't try if we don't think the user is an admin
+                utils.getFromAsync(req, res, '/apis/' + apiId + '/subscriptions', 200, callback);
+            else
+                callback(null, null);
+        },
         getApiConfig: callback => utils.getFromAsync(req, res, '/apis/' + apiId + '/config', 200, callback),
         getUser: function (callback) {
             if (loggedInUserId)
@@ -98,6 +105,7 @@ router.get('/:api', function (req, res, next) {
             apiDesc = '';
         var userInfo = results.getUser;
         var apiConfig = results.getApiConfig;
+        var apiSubscriptions = results.getSubscriptions;
         // TODO: This makes me a little unhappy, as this is Kong specific.
         // The "right" thing to do here would be to have the API, and more specific
         // even the Kong Adapter (or something) translate this into this Request URI.
@@ -190,6 +198,10 @@ router.get('/:api', function (req, res, next) {
                     thisApp.maySubscribe = false;
                     thisApp.subscribeError = 'App needs Redirect URI for this API';
                 }
+                if (apiInfo.deprecated) {
+                    thisApp.maySubscribe = false;
+                    thisApp.subscribeError = 'API deprecated';
+                }
 
                 thisApp.hasSubscription = false;
                 if (subsResults[i]) {
@@ -230,7 +242,8 @@ router.get('/:api', function (req, res, next) {
                         applications: apps,
                         apiPlans: plans,
                         apiUri: apiUri,
-                        authServer: authServer
+                        authServer: authServer,
+                        apiSubscriptions: apiSubscriptions
                     });
             } else {
                 res.json({
@@ -238,7 +251,8 @@ router.get('/:api', function (req, res, next) {
                     apiInfo: apiInfo,
                     apiPlans: plans,
                     applications: apps,
-                    apiUri: apiUri
+                    apiUri: apiUri,
+                    apiSubscriptions: apiSubscriptions
                 });
             }
         });

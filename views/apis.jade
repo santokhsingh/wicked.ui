@@ -14,6 +14,8 @@ mixin apiDef(anApi)
                         img(src='/images/key-icon-32.png' align='right' title='API is secured over API keys')
                 a(href='/apis/#{anApi.id}')
                     h4= anApi.name
+                if anApi.deprecated
+                    p(style='color:red;') <b>Deprecated</b>
                 p!= anApi.desc
                 a(class="btn btn-default" href="/apis/#{anApi.id}" role="button") Information &raquo;
 
