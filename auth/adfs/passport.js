@@ -5,7 +5,6 @@ var passport = require('passport');
 var request = require('request');
 var debug = require('debug')('portal:auth:adfs');
 var OAuth2Strategy = require('passport-oauth').OAuth2Strategy;
-//var refresh = require('passport-oauth2-refresh');
 var jwt = require('jsonwebtoken');
 var fs = require('fs');
 var utils = require('../../routes/utils');
