@@ -16,11 +16,15 @@ block content
             applications with other developers.
             
         if !authUser
-            h3 You are not logged in
+            .panel.panel-danger
+                .panel-heading
+                    h4.panel-title Not logged in
+                .panel-body
+                    p You are not logged in. Applications can only be created if you are logged in.
             
-            p Applications can only be created if you are logged in.
-            
-            p Please <a href="/login">log in</a> or <a href="/signup">sign up</a>.
+                    a(href="/login").btn.btn-default Log in &raquo;
+                    | &nbsp;&nbsp;
+                    a(href="/signup").btn.btn-default Sign up &raquo;
             
         else
             .panel-group
