@@ -161,11 +161,12 @@ router.get('/:api', function (req, res, next) {
                     callback(null, results);
                 });
             },
-            getAuthServer: function (callback) {
-                if (!apiInfo.authServer)
+            getAuthServers: function (callback) {
+                if (!apiInfo.authServers)
                     callback(null, null);
-                else
-                    utils.getFromAsync(req, res, '/auth-servers/' + apiInfo.authServer, 200, callback);
+                else {
+                    async.map(apiInfo.authServers, (authServerName, callback) => utils.getFromAsync(req, res, '/auth-servers/' + authServerName, 200, callback), callback);
+                }
             }
         }, function (err, results) {
             if (err)
@@ -178,10 +179,15 @@ router.get('/:api', function (req, res, next) {
             const subsResults = results.getSubs;
             debug('subsResults:');
             debug(subsResults);
-            const authServer = results.getAuthServer;
-            if (authServer && authServer.urlDescription)
-                authServer.urlDescription = marked(authServer.urlDescription); // May be markdown.
-            debug(authServer);
+            const authServers = results.getAuthServers;
+            if (authServers && authServers.length > 0) {
+                for (let i=0; i<authServers.length; ++i) {
+                    if (authServers[i].urlDescription)
+                        authServers[i].urlDescription = marked(authServers[i].urlDescription); // May be markdown.
+                }
+            }
+            debug("authServers:");
+            debug(authServers);
 
             var apps = [];
             for (var i = 0; i < userInfo.applications.length; ++i) {
@@ -223,10 +229,12 @@ router.get('/:api', function (req, res, next) {
                 debug(thisApp);
             }
 
-            if (authServer) {
-                authServer.url = mustache.render(authServer.url, {
-                    apiId: apiInfo.id
-                });
+            if (authServers) {
+                for (let i=0; i<authServers.length; ++i) {
+                    authServers[i].url = mustache.render(authServers[i].url, {
+                        apiId: apiInfo.id
+                    });
+                }
             }
 
             // See also views/models/api.json for how this looks
@@ -242,7 +250,7 @@ router.get('/:api', function (req, res, next) {
                         applications: apps,
                         apiPlans: plans,
                         apiUri: apiUri,
-                        authServer: authServer,
+                        authServers: authServers,
                         apiSubscriptions: apiSubscriptions
                     });
             } else {
