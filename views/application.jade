@@ -100,19 +100,20 @@ block content
                                 th Actions
                         tbody
                             each owner, index in application.owners
-                                if (authUser.admin)
-                                    td(style='vertical-align: middle;')
-                                        a(href='/users/#{owner.userId}')= owner.email
-                                else
-                                    td(style='vertical-align: middle;')= owner.email
-                                td(style='vertical-align: middle;')= owner.role
-                                td
-                                    if owner._links.deleteOwner
-                                        form(style='display:inline;' role='form' action='/applications/#{application.id}/owners/delete' method='post')
-                                            input(type='hidden' value='#{owner.email}' name='owneremail')
-                                            button(class='btn btn-default btn-warning' type='submit') Remove &raquo;
+                                tr
+                                    if (authUser.admin)
+                                        td(style='vertical-align: middle;')
+                                            a(href='/users/#{owner.userId}')= owner.email
                                     else
-                                        span &nbsp;
+                                        td(style='vertical-align: middle;')= owner.email
+                                    td(style='vertical-align: middle;')= owner.role
+                                    td
+                                        if owner._links.deleteOwner
+                                            form(style='display:inline;' role='form' action='/applications/#{application.id}/owners/delete' method='post')
+                                                input(type='hidden' value='#{owner.email}' name='owneremail')
+                                                button(class='btn btn-default btn-warning' type='submit') Remove &raquo;
+                                        else
+                                            span &nbsp;
 
                     if application._links.addOwner
                         if application.owners.length == 1
