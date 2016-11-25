@@ -116,7 +116,10 @@ block content
                                         // Plan, API Key or Client ID/Secret
                                         if app.hasSubscription
                                             td(style='vertical-align:middle;')
-                                                a(href='#' data-toggle='popover' data-trigger='hover' title='#{app.plan.name}' data-content='#{app.plan.desc}')= app.plan.name
+                                                if app.plan && app.plan.name
+                                                    a(href='#' data-toggle='popover' data-trigger='hover' title='#{app.plan.name}' data-content='#{app.plan.desc}')= app.plan.name
+                                                else
+                                                    i Inaccessible plan
                                             if app.subscriptionApproved
                                                 if apiInfo.auth == "key-auth"
                                                     td(colspan=2 style='max-width:400px')
