@@ -4,6 +4,7 @@ var request = require('request');
 var debug = require('debug')('portal:utils');
 var fs = require('fs');
 var path = require('path');
+var wicked = require('wicked-sdk');
 
 var utils = function () { };
 
@@ -22,17 +23,19 @@ utils.getLoggedInUserEmail = function (req) {
 };
 
 function makeHeaders(req, userId) {
+    var headers = {
+        'User-Agent': 'wicked.portal/' + utils.getVersion(),
+        'X-Config-Hash': wicked.getConfigHash(),
+        'Correlation-Id': req.correlationId,
+    };
     if (!userId) {
-        var headers = { 'Correlation-Id': req.correlationId };
         var loggedInUserId = utils.getLoggedInUserId(req);
         if (loggedInUserId)
             headers['X-UserId'] = loggedInUserId;
         return headers;
     }
-    return {
-        'X-UserId': userId,
-        'Correlation-Id': req.correlationId
-    };
+    headers['X-UserId'] = userId;
+    return headers;
 }
 
 utils.get = function (req, uri, callback) {

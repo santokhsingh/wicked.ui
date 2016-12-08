@@ -210,7 +210,7 @@ app.initialize = function (done) {
 
     // development error handler
     // will print stacktrace
-    if ((app.get('env') === 'development')) { // TODO: || !process.env.WICKED_IN_DOCKER) {
+    if (wicked.isDevelopmentMode()) {
         app.use(function (err, req, res, next) {
             debug(err);
             res.status(err.status || 500);
@@ -245,6 +245,7 @@ app.initialize = function (done) {
             switch (status) {
                 case 403: errorTemplate = 'error_403'; break;
                 case 404: errorTemplate = 'error_404'; break;
+                case 428: errorTemplate = 'error_428'; break;
             }
 
             res.render(errorTemplate, {

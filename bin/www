@@ -41,7 +41,10 @@ server.on('listening', onListening);
 // Wait for Portal API to be available
 debug('Waiting for API to be available.');
 app.initState = 'Waiting for API...';
-wicked.initialize(function (err) {
+wicked.initialize({
+    userAgentName: 'wicked.portal',
+    userAgentVersion: utils.getVersion()
+}, function (err) {
     if (err) {
         console.error(err);
         throw Error('Could not retrieve globals from API! API not running?');
