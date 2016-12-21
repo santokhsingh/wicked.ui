@@ -39,6 +39,9 @@ if (portalGlobals.glob.auth.adfs &&
                 return done(null, false, { message: ex });
             }
         }
+        else {
+          decodedProfile = jwt.decode(accessToken);
+        }
 
         debug(decodedProfile);
 
