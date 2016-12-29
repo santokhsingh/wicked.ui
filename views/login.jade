@@ -35,6 +35,9 @@ block content
     
     p Welcome to the #{glob.title}.
 
+    if displayRedirectMessage
+        h4 You will be redirected to the desired page right after successfully logging in.
+
     if glob.auth.adfs && glob.auth.adfs.useAdfs
         a(href='/login/adfs').btn.btn-block.btn-lg.btn-primary
             i.fa.fa-cloud.fa-lg

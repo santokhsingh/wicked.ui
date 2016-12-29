@@ -82,7 +82,7 @@ block content
                         You are currently not logged in, so we can't display your registered applications.
                         Please log in first.
                     p                    
-                        a(href="/login").btn.btn-default Log in &raquo;
+                        a(href="/login?redirect=/apis/#{apiInfo.id}").btn.btn-default Log in &raquo;
 
         else
             .panel.panel-default

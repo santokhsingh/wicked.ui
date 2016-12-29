@@ -10,29 +10,39 @@ var passport = require('passport');
 /* GET home page. */
 router.get('/', function (req, res, next) {
     debug("get('/')");
-    res.render('signup',
-        {
-            route: '/signup',
-            authUser: req.user,
-            glob: req.app.portalGlobals,
-            error: req.flash().error
-        });
+    debug(req.session);
+    // redirect after login active?
+    if (utils.getLoggedInUserId(req) &&
+        req.session.redirectAfterLogin) {
+        const redirectTarget = req.session.redirectAfterLogin;
+        // Reset redirect target so that we don't get nasty loops
+        req.session.redirectAfterLogin = null;
+        res.redirect(redirectTarget);
+    } else {
+        res.render('signup',
+            {
+                route: '/signup',
+                authUser: req.user,
+                glob: req.app.portalGlobals,
+                error: req.flash().error
+            });
+    }
 });
 
 router.post('/', function (req, res, next) {
     debug("post('/')");
     if (!(req.app.portalGlobals.auth.local &&
-          req.app.portalGlobals.auth.local.useLocal)) {
+        req.app.portalGlobals.auth.local.useLocal)) {
         return next();
     }
-          
-    var signupLocal = function() {
+
+    var signupLocal = function () {
         // These kinds of lines is why I both love and totally hate JavaScript.
         // passport.authenticate returns a function which takes the below parameters.
         passport.authenticate('local-signup', {
             failureFlash: true,
-            successRedirect: '/login',
-            failureRedirect: '/signup'
+            failureRedirect: '/login',
+            successRedirect: '/signup'
         })(req, res, next);
     };
     // Recaptcha?
@@ -54,12 +64,11 @@ router.post('/', function (req, res, next) {
                 err.status = 403;
                 return next(err);
             }
-            
+
             signupLocal();
         });
     }
-    else
-    {
+    else {
         signupLocal();
     }
 });

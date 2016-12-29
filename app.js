@@ -236,33 +236,41 @@ app.initialize = function (done) {
     // production error handler
     // no stacktraces leaked to user
     app.use(function (err, req, res, next) {
-        debug(err);
-        var status = err.status || 500;
-        res.status(status);
-        if (!utils.acceptJson(req)) {
-            var errorTemplate = 'error'; // default error template
-
-            switch (status) {
-                case 403: errorTemplate = 'error_403'; break;
-                case 404: errorTemplate = 'error_404'; break;
-                case 428: errorTemplate = 'error_428'; break;
-            }
-
-            res.render(errorTemplate, {
-                authUser: req.user,
-                title: 'Error',
-                glob: app.portalGlobals,
-                message: err.message,
-                error: { status: status },
-                correlationId: req.correlationId
-            });
+        // 403 and not logged in? And not an API/JSON user?
+        if (err.status &&
+            403 === err.status &&
+            !utils.getLoggedInUserId(req) &&
+            !utils.acceptJson(req)) {
+            res.redirect('/login?redirect=' + encodeURIComponent(req.url));
         } else {
-            res.json({
-                statusCode: res.statusCode,
-                message: err.message,
-                error: { status: status },
-                correlationId: req.correlationId
-            });
+            debug(err);
+            var status = err.status || 500;
+            res.status(status);
+            if (!utils.acceptJson(req)) {
+                var errorTemplate = 'error'; // default error template
+
+                switch (status) {
+                    case 403: errorTemplate = 'error_403'; break;
+                    case 404: errorTemplate = 'error_404'; break;
+                    case 428: errorTemplate = 'error_428'; break;
+                }
+
+                res.render(errorTemplate, {
+                    authUser: req.user,
+                    title: 'Error',
+                    glob: app.portalGlobals,
+                    message: err.message,
+                    error: { status: status },
+                    correlationId: req.correlationId
+                });
+            } else {
+                res.json({
+                    statusCode: res.statusCode,
+                    message: err.message,
+                    error: { status: status },
+                    correlationId: req.correlationId
+                });
+            }
         }
     });
     if (done)
