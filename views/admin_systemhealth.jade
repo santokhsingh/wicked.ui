@@ -28,8 +28,12 @@ block content
                 for info in health
                     tr
                         td
-                            if info.version
+                            if info.version && info.kongVersion && info.kongStatus
+                                a(href='#' data-toggle='popover' data-trigger='hover' data-html="true" data-content='<b>Version:</b> #{info.version}<br/><b>Branch:</b> #{info.gitBranch}<br/><b>Build date:</b> #{info.buildDate}<br><pre>#{info.gitLastCommit}</pre><br><b>Kong Version:</b> #{info.kongVersion}<br><b>Kong Status:</b><br><pre>#{info.kongStatus}</pre>')= info.name
+                            else if info.version
                                 a(href='#' data-toggle='popover' data-trigger='hover' data-html="true" data-content='<b>Version:</b> #{info.version}<br/><b>Branch:</b> #{info.gitBranch}<br/><b>Build date:</b> #{info.buildDate}<br><pre>#{info.gitLastCommit}</pre>')= info.name
+                            else if info.name == 'kong'
+                                a(href='#' data-toggle='popover' data-trigger='hover' data-html="true" data-content='See <code>kong-adapter</code> for information on Kong.')= info.name
                             else
                                 | #{info.name}
                         td
