@@ -50,13 +50,13 @@ if [ "$1" = "--push" ]; then
     echo "Pushing ${DOCKER_PREFIX}portal:${DOCKER_TAG}-onbuild"
     echo "============================================"
 
-    docker push ${DOCKER_PREFIX}portal:${DOCKER_TAG}-onbuild
+    docker push ${DOCKER_PREFIX}portal:${DOCKER_TAG}
 
     echo "============================================"
     echo "Pushing ${DOCKER_PREFIX}portal:${DOCKER_TAG}-onbuild-alpine"
     echo "============================================"
     
-    docker push ${DOCKER_PREFIX}portal:${DOCKER_TAG}-onbuild-alpine
+    docker push ${DOCKER_PREFIX}portal:${DOCKER_TAG}-alpine
 else
     if [ ! -z "$1" ]; then
         echo "WARNING: Unknown parameter '$1'; did you mean --push?"
