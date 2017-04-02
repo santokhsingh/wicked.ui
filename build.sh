@@ -18,7 +18,8 @@ echo "============================================"
 
 export BUILD_ALPINE=""
 perl -pe 's;(\\*)(\$([a-zA-Z_][a-zA-Z_0-9]*)|\$\{([a-zA-Z_][a-zA-Z_0-9]*)\})?;substr($1,0,int(length($1)/2)).($2&&length($1)%2?$2:$ENV{$3||$4});eg' Dockerfile.template > Dockerfile
-docker build -t ${DOCKER_PREFIX}portal:${DOCKER_TAG} .
+normalImageName="${DOCKER_PREFIX}portal:${DOCKER_TAG}"
+docker build -t ${normalImageName} .
 
 echo "============================================"
 echo "Building alpine image..."
@@ -26,7 +27,8 @@ echo "============================================"
 
 export BUILD_ALPINE="-alpine"
 perl -pe 's;(\\*)(\$([a-zA-Z_][a-zA-Z_0-9]*)|\$\{([a-zA-Z_][a-zA-Z_0-9]*)\})?;substr($1,0,int(length($1)/2)).($2&&length($1)%2?$2:$ENV{$3||$4});eg' Dockerfile.template > Dockerfile-alpine
-docker build -f Dockerfile-alpine -t ${DOCKER_PREFIX}portal:${DOCKER_TAG}-alpine .
+alpineImageName="${DOCKER_PREFIX}portal:${DOCKER_TAG}-alpine"
+docker build -f Dockerfile-alpine -t ${alpineImageName} .
 
 if [ "$1" = "--push" ]; then
     echo "============================================"
@@ -47,16 +49,16 @@ if [ "$1" = "--push" ]; then
     fi
 
     echo "============================================"
-    echo "Pushing ${DOCKER_PREFIX}portal:${DOCKER_TAG}-onbuild"
+    echo "Pushing ${normalImageName}"
     echo "============================================"
 
-    docker push ${DOCKER_PREFIX}portal:${DOCKER_TAG}
+    docker push ${normalImageName}
 
     echo "============================================"
-    echo "Pushing ${DOCKER_PREFIX}portal:${DOCKER_TAG}-onbuild-alpine"
+    echo "Pushing ${alpineImageName}"
     echo "============================================"
     
-    docker push ${DOCKER_PREFIX}portal:${DOCKER_TAG}-alpine
+    docker push ${alpineImageName}
 else
     if [ ! -z "$1" ]; then
         echo "WARNING: Unknown parameter '$1'; did you mean --push?"
