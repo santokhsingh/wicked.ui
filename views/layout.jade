@@ -20,7 +20,7 @@ html
     link(rel='stylesheet', href='/content/wicked.css')
     link(rel="stylesheet", href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/styles/default.min.css")
     script(src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/highlight.min.js")
-    
+
     block scripts
   body
     if authUser && authUser.id == '1'
@@ -36,20 +36,20 @@ html
                         portal for the first time. You must only use this user to give your actual user admin rights
                         to the portal; after that, delete the password for the superuser (with the ID '1'), so that
                         it is no longer possible to log in as this user.
-                    
+
                     p Your Todos right now are:
-                    
+
                     ul
                         li
                             a(href='/admin/users') Go to the Admin/Users page, find your own user, and assign an 'admin' group to it
                         li
                             a(href='/users/1') Open this User's user profile, and delete the password from it
-                    
+
                     p.
                         If you don't have a user in your own name yet, please create that user first, either by signing
                         up using email address or password, or by using one of the federated logins you have configured (if applicable).
-                    
-        
+
+
     nav(class="navbar navbar-default navbar-fixed-top")
         .container
             .navbar-header
@@ -58,12 +58,12 @@ html
                     span.icon-bar
                     span.icon-bar
                     span.icon-bar
-                a.pull-left(href='http://wicked.haufe.io' target='_blank')
+                a.pull-left(href='/')
                     img(src='/content/images/wicked-40.png' style='margin-top: 5px; margin-right: 5px;' title='wicked project home')
 
             div(id="navbar", class="collapse navbar-collapse")
                 ul(class="nav navbar-nav")
-                    if (route == '/') 
+                    if (route == '/')
                         li.active
                             a(href="/") Home
                     else
@@ -72,9 +72,10 @@ html
                     if route == '/apis'
                         li.active
                             a(href="/apis") APIs
-                    else
+                    else if glob.layout.linkMenuVisibleToGuest || authUser
                         li
                             a(href="/apis") APIs
+
                     if route == '/applications'
                         li.active
                             a(href='/applications') Applications
@@ -147,11 +148,12 @@ html
                 tr
                     td(style='text-align:left; color: #999999;')!= glob.footer
                     td(style='text-align:right; color:#999999;')
-                        | Built by <a href='http://www.haufe-lexware.com' target='_blank'>Haufe-Lexware</a>, powered by <a href='http://getkong.org' target='_blank'>Mashape Kong</a>.
+                        if glob.layout.showBuiltByInFooter
+                            | Built by <a href='http://www.haufe-lexware.com' target='_blank'>Haufe-Lexware</a>, powered by <a href='http://getkong.org' target='_blank'>Mashape Kong</a>.
                 tr
                     if (authUser && authUser.admin)
                         td(colspan=2 style='text-align:right; color: #cccccc; font-size: 10pt;') Portal Build: #{glob.buildDate} -- <a href='/admin/health'>Config Build: #{glob.configDate}</a>
-                    else
+                    else if glob.layout.showBuiltByInFooter
                         td(colspan=2 style='text-align:right; color: #cccccc; font-size: 10pt;') Portal Build: #{glob.buildDate} -- Config Build: #{glob.configDate}
                 if !glob.isProduction
                     tr
@@ -160,5 +162,5 @@ html
     script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js')
     script(src='/js/bootstrap.min.js')
     script(src='/js/bootstrap-show-password.min.js')
- 
+
     block bodyScripts
