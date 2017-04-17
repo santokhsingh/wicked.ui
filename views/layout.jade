@@ -58,55 +58,59 @@ html
                     span.icon-bar
                     span.icon-bar
                     span.icon-bar
-                a.pull-left(href='/')
-                    img(src='/content/images/wicked-40.png' style='margin-top: 5px; margin-right: 5px;' title='wicked project home')
+                a.pull-left(href=glob.layouts.defautRootUrl target=glob.layouts.defautRootUrlTarget)
+                    if glob.layouts.defautRootUrlText != null
+                        span= glob.layouts.defautRootUrlText
+                    else
+                        img(src='/content/images/wicked-40.png' style='margin-top: 5px; margin-right: 5px;' title='wicked project home')
 
             div(id="navbar", class="collapse navbar-collapse")
                 ul(class="nav navbar-nav")
                     if (route == '/')
                         li.active
-                            a(href="/") Home
+                            a(href="/")= glob.layouts.menu.homeLinkText
                     else
                         li
-                            a(href="/") Home
+                            a(href="/")= glob.layouts.menu.homeLinkText
                     if route == '/apis'
                         li.active
                             a(href="/apis") APIs
-                    else if glob.layout.linkMenuVisibleToGuest || authUser
+                    else if glob.layouts.menu.apisLinkVisibleToGuest || authUser
                         li
                             a(href="/apis") APIs
-
                     if route == '/applications'
                         li.active
                             a(href='/applications') Applications
-                    else
+                    else if glob.layouts.menu.applicationsLinkVisibleToGuest || authUser
                         li
                             a(href='/applications') Applications
                     if route == '/content/contact'
                         li.active
                             a(href="/content/contact") Contact
-                    else
+                    else if glob.layouts.menu.contactLinkVisibleToGuest || authUser
                         li
                             a(href="/content/contact") Contact
                     if route == '/content/toc'
                         li.active
                             a(href="/content/toc") Content
-                    else
+                    else if glob.layouts.menu.contentLinkVisibleToGuest || authUser
                         li
                             a(href="/content/toc") Content
+                ul(class='nav navbar-nav navbar-#{glob.layouts.menu.classForLoginSignupPosition}')
                     if !authUser
-                        if route == '/signup'
-                            li.active
-                                a(href="/signup") Sign up
-                        else
-                            li
-                                a(href="/signup") Sign up
+                        if glob.layouts.menu.showSignupLink
+                            if route == '/signup'
+                                li.active
+                                    a(href="/signup") Sign up
+                            else
+                                li
+                                    a(href="/signup") Sign up
                         if route == '/login'
                             li.active
-                                a(href="/login") Log in
+                                a(href="/login")= glob.layouts.menu.loginLinkText
                         else
                             li
-                                a(href="/login") Log in
+                                a(href="/login")= glob.layouts.menu.loginLinkText
                 if authUser
                     ul(class='nav navbar-nav navbar-right')
                         li
@@ -148,12 +152,12 @@ html
                 tr
                     td(style='text-align:left; color: #999999;')!= glob.footer
                     td(style='text-align:right; color:#999999;')
-                        if glob.layout.showBuiltByInFooter
+                        if glob.layouts.footer.showBuiltBy
                             | Built by <a href='http://www.haufe-lexware.com' target='_blank'>Haufe-Lexware</a>, powered by <a href='http://getkong.org' target='_blank'>Mashape Kong</a>.
                 tr
                     if (authUser && authUser.admin)
                         td(colspan=2 style='text-align:right; color: #cccccc; font-size: 10pt;') Portal Build: #{glob.buildDate} -- <a href='/admin/health'>Config Build: #{glob.configDate}</a>
-                    else if glob.layout.showBuiltByInFooter
+                    else if glob.layouts.footer.showBuilds
                         td(colspan=2 style='text-align:right; color: #cccccc; font-size: 10pt;') Portal Build: #{glob.buildDate} -- Config Build: #{glob.configDate}
                 if !glob.isProduction
                     tr

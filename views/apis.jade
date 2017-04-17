@@ -4,7 +4,8 @@ mixin apiDef(anApi)
     .col-md-4
         .panel.panel-default
             .panel-body.wicked-api-body
-                img(src='/images/api-icon.png')
+                if glob.views.apis.showApiIcon
+                    img(src='/images/api-icon.png')
                 if anApi.auth == 'oauth2'
                     a(href='/help/apis' target='_blank')
                         img(src='/images/oauth2-icon-32.png' align='right' title='API is secured over OAuth 2.0')
@@ -23,13 +24,13 @@ block content
     .jumbotron.wicked-api-title
         .container.wicked-title-container
             h1= title
-            
-            p This is the index of APIs which are available for this API Portal.
-        
+
+            p= glob.views.apis.titleTagline
+
     .container.wicked-container
         if desc
             p!= desc
-            
+
         p &nbsp;
 
         - var length = apilist.length
