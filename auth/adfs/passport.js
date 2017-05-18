@@ -31,7 +31,7 @@ if (portalGlobals.glob.auth.adfs &&
         // Verify Token with Certificate?
         if (portalGlobals.glob.auth.adfs.verifyCert) {
             try {
-                //Decode Oauth token and verify that it has been signed by identity.haufe.com
+                //Decode Oauth token and verify that it has been signed by the given public cert
                 decodedProfile = jwt.verify(accessToken, portalGlobals.glob.auth.adfs.publicCert);
                 debug('Verified JWT successfully.');
             } catch (ex) {
