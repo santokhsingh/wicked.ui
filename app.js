@@ -136,7 +136,10 @@ app.initialize = function (done) {
         if (app.isProduction &&
             !req.path.startsWith('/swagger-ui') &&
             req.get('x-forwarded-proto') != 'https')
-            return next(new Error('You are running in "production" (NODE_ENV) mode, but not on https. This is not supported.'));
+            if (portalGlobals.glob.network.forceRedirectToHttps === true)
+                return res.redirect(301, 'https://' + req.headers.host + req.url);
+            else
+                return next(new Error('You are running in "production" (NODE_ENV) mode, but not on https. This is not supported.'));
         next();
     });
 

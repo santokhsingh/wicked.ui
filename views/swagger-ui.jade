@@ -46,7 +46,7 @@ html
           client_secret = decodeURIComponent(client_secret[1]);
         else
           client_secret = null;
-          
+
         var supportedMethods = [];
         if (apikey || client_id)
           supportedMethods = ['get', 'post', 'put', 'delete', 'patch'];
@@ -65,7 +65,7 @@ html
                 clientId: "your-client-id",
                 clientSecret: "your-client-secret-if-required",
                 realm: "your-realms",
-                appName: "your-app-name", 
+                appName: "your-app-name",
                 scopeSeparator: ",",
                 additionalQueryStringParams: {}
               });
@@ -115,10 +115,13 @@ body.swagger-section
 
   div(id='header')
     div(style="color:#cccccc;").swagger-ui-wrap
-      a(id="logo" href="#{glob.network.schema}://#{glob.network.portalHost}/") Home
+      a(id="logo" href="#{glob.network.schema}://#{glob.network.portalHost}/")= glob.layouts.swaggerUi.menu.homeLinkText
       a(href="#{glob.network.schema}://#{glob.network.portalHost}/apis").header-item APIs
       a(href="#{glob.network.schema}://#{glob.network.portalHost}/applications").header-item Applications
-      a(href="#{glob.network.schema}://#{glob.network.portalHost}/content/contact").header-item Contact
+      if glob.layouts.swaggerUi.menu.showContactLink
+        a(href="#{glob.network.schema}://#{glob.network.portalHost}/content/contact").header-item Contact
+      if glob.layouts.swaggerUi.menu.showContentLink
+        a(href="#{glob.network.schema}://#{glob.network.portalHost}/content/toc").header-item Content
 
   div(id="message-bar" class="swagger-ui-wrap" data-sw-translate) &nbsp;
   div(id="swagger-ui-container" class="swagger-ui-wrap")
