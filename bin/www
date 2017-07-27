@@ -6,30 +6,31 @@
  * Module dependencies.
  */
 
-var debug = require('debug')('portal:www');
-var http = require('http');
-var request = require('request');
-var fs = require('fs');
-var path = require('path');
+const debug = require('debug')('portal:www');
+const async = require('async');
+const http = require('http');
+const request = require('request');
+const fs = require('fs');
+const path = require('path');
 
 //var envReader = require('portal-env');
-var wicked = require('wicked-sdk');
+const wicked = require('wicked-sdk');
 
-var utils = require('../routes/utils');
-var portalGlobals = require('../portalGlobals');
+const utils = require('../routes/utils');
+const portalGlobals = require('../portalGlobals');
 
-var app = require('../app');
+const app = require('../app');
 
 /**
  * Get port from environment and store in Express.
  */
-var port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
 /**
  * Create HTTP server.
  */
-var server = http.createServer(app);
+const server = http.createServer(app);
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -41,18 +42,42 @@ server.on('listening', onListening);
 // Wait for Portal API to be available
 debug('Waiting for API to be available.');
 app.initState = 'Waiting for API...';
-wicked.initialize({
+
+const wickedOptions = {
     userAgentName: 'wicked.portal',
     userAgentVersion: utils.getVersion()
-}, function (err) {
+};
+
+async.series([
+    callback => wicked.initialize(wickedOptions, callback),
+    callback => wicked.initMachineUser('portal', callback)
+], function (err) {
     if (err) {
         console.error(err);
         throw Error('Could not retrieve globals from API! API not running?');
     }
 
-    let apiUrl = wicked.getInternalApiUrl();
-    if (apiUrl.endsWith('/')) // Strip trailing slash
-        apiUrl = apiUrl.substring(0, apiUrl.length - 1);
+    // TODO: This is the OAuth2 callback URL for the Portal:
+    let callbackUrl = wicked.getExternalPortalUrl();
+    if (!callbackUrl.endsWith('/'))
+        callbackUrl = callbackUrl + '/';
+    callbackUrl = callbackUrl + 'oauth2/callback';
+
+    // TODO: Get from wicked instead
+    // wicked.registerApplication('__portal', callbackUrl, function (err, clientCredentials) {
+    //     ...
+    // })
+
+    const CLIENT_ID = "364efbef2ec0bf4e1ca61bfc2cbdb029ab3fee56";
+    const CLIENT_SECRET = "c7d1c1b869142926e2c40e0d49c68c60be787e40";
+
+    utils.setOAuth2Credentials(CLIENT_ID, CLIENT_SECRET);
+
+    let apiUrl = wicked.getExternalApiUrl();
+    if (!apiUrl.endsWith('/')) // Add trailing slash
+        apiUrl = apiUrl + '/';
+    apiUrl = apiUrl + 'api/v1';
+
     app.set('api_url', apiUrl);
 
     debug('API is responding. Finishing initialization.');
@@ -71,7 +96,7 @@ wicked.initialize({
 
 function getBuildDate() {
     debug('getBuildDate()');
-    var buildDatePath = path.join(__dirname, '..', 'build_date');
+    const buildDatePath = path.join(__dirname, '..', 'build_date');
     debug('Looking for build date file at: ' + buildDatePath);
     if (!fs.existsSync(buildDatePath))
         return "(no build date found)";
@@ -107,7 +132,7 @@ function onError(error) {
         throw error;
     }
 
-    var bind = typeof port === 'string' ?
+    const bind = typeof port === 'string' ?
         'Pipe ' + port :
         'Port ' + port;
 
@@ -131,8 +156,8 @@ function onError(error) {
  */
 
 function onListening() {
-    var addr = server.address();
-    var bind = typeof addr === 'string' ?
+    const addr = server.address();
+    const bind = typeof addr === 'string' ?
         'pipe ' + addr :
         'port ' + addr.port;
     debug('Listening on ' + bind);

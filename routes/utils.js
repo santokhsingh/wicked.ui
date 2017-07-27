@@ -1,12 +1,18 @@
 'use strict';
 
-var request = require('request');
-var debug = require('debug')('portal:utils');
-var fs = require('fs');
-var path = require('path');
-var wicked = require('wicked-sdk');
+const request = require('request');
+const async = require('async');
+const debug = require('debug')('portal:utils');
+const fs = require('fs');
+const path = require('path');
+const wicked = require('wicked-sdk');
 
-var utils = function () { };
+const utils = function () { };
+
+utils.setOAuth2Credentials = function (clientId, clientSecret) {
+    utils.CLIENT_ID = clientId;
+    utils.CLIENT_SECRET = clientSecret;
+};
 
 utils.getLoggedInUserId = function (req) {
     //debug('getLoggedInUserId()');
@@ -23,7 +29,7 @@ utils.getLoggedInUserEmail = function (req) {
 };
 
 function makeHeaders(req, userId) {
-    var headers = {
+    const headers = {
         'User-Agent': 'wicked.portal/' + utils.getVersion(),
         'X-Config-Hash': wicked.getConfigHash(),
         'Correlation-Id': req.correlationId,
@@ -38,28 +44,104 @@ function makeHeaders(req, userId) {
     return headers;
 }
 
+utils._anonymousAccessToken = null;
+function checkAccessToken(req, callback) {
+    debug('checkAccessToken()');
+    if (utils._anonymousAccessToken)
+        return callback(null, utils._anonymousAccessToken);
+
+    debug('Requesting new anonymous access token');
+    const baseUrl = req.app.get('api_url');
+    const tokenUrl = baseUrl + '/oauth2/token';
+    let headers = null;
+    if (tokenUrl.startsWith('http:')) {
+        headers = {
+            'X-Forwarded-Proto': 'https'
+        };
+    }
+
+    request.post({
+        url: tokenUrl,
+        json: true,
+        body: {
+            grant_type: 'client_credentials',
+            client_id: utils.CLIENT_ID,
+            client_secret: utils.CLIENT_SECRET
+        },
+        headers: headers
+    }, function (err, res, body) {
+        if (err) {
+            console.error('ERROR: Could not get access token for anonymous access');
+            console.error(err);
+            return callback(err);
+        }
+
+        debug(body);
+        if (!body.access_token) {
+            console.error('ERROR: Did not receive expected access_token.');
+            return callback(new Error('Did not receive anonymous access token.'));
+        }
+        debug('Successfully retrieved anonymous access token.');
+        // Cache it
+        utils._anonymousAccessToken = body.access_token;
+        return callback(null, body.access_token);
+    });
+}
+
+function apiAction(req, method, body, callback, iteration) {
+    debug('apiAction()');
+    async.waterfall([
+        callback => checkAccessToken(req, callback),
+        (accessToken, callback) => {
+            body.method = method;
+            body.headers.Authorization = 'Bearer ' + accessToken;
+            request(body, (err, apiResponse, apiBody) => {
+                if (err) {
+                    return callback(err);
+                }
+                return callback(null, apiResponse, apiBody);
+            });
+        }
+    ], function (err, apiResponse, apiBody) {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, apiResponse, apiBody);
+    });
+}
+
 utils.get = function (req, uri, callback) {
     debug('get(): ' + uri);
     var baseUrl = req.app.get('api_url');
 
-    request.get(
-        {
+    apiAction(req, 'GET', {
+        url: baseUrl + uri,
+        headers: makeHeaders(req)
+    }, callback);
+};
+
+utils.pipe = function (req, res, uri) {
+    debug('pipe()');
+    var baseUrl = req.app.get('api_url');
+    checkAccessToken(req, (err, accessToken) => {
+        request({
             url: baseUrl + uri,
-            headers: makeHeaders(req)
-        },
-        callback);
+            headers: {
+                'Authorization': 'Bearer ' + accessToken,
+                'Correlation-Id': req.correlationId
+            }
+        }).pipe(res);
+    });
 };
 
 utils.getAsUser = function (req, uri, userId, callback) {
     debug('getAsUser(): ' + uri + ', userId = ' + userId);
     var baseUrl = req.app.get('api_url');
 
-    request.get(
-        {
-            url: baseUrl + uri,
-            headers: makeHeaders(req, userId)
-        },
-        callback);
+    apiAction(req, 'GET', {
+        url: baseUrl + uri,
+        headers: makeHeaders(req, userId)
+    }, callback);
 };
 
 utils.handleError = function (res, apiResponse, apiBody, next) {
@@ -106,14 +188,12 @@ utils.post = function (req, uri, body, callback) {
     debug(body);
     var baseUrl = req.app.get('api_url');
 
-    request.post(
-        {
-            url: baseUrl + uri,
-            headers: makeHeaders(req),
-            json: true,
-            body: body
-        },
-        callback);
+    apiAction(req, 'POST', {
+        url: baseUrl + uri,
+        headers: makeHeaders(req),
+        json: true,
+        body: body
+    }, callback);
 };
 
 utils.patch = function (req, uri, body, callback) {
@@ -121,14 +201,12 @@ utils.patch = function (req, uri, body, callback) {
     debug(body);
     var baseUrl = req.app.get('api_url');
 
-    request.patch(
-        {
-            url: baseUrl + uri,
-            headers: makeHeaders(req),
-            json: true,
-            body: body
-        },
-        callback);
+    apiAction(req, 'PATCH', {
+        url: baseUrl + uri,
+        headers: makeHeaders(req),
+        json: true,
+        body: body
+    }, callback);
 };
 
 utils.patchAsUser = function (req, uri, userId, body, callback) {
@@ -136,26 +214,22 @@ utils.patchAsUser = function (req, uri, userId, body, callback) {
     debug(body);
     var baseUrl = req.app.get('api_url');
 
-    request.patch(
-        {
-            url: baseUrl + uri,
-            headers: makeHeaders(req, userId),
-            json: true,
-            body: body
-        },
-        callback);
+    apiAction(req, 'PATCH', {
+        url: baseUrl + uri,
+        headers: makeHeaders(req, userId),
+        json: true,
+        body: body
+    }, callback);
 };
 
 utils.delete = function (req, uri, callback) {
     debug('delete(): ' + uri);
     var baseUrl = req.app.get('api_url');
 
-    request.delete(
-        {
-            url: baseUrl + uri,
-            headers: makeHeaders(req)
-        },
-        callback);
+    apiAction(req, 'DELETE', {
+        url: baseUrl + uri,
+        headers: makeHeaders(req)
+    }, callback);
 };
 
 utils.getUtc = function () {

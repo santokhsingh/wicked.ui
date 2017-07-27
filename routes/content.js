@@ -17,13 +17,14 @@ function isPublic(uriName) {
 
 router.get('/*', function (req, res, next) {
     debug("get('/*'): " + req.path);
-    var apiUrl = req.app.get('api_url');
+    // var apiUrl = req.app.get('api_url');
     // Serve images and CSS as is
     if (isPublic(req.path)) {
-        return request({
-            url: apiUrl + '/content' + req.path,
-            headers: { 'Correlation-Id': req.correlationId }
-        }).pipe(res);
+        return utils.pipe(req, res, '/content' + req.path);
+        // return request({
+        //     url: apiUrl + '/content' + req.path,
+        //     headers: { 'Correlation-Id': req.correlationId }
+        // }).pipe(res);
     }
 
     if (req.path !== '/toc') {
