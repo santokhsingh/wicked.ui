@@ -32,16 +32,13 @@ var correlationIdHandler = wicked.correlationIdHandler();
 var passport = require('passport');
 var fs = require('fs');
 var session = require('express-session');
-var FileStore = require('session-file-store')(session);
-
-// Use default options, see https://www.npmjs.com/package/session-file-store
-var sessionStoreOptions = {};
+var sessionStore = require('./sessionstore')(session);
 
 var SECRET = 'ThisIsASecret';
 
 // Session: 15 minutes
 var sessionArgs = {
-    store: new FileStore(sessionStoreOptions),
+    store: sessionStore,
     secret: SECRET,
     saveUninitialized: true,
     resave: false,
