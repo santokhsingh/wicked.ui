@@ -20,6 +20,7 @@ if (portalGlobals.glob.auth.oauth2 &&
     
     oauth2Strategy = new OAuth2Strategy({
         authorizationURL: oauth2Glob.authorizationURL,
+        tokenURL: oauth2Glob.tokenURL,
         clientID: oauth2Glob.clientID,
         clientSecret: oauth2Glob.clientSecret,
         callbackURL: oauth2Glob.callbackURL,
@@ -30,9 +31,9 @@ if (portalGlobals.glob.auth.oauth2 &&
         // Get the email addresses; they are not included in the OAuth profile directly.
         var email = getEmail(profile);
         var userCreateInfo = {
-            customId: 'Google:' + profile.id,
-            firstName: profile.name.givenName,
-            lastName: profile.name.familyName,
+            customId: 'Oauth2:' + profile.id,
+            firstName: profile.name.firstName,
+            lastName: profile.name.lastName,
             validated: true,
             email: email,
             groups: []
