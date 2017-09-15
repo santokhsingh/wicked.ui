@@ -15,16 +15,16 @@ fi
 if [[ "haufelexware/wicked." == "$DOCKER_PREFIX" ]] && [[ "$1" == "--push" ]]; then
     echo "INFO: Resolving portal-env base tag for target tag ${DOCKER_TAG}..."
     docker pull haufelexware/wicked.portal-env:next-onbuild-alpine
-    export DOCKER_ENV_TAG=$(docker run --rm haufelexware/wicked.portal-env:next-onbuild-alpine node node_modules/portal-env/getMatchingTag.js haufelexware wicked.portal-env ${DOCKER_TAG})
-    if [ -z "$DOCKER_ENV_TAG" ]; then
+    export PORTAL_ENV_TAG=$(docker run --rm haufelexware/wicked.portal-env:next-onbuild-alpine node node_modules/portal-env/getMatchingTag.js haufelexware wicked.portal-env ${DOCKER_TAG})
+    if [ -z "$PORTAL_ENV_TAG" ]; then
         echo "ERROR: Could not resolve portal-env base tag!"
         exit 1
     fi 
 else
-    export DOCKER_ENV_TAG=${DOCKER_TAG}-onbuild
+    export PORTAL_ENV_TAG=${DOCKER_TAG}-onbuild
 fi
 
-echo "INFO: Using base image tag ${DOCKER_ENV_TAG}"
+echo "INFO: Using base image tag ${PORTAL_ENV_TAG}"
 echo "============================================"
 echo "Building normal image..."
 echo "============================================"
