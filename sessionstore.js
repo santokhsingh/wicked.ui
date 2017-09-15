@@ -1,7 +1,14 @@
-var debug = require('debug')('portal:app');
+var debug = require('debug')('portal:sessionstore');
 
-function initSessionStore(session){
-    var sessionStoreType = process.env.SESSION_STORE_TYPE || 'file';
+function initSessionStore(globals, session){
+    let sessionStoreType = 'file';
+    if (globals.sessionStore && globals.sessionStore.type) {
+        sessionStoreType = globals.sessionStore.type;
+    }  else {
+        console.error('WARNING: Missing sessionStore global property, defaulting to file session store - THIS WILL NOT SCALE.');
+        globals.sessionStore = { type: 'file' };
+    }
+    debug('SESSION_STORE_TYPE: ' + sessionStoreType);
 
     var sessionStoreOptions = {};
     var SessionStore;
@@ -13,8 +20,10 @@ function initSessionStore(session){
         case 'redis':
             SessionStore = require('connect-redis')(session);
             // Set options for Redis session store, see https://www.npmjs.com/package/connect-redis
-            sessionStoreOptions.host = process.env.SESSION_STORE_HOST || 'localhost';
-            sessionStoreOptions.port = process.env.SESSION_STORE_PORT || 6379;
+            sessionStoreOptions.host = globals.sessionStore.host || 'portal-redis';
+            sessionStoreOptions.port = globals.sessionStore.port || 6379;
+            if (globals.sessionStore.password)
+                sessionStoreOptions.pass = globals.sessionStore.password;
             break;
         default:
             throw new Error("Invalid session-store type: '" + sessionStoreType + "'");
