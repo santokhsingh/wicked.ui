@@ -3,6 +3,7 @@
 var passport = require('passport');
 var request = require('request');
 var debug = require('debug')('portal:auth:oauth2');
+var jwt = require('jsonwebtoken');
 
 var OAuth2Strategy = require('passport-oauth').OAuth2Strategy;
 
@@ -27,18 +28,15 @@ if (portalGlobals.glob.auth.oauth2 &&
         passReqToCallback: true
     }, function(req, accessToken, refreshToken, profile, done) {
         debug('Oauth2 Authentication');
-        debug(profile);
-        // Get the email addresses; they are not included in the OAuth profile directly.
-        var email = getEmail(profile);
+        var decodedProfile = jwt.decode(accessToken);
         var userCreateInfo = {
-            customId: 'Oauth2:' + profile.id,
-            firstName: profile.name.firstName,
-            lastName: profile.name.lastName,
-            validated: true,
-            email: email,
-            groups: []
-        };
-        
+                customId: decodedProfile[oauth2Glob.customIdField],
+                firstName: decodedProfile[oauth2Glob.firstNameField],
+                lastName: decodedProfile[oauth2Glob.lastNameField],
+                validated: true, // In Oauth2 we trust
+                groups: [],
+                email: decodedProfile[oauth2Glob.emailField]
+            };
         return federate.userLogin(req, userCreateInfo, done);
     });
 }
