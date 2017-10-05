@@ -32,23 +32,6 @@ var correlationIdHandler = wicked.correlationIdHandler();
 var passport = require('passport');
 var fs = require('fs');
 var session = require('express-session');
-var FileStore = require('session-file-store')(session);
-
-// Use default options, see https://www.npmjs.com/package/session-file-store
-var sessionStoreOptions = {};
-
-var SECRET = 'ThisIsASecret';
-
-// Session: 15 minutes
-var sessionArgs = {
-    store: new FileStore(sessionStoreOptions),
-    secret: SECRET,
-    saveUninitialized: true,
-    resave: false,
-    cookie: {
-        maxAge: 15 * 60 * 1000
-    }
-};
 
 var app = express();
 app.initialized = false;
@@ -100,6 +83,22 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.initialize = function (done) {
     debug('initialize()');
 
+    // The session type is configured via the globals.json sessionStore property,
+    // This is why this has to go in here instead of in the above initialization.
+    var sessionStore = require('./sessionstore')(app.portalGlobals, session);
+    var SECRET = 'ThisIsASecret';
+
+    // Session: 15 minutes
+    var sessionArgs = {
+        store: sessionStore,
+        secret: SECRET,
+        saveUninitialized: true,
+        resave: false,
+        cookie: {
+            maxAge: 15 * 60 * 1000
+        }
+    };
+
     if (!wicked.isDevelopmentMode()) {
         app.isProduction = true;
         app.set('trust proxy', 1);
@@ -122,6 +121,15 @@ app.initialize = function (done) {
 
     app.use(cookieParser(SECRET));
     app.use(session(sessionArgs));
+    // Session checker middleware
+    app.use(function (req, res, next) {
+        if (!req.session) {
+            var err = new Error('Session not found (redis not available?)');
+            err.status = 500;
+            return next(err);
+        }
+        next(); // otherwise continue
+    });
     app.use(flash());
     app.use(passport.initialize());
     app.use(passport.session());
