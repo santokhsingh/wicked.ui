@@ -29,12 +29,16 @@ if (portalGlobals.glob.auth.oauth2 &&
     }, function(req, accessToken, refreshToken, profile, done) {
         debug('Oauth2 Authentication');
         var decodedProfile = jwt.decode(accessToken);
+        var defaultGroups = [];
+        if(decodedProfile['group']){
+          defaultGroups = decodedProfile['group'];
+        }
         var userCreateInfo = {
                 customId: decodedProfile[oauth2Glob.customIdField],
                 firstName: decodedProfile[oauth2Glob.firstNameField],
                 lastName: decodedProfile[oauth2Glob.lastNameField],
                 validated: true, // In Oauth2 we trust
-                groups: [],
+                groups: defaultGroups,
                 email: decodedProfile[oauth2Glob.emailField]
             };
         return federate.userLogin(req, userCreateInfo, done);
