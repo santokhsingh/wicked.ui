@@ -50,15 +50,18 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
   var headers = body.headers;
   var pdata =  utils.getJson(body.pdata);
   var data=[];
+  var foundExisting = false;
   for (var i = 0; i < pdata.headers.length; ++i) {
     if(pdata.headers[i].key===key){
        pdata.headers[i].headers = utils.getJson(headers);
+       foundExisting = true;
     }
     data.push(pdata.headers[i]);
   }
-  if(data.length<=0){
-    data = {"key": key, "headers":  headers}
+  if(!foundExisting){
+    data.push({"key": key, "headers":  utils.getJson(headers)});
   }
+
   var myObject = {};
   var params = [];
   myObject["name"]= "custom-key-headers";
