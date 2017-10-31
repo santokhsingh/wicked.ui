@@ -70,10 +70,10 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
        pdata.headers[i].headers = utils.getJson(headers);
        foundExisting = true;
     }
-    data.push(pdata.headers[i]);
+    data.push(utils.getText(pdata.headers[i]));
   }
   if(!foundExisting){
-    data.push({"key": key, "headers":  utils.getJson(headers)});
+    data.push(utils.getText({"key": key, "headers":  utils.getJson(headers)}));
   }
 
   var myObject = {};
@@ -84,6 +84,8 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
     params.push(data[i]);
   }
   myObject["config"]["parameters"]=params;
+  //console.log('ssss----->'+utils.getText(myObject));
+
   patchAdmin(req, res, '/apis/'+apiId+'/plugins/'+pluginId, myObject, function (err, pluginsResponse) {
     if (err)
        return next(err);
