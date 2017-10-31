@@ -12,6 +12,17 @@ var utils = require('./utils');
 
 router.get('/subscriptions', function (req, res, next) {
     debug("get('/subscriptions')");
+    var consumers = {}
+    getAdmin(req, res, '/consumers', function (err, consumersResponse) {
+      if (err)
+        return next(err);
+      var body = utils.getJson(consumersResponse.body);
+      var pid;
+      for (var i = 0; i < body.data.length; ++i) {
+        var user_name = body.data[i].username;
+        consumers[user_name] = body.data[i];
+      }
+    });
     // This is not super good; this is expensive. Lots of calls.
     utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
         if (err)
@@ -30,6 +41,9 @@ router.get('/subscriptions', function (req, res, next) {
             for (var i = 0; i < appsSubscInfos.length; ++i) {
                 var sub = appsSubscInfos[i];
                  for (var j = 0; j < sub.length; ++j){
+                    var application = sub[j].application;
+                    var api = sub[j].api;
+                    sub[j]["consumer"] = consumers[application+"$"+api];
                   subs.push(sub[j]);
                 } 
             }
