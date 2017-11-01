@@ -12,19 +12,18 @@ var utils = require('./utils');
 
 router.get('/subscriptions', function (req, res, next) {
     debug("get('/subscriptions')");
-    var consumers = {}
     getAdmin(req, res, '/consumers', function (err, consumersResponse) {
       if (err)
         return next(err);
+      var consumers = {} 
       var body = utils.getJson(consumersResponse.body);
       var pid;
       for (var i = 0; i < body.data.length; ++i) {
         var user_name = body.data[i].username;
         consumers[user_name] = body.data[i];
       }
-    });
-    // This is not super good; this is expensive. Lots of calls.
-    utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
+          // This is not super good; this is expensive. Lots of calls.
+     utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
         if (err)
             return next(err);
         var appIds = [];
@@ -52,7 +51,9 @@ router.get('/subscriptions', function (req, res, next) {
               subscriptions: subs
             });   
         });
-    });  
+      });  
+
+    });
 
 });
 
