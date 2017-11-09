@@ -17,6 +17,7 @@ router.get('/subscriptions', function (req, res, next) {
         return next(err);
       var consumers = {} 
       var body = utils.getJson(consumersResponse.body);
+      if(!body.data) return; 
       var pid;
       for (var i = 0; i < body.data.length; ++i) {
         var user_name = body.data[i].username;
@@ -85,8 +86,7 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
     params.push(data[i]);
   }
   myObject["config"]["parameters"]=params;
-  //console.log('ssss----->'+utils.getText(myObject));
-
+ 
   patchAdmin(req, res, '/apis/'+apiId+'/plugins/'+pluginId, myObject, function (err, pluginsResponse) {
     if (err)
        return next(err);
@@ -131,6 +131,7 @@ router.get('/customheaders/:apiId', function (req, res, next) {
        return next(err);
      var body = utils.getJson(pluginsResponse.body);
      var pid;
+     if(!body.data) return;
      for (var i = 0; i < body.data.length; ++i) {
         var plugin_name = body.data[i].name;
         if(plugin_name === 'custom-key-headers'){
