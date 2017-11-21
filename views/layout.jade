@@ -16,7 +16,7 @@ doctype html
 html
   head
     title #{glob.title} - #{title}
-    link(rel='stylesheet', href='/css/bootstrap.min.css')
+    link(rel='stylesheet', href='/assets/bootstrap/css/bootstrap.min.css')
     link(rel='stylesheet', href='/content/wicked.css')
     link(rel="stylesheet", href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/styles/default.min.css")
     script(src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/highlight.min.js")
@@ -163,8 +163,8 @@ html
                     tr
                         td(colspan=2 style='text-align:center; color: #ff0000; font-size:18pt;') PORTAL IS RUNNING IN DEVELOPMENT MODE
 
-    script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js')
-    script(src='/js/bootstrap.min.js')
-    script(src='/js/bootstrap-show-password.min.js')
+    script(src='/assets/jquery/jquery.min.js')
+    script(src='/assets/bootstrap/js/bootstrap.min.js')
+    script(src='/assets/js/bootstrap-show-password.min.js')
 
     block bodyScripts

@@ -62,8 +62,8 @@ app.use(logger('{"date":":date[clf]","method":":method","url":":url","remote-add
 
 // We want to serve static content and "ping" without using a session.
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
-app.use('/bootstrap-show-password', express.static(path.join(__dirname, 'node_modules/bootstrap-show-password')));
+app.use('/assets/bootstrap', express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
+app.use('/assets/jquery', express.static(path.join(__dirname, 'node_modules/jquery/dist')));
 
 // Initializing state
 app.use('/ping', ping);
@@ -90,6 +90,7 @@ app.initialize = function (done) {
 
     // Session: 15 minutes
     var sessionArgs = {
+        name: 'portal.cookie.sid',
         store: sessionStore,
         secret: SECRET,
         saveUninitialized: true,
@@ -118,6 +119,8 @@ app.initialize = function (done) {
     }
 
     app.portalGlobals.isProduction = app.isProduction;
+    // Once for the really static content
+    app.use('/content', content);
 
     app.use(cookieParser(SECRET));
     app.use(session(sessionArgs));
@@ -127,6 +130,10 @@ app.initialize = function (done) {
             var err = new Error('Session not found (redis not available?)');
             err.status = 500;
             return next(err);
+        }
+        if (req.session && req.session.user && req.session.user.profile) {
+            debug(req.user);
+            req.user = req.session.user.profile;
         }
         next(); // otherwise continue
     });

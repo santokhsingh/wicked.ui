@@ -111,6 +111,7 @@ router.get('/:api', function (req, res, next) {
         // even the Kong Adapter (or something) translate this into this Request URI.
         // Idea: Make this part of the generic configuration, as it would be a 
         // necessary configuration option for any API gateway.
+        // console.log(JSON.stringify(apiConfig));
         var apiRequestUri = apiConfig.api.uris[0];
         var nw = req.app.portalGlobals.network;
         var apiUri = nw.schema + '://' + nw.apiHost + apiRequestUri;

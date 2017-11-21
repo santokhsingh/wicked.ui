@@ -5,6 +5,7 @@ const async = require('async');
 const debug = require('debug')('portal:utils');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const wicked = require('wicked-sdk');
 
 const utils = function () { };
@@ -14,11 +15,26 @@ utils.setOAuth2Credentials = function (clientId, clientSecret) {
     utils.CLIENT_SECRET = clientSecret;
 };
 
+utils.createRandomId = function () {
+    return crypto.randomBytes(20).toString('hex');
+};
+
+utils.fail = function (statusCode, message, internalError, callback) {
+    debug(`fail(${statusCode}, ${message})`);
+    const err = new Error(message);
+    err.status = statusCode;
+    if (typeof (internalError) === 'function')
+        callback = internalError;
+    else
+        err.internalError = internalError;
+    return callback(err);
+};
+
 utils.getLoggedInUserId = function (req) {
     //debug('getLoggedInUserId()');
     if (!req.user)
         return null;
-    return req.user.id;
+    return req.user.sub;
 };
 
 utils.getLoggedInUserEmail = function (req) {
@@ -34,31 +50,205 @@ function makeHeaders(req, userId) {
         'X-Config-Hash': wicked.getConfigHash(),
         'Correlation-Id': req.correlationId,
     };
-    if (!userId) {
-        var loggedInUserId = utils.getLoggedInUserId(req);
-        if (loggedInUserId)
-            headers['X-UserId'] = loggedInUserId;
-        return headers;
-    }
-    headers['X-UserId'] = userId;
+    // if (!userId) {
+    //     var loggedInUserId = utils.getLoggedInUserId(req);
+    //     if (loggedInUserId)
+    //         headers['X-UserId'] = loggedInUserId;
+    //     return headers;
+    // }
+    // headers['X-UserId'] = userId;
     return headers;
 }
 
-utils._anonymousAccessToken = null;
-function checkAccessToken(req, callback) {
-    debug('checkAccessToken()');
-    if (utils._anonymousAccessToken)
-        return callback(null, utils._anonymousAccessToken);
+// utils._anonymousAccessToken = null;
+// function checkAccessToken(req, callback) {
+//     debug('checkAccessToken()');
+//     if (utils._anonymousAccessToken)
+//         return callback(null, utils._anonymousAccessToken);
 
-    debug('Requesting new anonymous access token');
-    const baseUrl = req.app.get('api_url');
-    const tokenUrl = baseUrl + '/oauth2/token';
-    let headers = null;
-    if (tokenUrl.startsWith('http:')) {
-        headers = {
-            'X-Forwarded-Proto': 'https'
-        };
+//     debug('Requesting new anonymous access token');
+//     const baseUrl = req.app.get('api_url');
+//     const tokenUrl = baseUrl + '/oauth2/token';
+//     let headers = null;
+//     if (tokenUrl.startsWith('http:')) {
+//         headers = {
+//             'X-Forwarded-Proto': 'https'
+//         };
+//     }
+
+//     request.post({
+//         url: tokenUrl,
+//         json: true,
+//         body: {
+//             grant_type: 'client_credentials',
+//             client_id: utils.CLIENT_ID,
+//             client_secret: utils.CLIENT_SECRET
+//         },
+//         headers: headers
+//     }, function (err, res, body) {
+//         if (err) {
+//             console.error('ERROR: Could not get access token for anonymous access');
+//             console.error(err);
+//             return callback(err);
+//         }
+
+//         debug(body);
+//         if (!body.access_token) {
+//             console.error('ERROR: Did not receive expected access_token.');
+//             return callback(new Error('Did not receive anonymous access token.'));
+//         }
+//         debug('Successfully retrieved anonymous access token.');
+//         // Cache it
+//         utils._anonymousAccessToken = body.access_token;
+//         return callback(null, body.access_token);
+//     });
+// }
+
+function hasPersonalToken(req) {
+    return !!(req.session.user && req.session.user.authMethodId && req.session.user.token && req.session.user.token.access_token && req.session.user.token.refresh_token);
+}
+
+function getAccessToken(req, callback) {
+    debug('getAccessToken()');
+    if (hasPersonalToken(req))
+        return getPersonalToken(req, callback);
+    if (!req.session.user)
+        return getAnonymousToken(req, callback);
+}
+
+function renewAccessToken(req, callback) {
+    debug('renewAccessToken()');
+    if (hasPersonalToken(req))
+        return renewPersonalToken(req, callback);
+    return renewAnonymousToken(req, callback);
+}
+
+function getPersonalToken(req, callback) {
+    debug('getPersonalToken()');
+    if (!hasPersonalToken(req))
+        return getAccessToken(req, callback);
+    if (_refreshingAccessToken[utils.getLoggedInUserId(req)])
+        return setTimeout(getPersonalToken, 100, req, callback);
+    return callback(null, req.session.user.token.access_token);
+}
+
+let _refreshingAccessToken = {};
+function renewPersonalToken(req, callback) {
+    debug('renewPersonalToken()');
+    const userId = utils.getLoggedInUserId(req);
+    if (_refreshingAccessToken[userId])
+        return setTimeout(getPersonalToken, 100, req, callback);
+    _refreshingAccessToken[userId] = true;
+    refreshPersonalToken(req, function (err, tokenResponse) {
+        delete _refreshingAccessToken[userId];
+        if (!err && req.session && req.session.user && req.session.user.token) {
+            req.session.user.token = tokenResponse;
+            return callback(err, tokenResponse.access_token);
+        } else {
+            // Fallback to anonymous token
+            return getAnonymousToken(req, callback);
+        }
+    });
+}
+
+function refreshPersonalToken(req, callback) {
+    debug('refreshPersonalToken()');
+    if (!hasPersonalToken(req))
+        return getAccessToken(req, callback); // Falls back to anonymous token
+    const authMethod = req.app.authConfig.authMethods.find(am => am.name === req.session.user.authMethodId);
+    const authServerUrl = req.app.authConfig.authServerUrl;
+    // We need the specific token URL for the selected auth method
+    const tokenUrl = authServerUrl + authMethod.config.tokenEndpoint;
+    debug('refreshPersonalToken() - using token URL: ' + tokenUrl);
+
+    request.post({
+        url: tokenUrl,
+        json: true,
+        body: {
+            grant_type: 'refresh_token',
+            client_id: utils.CLIENT_ID,
+            client_secret: utils.CLIENT_SECRET,
+            refresh_token: req.session.user.token.refresh_token
+        }
+    }, function (err, res, tokenResponse) {
+        if (err) {
+            console.error('ERROR: Could not refresh token for personal access');
+            console.error(err);
+            return callback(err);
+        }
+
+        debug(tokenResponse);
+        if (!tokenResponse.access_token) {
+            console.error('ERROR: Could not refresh access_token, logging out forcefully.');
+            // We'll log ourselves out then
+            utils.logoutUser(req, (err) => {
+                // if (err)
+                //     return callback(err);
+                // return getAccessToken(req, callback);
+                return callback(new Error('Could not refresh personal access_token'));
+            });
+        } else {
+            debug('Successfully refreshed personal access token.');
+            return callback(null, tokenResponse);
+        }
+    });
+}
+
+let _anonymousToken = null;
+function getAnonymousToken(req, callback) {
+    debug('getAnonymousToken()');
+    if (_creatingAnonymousToken) {
+        debug('getAnonymousToken: Somebody else is already creating a token.');
+        return setTimeout(getAnonymousToken, 100, req, callback);
     }
+    if (_anonymousToken)
+        return callback(null, _anonymousToken);
+    debug('no token available, needs to create a new token');
+    return renewAnonymousToken(req, callback);
+}
+
+let _creatingAnonymousToken = false;
+function renewAnonymousToken(req, callback) {
+    debug('renewAnonymousToken()');
+    if (_creatingAnonymousToken) {
+        debug('renewAnonymousToken: Somebody else is already creating a token.');
+        return setTimeout(getAnonymousToken, 100, req, callback);
+    }
+    _creatingAnonymousToken = true;
+    // Reset the thing
+    _anonymousToken = null;
+    createAnonymousTokenInternal(req, function (err, accessToken) {
+        _creatingAnonymousToken = false;
+        if (!err) {
+            _anonymousToken = accessToken;
+        }
+        return callback(err, accessToken);
+    });
+}
+
+// function createAnonymousToken(req, callback) {
+//     debug('createAnonymousToken()');
+//     if (_creatingAnonymousToken) {
+//         debug('Already creating anonymous token somewhere else, waiting 200ms.');
+//         return setTimeout(getAnonymousToken, 100, req, callback);
+//     }
+//     _creatingAnonymousToken = true;
+//     createAnonymousTokenInternal(req, function (err, accessToken) {
+//         _creatingAnonymousToken = false;
+//         return callback(err, accessToken);
+//     });
+// }
+
+function createAnonymousTokenInternal(req, callback) {
+    debug('createAnonymousTokenInternal()');
+    if (!req.app.authConfig || !req.app.authConfig.authServerUrl || !req.app.authConfig.authMethods || req.app.authConfig.authMethods.length <= 0)
+        callback(new Error('The global auth configuration is not valid, cannot talk to the portal-api.'));
+
+    const authServerUrl = req.app.authConfig.authServerUrl;
+    // Just pick any auth method, it doesn't matter which for the client credentials flow
+    const authMethod = req.app.authConfig.authMethods[0];
+    const tokenUrl = authServerUrl + authMethod.config.tokenEndpoint;
+    debug('getAccessToken() - using token URL: ' + tokenUrl);
 
     request.post({
         url: tokenUrl,
@@ -67,8 +257,7 @@ function checkAccessToken(req, callback) {
             grant_type: 'client_credentials',
             client_id: utils.CLIENT_ID,
             client_secret: utils.CLIENT_SECRET
-        },
-        headers: headers
+        }
     }, function (err, res, body) {
         if (err) {
             console.error('ERROR: Could not get access token for anonymous access');
@@ -82,32 +271,63 @@ function checkAccessToken(req, callback) {
             return callback(new Error('Did not receive anonymous access token.'));
         }
         debug('Successfully retrieved anonymous access token.');
-        // Cache it
-        utils._anonymousAccessToken = body.access_token;
-        return callback(null, body.access_token);
+
+        const accessToken = body.access_token;
+        return callback(null, accessToken);
     });
 }
 
 function apiAction(req, method, body, callback, iteration) {
     debug('apiAction()');
-    async.waterfall([
-        callback => checkAccessToken(req, callback),
-        (accessToken, callback) => {
-            body.method = method;
-            body.headers.Authorization = 'Bearer ' + accessToken;
-            request(body, (err, apiResponse, apiBody) => {
-                if (err) {
-                    return callback(err);
-                }
+
+    const payload = function (accessToken, callback) {
+        debug(`payload() ${method} ${body.url}`);
+        body.method = method;
+        body.headers.Authorization = 'Bearer ' + accessToken;
+        request(body, (err, apiResponse, apiBody) => {
+            if (err) {
+                return callback(err);
+            }
+            return callback(null, apiResponse, apiBody);
+        });
+    };
+
+    getAccessToken(req, function (err, accessToken) {
+        payload(accessToken, function (err, apiResponse, apiBody) {
+            if (err)
+                return callback(err);
+            if (apiResponse.statusCode === 401) {
+                renewAccessToken(req, function (err, accessToken) {
+                    payload(accessToken, function (err, apiResponse, apiBody) {
+                        if (err)
+                            return callback(err);
+                        return callback(null, apiResponse, apiBody);
+                    });
+                });
+            } else {
                 return callback(null, apiResponse, apiBody);
-            });
-        }
-    ], function (err, apiResponse, apiBody) {
-        if (err) {
-            return callback(err);
-        }
-        return callback(null, apiResponse, apiBody);
+            }
+        });
     });
+
+    // async.waterfall([
+    //     callback => getAccessToken(req, callback),
+    //     (accessToken, callback) => {
+    //         body.method = method;
+    //         body.headers.Authorization = 'Bearer ' + accessToken;
+    //         request(body, (err, apiResponse, apiBody) => {
+    //             if (err) {
+    //                 return callback(err);
+    //             }
+    //             return callback(null, apiResponse, apiBody);
+    //         });
+    //     }
+    // ], function (err, apiResponse, apiBody) {
+    //     if (err) {
+    //         return callback(err);
+    //     }
+    //     return callback(null, apiResponse, apiBody);
+    // });
 }
 
 utils.get = function (req, uri, callback) {
@@ -120,17 +340,35 @@ utils.get = function (req, uri, callback) {
     }, callback);
 };
 
-utils.pipe = function (req, res, uri) {
+utils.pipe = function (req, res, uri, isRetry) {
     debug('pipe()');
     var baseUrl = req.app.get('api_url');
-    checkAccessToken(req, (err, accessToken) => {
-        request({
+    getAnonymousToken(req, (err, accessToken) => {
+        const pipeReq = request({
             url: baseUrl + uri,
             headers: {
                 'Authorization': 'Bearer ' + accessToken,
                 'Correlation-Id': req.correlationId
             }
-        }).pipe(res);
+        });
+        pipeReq.on('response', function (response) {
+            let pipeIt = true;
+            if (!isRetry) {
+                if (response.statusCode === 401) {
+                    pipeIt = false;
+                    renewAnonymousToken(req, function (err, accessToken) {
+                        if (err)
+                            return res.status(500).json({ message: 'Internal Server Error. Could not renew access token.' });
+                        return utils.pipe(req, res, uri, true);
+                    });
+                }
+            }
+            if (pipeIt) {
+                return pipeReq.pipe(res);
+            } else {
+                return pipeReq.abort();
+            }
+        });
     });
 };
 
@@ -146,7 +384,8 @@ utils.getAsUser = function (req, uri, userId, callback) {
 
 utils.handleError = function (res, apiResponse, apiBody, next) {
     debug('handleError()');
-    debug(apiResponse);
+    // debug(apiResponse);
+    debug('statusCode: ' + apiResponse.statusCode);
     debug(apiBody);
     var errorText = utils.getText(apiBody);
     try {
@@ -230,6 +469,13 @@ utils.delete = function (req, uri, callback) {
         url: baseUrl + uri,
         headers: makeHeaders(req)
     }, callback);
+};
+
+utils.logoutUser = function (req, callback) {
+    debug('logoutUser()');
+    if (req.session && req.session.user)
+        delete req.session.user;
+    return callback(null);
 };
 
 utils.getUtc = function () {

@@ -17,55 +17,55 @@ function isPublic(uriName) {
 
 router.get('/*', function (req, res, next) {
     debug("get('/*'): " + req.path);
-    // var apiUrl = req.app.get('api_url');
-    // Serve images and CSS as is
-    if (isPublic(req.path)) {
-        return utils.pipe(req, res, '/content' + req.path);
-        // return request({
-        //     url: apiUrl + '/content' + req.path,
-        //     headers: { 'Correlation-Id': req.correlationId }
-        // }).pipe(res);
-    }
 
-    if (req.path !== '/toc') {
-        debug('Normal content');
-        var contentPath = '/content' + req.path;
-        // Let's do dis
-        utils.get(req, contentPath,
-            function (err, apiResponse, apiBody) {
-                if (err)
-                    return next(err);
-                if (200 != apiResponse.statusCode)
-                    return utils.handleError(res, apiResponse, apiBody, next);
-                contentRenderer.renderContent(req, res, contentPath, 'content', apiResponse, apiBody);
-            });
+    // Serve images and CSS as is
+    if (!req.session) {
+        if (isPublic(req.path)) {
+            return utils.pipe(req, res, '/content' + req.path);
+        } else {
+            return next();
+        }
     } else {
-        debug('Table of contents');
-        // Table of contents, special case
-        utils.get(req, '/content/toc',
-            function (err, apiResponse, apiBody) {
-                if (err)
-                    return next(err);
-                if (200 != apiResponse.statusCode)
-                    return utils.handleError(res, apiResponse, apiBody, next);
-                debug(apiBody);
-                var jsonBody = utils.getJson(apiBody);
-                var toc = categorize(jsonBody);
-                res.render('content_toc', {
-                    authUser: req.user,
-                    glob: req.app.portalGlobals,
-                    route: '/content/toc',
-                    title: 'Table of Content',
-                    subTitle: 'This is the site map for this API Portal, for your user.',
-                    toc: toc
+        if (req.path !== '/toc') {
+            debug('Normal content');
+            var contentPath = '/content' + req.path;
+            // Let's do dis
+            utils.get(req, contentPath,
+                function (err, apiResponse, apiBody) {
+                    if (err)
+                        return next(err);
+                    if (200 != apiResponse.statusCode)
+                        return utils.handleError(res, apiResponse, apiBody, next);
+                    contentRenderer.renderContent(req, res, contentPath, 'content', apiResponse, apiBody);
                 });
-            });
+        } else {
+            debug('Table of contents');
+            // Table of contents, special case
+            utils.get(req, '/content/toc',
+                function (err, apiResponse, apiBody) {
+                    if (err)
+                        return next(err);
+                    if (200 != apiResponse.statusCode)
+                        return utils.handleError(res, apiResponse, apiBody, next);
+                    debug(apiBody);
+                    var jsonBody = utils.getJson(apiBody);
+                    var toc = categorize(jsonBody);
+                    res.render('content_toc', {
+                        authUser: req.user,
+                        glob: req.app.portalGlobals,
+                        route: '/content/toc',
+                        title: 'Table of Content',
+                        subTitle: 'This is the site map for this API Portal, for your user.',
+                        toc: toc
+                    });
+                });
+        }
     }
 });
 
 function categorize(rawToc) {
     var toc = {};
-    for (var i=0; i<rawToc.length; ++i) {
+    for (var i = 0; i < rawToc.length; ++i) {
         var tocEntry = rawToc[i];
         if (!toc[tocEntry.category])
             toc[tocEntry.category] = {
