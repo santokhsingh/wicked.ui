@@ -15,9 +15,9 @@ router.get('/subscriptions', function (req, res, next) {
     getAdmin(req, res, '/consumers', function (err, consumersResponse) {
       if (err)
         return next(err);
-      var consumers = {} 
+      var consumers = {}
       var body = utils.getJson(consumersResponse.body);
-      if(!body.data) return; 
+      if(!body.data) return;
       var pid;
       for (var i = 0; i < body.data.length; ++i) {
         var user_name = body.data[i].username;
@@ -30,7 +30,7 @@ router.get('/subscriptions', function (req, res, next) {
         var appIds = [];
         for (var i = 0; i < appsResponse.length; ++i)
             appIds.push(appsResponse[i].id);
-      
+
         // This is the expensive part:
         async.map(appIds, function (appId, callback) {
             utils.getFromAsync(req, res, '/applications/' + appId +'/subscriptions', 200, callback);
@@ -45,21 +45,22 @@ router.get('/subscriptions', function (req, res, next) {
                     var api = sub[j].api;
                     sub[j]["consumer"] = consumers[application+"$"+api];
                   subs.push(sub[j]);
-                } 
+                }
             }
             res.json({
               title: 'All Subsriptions',
               subscriptions: subs
-            });   
+            });
         });
-      });  
+      });
 
     });
 
 });
 
-router.post('/customheaders/:pluginId', function (req, res, next) {  
+router.post('/customheaders/:pluginId', function (req, res, next) {
   var body = utils.getJson(req.body);
+  console.log(req.body);
   var pluginId = req.params.pluginId;
   var key = body.key;
   var apiId = body.api;
@@ -67,12 +68,14 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
   var pdata =  utils.getJson(body.pdata);
   var data=[];
   var foundExisting = false;
-  for (var i = 0; i < pdata.headers.length; ++i) {
-    if(pdata.headers[i].key===key){
+  if(pdata.headers){
+    for (var i = 0; i < pdata.headers.length; ++i) {
+      if(pdata.headers[i].key===key){
        pdata.headers[i].headers = utils.getJson(headers);
        foundExisting = true;
+      }
+      data.push(utils.getText(pdata.headers[i]));
     }
-    data.push(utils.getText(pdata.headers[i]));
   }
   if(!foundExisting){
     data.push(utils.getText({"key": key, "headers":  utils.getJson(headers)}));
@@ -86,7 +89,7 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
     params.push(data[i]);
   }
   myObject["config"]["parameters"]=params;
- 
+
   patchAdmin(req, res, '/apis/'+apiId+'/plugins/'+pluginId, myObject, function (err, pluginsResponse) {
     if (err)
        return next(err);
@@ -106,7 +109,7 @@ function patchAdmin(req, res, uri, data, callback) {
    var baseUrl =  getBaseUri(req);
    request.patch(
         {
-            
+
             url: baseUrl + uri,
             body: data,
             json: true,
@@ -117,7 +120,7 @@ function patchAdmin(req, res, uri, data, callback) {
 function getAdmin(req, res, uri, callback) {
     var baseUrl =  getBaseUri(req);
     request.get(
-        { 
+        {
             url: baseUrl + uri
         },
         callback);
@@ -142,8 +145,8 @@ router.get('/customheaders/:apiId', function (req, res, next) {
           }
         }
      }
-     res.json({ headers: payload, pluginid:  pid});    
+     res.json({ headers: payload, pluginid:  pid});
   });
-});   
+});
 
 module.exports = router;
