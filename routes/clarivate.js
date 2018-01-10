@@ -9,7 +9,6 @@ var fs = require('fs');
 var util = require('util');
 var utils = require('./utils');
 
-
 router.get('/subscriptions', function (req, res, next) {
     debug("get('/subscriptions')");
     getAdmin(req, res, '/consumers', function (err, consumersResponse) {
@@ -70,9 +69,9 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
   var foundExisting = false;
   if(pdata.headers){
     for (var i = 0; i < pdata.headers.length; ++i) {
-      if(pdata.headers[i].key===key){
-       pdata.headers[i].headers = utils.getJson(headers);
-       foundExisting = true;
+      if(pdata.headers[i].key==key){
+        pdata.headers[i].headers = utils.getJson(headers);
+        foundExisting = true;
       }
       data.push(utils.getText(pdata.headers[i]));
     }
