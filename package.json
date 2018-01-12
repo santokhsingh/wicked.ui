@@ -17,7 +17,7 @@
     "highlight.js": "9.3.0",
     "jade": "1.11.0",
     "jsonwebtoken": "5.7.0",
-    "marked": "0.3.6",
+    "marked": "0.3.9x",
     "morgan": "1.7.0",
     "mustache": "2.2.1",
     "passport": "0.2.2",
