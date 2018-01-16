@@ -1,6 +1,7 @@
 'use strict';
 
 var express = require('express');
+var where = require("lodash");
 var router = express.Router();
 var debug = require('debug')('portal:apis');
 var utils = require('./utils');
@@ -26,27 +27,53 @@ router.get('/', function (req, res, next) {
                 return next(err);
             var apiList = results.getApis.apis;
             // Markdownify short descriptions.
+            var apiTags = [];
             for (var i = 0; i < apiList.length; ++i) {
                 if (apiList[i].desc)
                     apiList[i].desc = marked(apiList[i].desc);
+                if(apiList[i].tags.length>0)
+                    apiTags.push(apiList[i].tags);
+            }
+            if(req.query["filter"]){
+              apiList=where.filter(apiList, function(api) {
+                for(var i=0; i< api.tags.length; i++){
+                  if(req.query[api.tags[i]]){
+                    return true;
+                  }
+                }
+                return false;
+              });
             }
             var desc = results.getDesc;
-
             if (!utils.acceptJson(req)) {
                 res.render('apis',
                     {
                         authUser: req.user,
+                        params: req.query,
                         glob: req.app.portalGlobals,
                         route: '/apis',
                         title: 'APIs',
                         desc: marked(desc),
-                        apilist: apiList
+                        apilist: apiList,
+                        apiTags: unique(apiTags)
                     });
             } else {
                 res.json(apiList);
             }
         });
 });
+
+function unique(arr) {
+    var u = {}, a = [];
+    for(var i = 0, l = arr.length; i < l; ++i){
+        if(!u.hasOwnProperty(arr[i])) {
+            a.push(arr[i]);
+            u[arr[i]] = 1;
+        }
+    }
+    return a;
+}
+
 
 router.get('/:api', function (req, res, next) {
     debug("get('/:api')");
@@ -109,7 +136,7 @@ router.get('/:api', function (req, res, next) {
         // TODO: This makes me a little unhappy, as this is Kong specific.
         // The "right" thing to do here would be to have the API, and more specific
         // even the Kong Adapter (or something) translate this into this Request URI.
-        // Idea: Make this part of the generic configuration, as it would be a 
+        // Idea: Make this part of the generic configuration, as it would be a
         // necessary configuration option for any API gateway.
         var apiRequestUri = apiConfig.api.uris[0];
         var nw = req.app.portalGlobals.network;
@@ -302,7 +329,7 @@ router.get('/:api/swagger', cors(corsOptionsDelegate), function (req, res, next)
         }
     };
 
-    // Let's call the API, it has all the data we need.    
+    // Let's call the API, it has all the data we need.
     var swaggerUri = '/apis/' + apiId + '/swagger';
 
     // Do we have a forUser query parameter?
