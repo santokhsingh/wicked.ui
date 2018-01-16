@@ -23,13 +23,13 @@ block scripts
                 emailError = 'Please enter a value for the email address. ';
             else if (!/.+@.+/.test(email))
                 emailError = 'Email address invalid. ';
-            if (!password 
+            if (!password
                 || (password.length < 6 || password.length > 24))
                 passwordError = 'Please enter a password, more than 5, less than 25 characters long.';
-            if (password 
+            if (password
                 && (password != password2))
                 password2Error = 'Passwords do not match.';
-                
+
             try {
                 $('#errorFirstname').text(firstnameError);
                 $('#errorLastname').text(lastnameError);
@@ -40,14 +40,14 @@ block scripts
                 alert('Validation errored! Check your input values.');
                 return false;
             }
-            
-            var somethingBad = 
+
+            var somethingBad =
                 !!firstnameError
                 || !!lastnameError
                 || !!emailError
                 || !!passwordError
-                || !!password2Error;            
-            
+                || !!password2Error;
+
             return !somethingBad;
         }
 
@@ -55,7 +55,7 @@ block content
 
     if !authUser
         h2 Sign up
-        
+
         p Sign up for the #{glob.title}.
         br
 
@@ -63,7 +63,7 @@ block content
         - var useGithub = glob.auth.github && glob.auth.github.useGithub
         - var useGoogle = glob.auth.google && glob.auth.google.useGoogle
         - var useLocal = glob.auth.local && glob.auth.local.useLocal
-        - var useSocial = useAdfs || useGithub || useGoogle   
+        - var useSocial = useAdfs || useGithub || useGoogle
 
         h4.
             By signing up to this portal, you agree to our <a href='/content/terms-and-conditions'>Terms
@@ -72,7 +72,8 @@ block content
         br
 
         if useSocial
-            h4 Use account federation
+            //
+                h4 Use account federation
 
             if useAdfs
                 a(href='/login/adfs').btn.btn-block.btn-lg.btn-primary
@@ -97,7 +98,7 @@ block content
                 .form-group
                     label(for='firstname') First Name:
                     input(type='string' id='firstname' name='firstname').form-control
-                    small 
+                    small
                         span(id='errorFirstname' style='color:red')
                 .form-group
                     label(for='lastname') Last Name:
@@ -107,7 +108,7 @@ block content
                 .form-group
                     label(for='email') Email address:
                     input(type='string' id='email' name='email').form-control
-                    small 
+                    small
                         span(id='errorEmail' style='color:red')
                         span The email address will be used as a username for the API Portal; you will need to verify it. We will send an email to this address with a verification link.
                 .form-group
@@ -125,7 +126,7 @@ block content
                     div(class='g-recaptcha' data-sitekey='#{glob.recaptcha.websiteKey}')
                     br
                 button(class='btn btn-primary btn-lg btn-block' type='submit') Register
-                
+
             h5
                 a(href='/forgotpassword') Forgot password?
 
@@ -136,25 +137,27 @@ block content
                 | &nbsp; This portal does not allow for local user sign up. Please use a different way to log in.
 
         h5
-            a(href='/login') Already have a user? Log in.
+            a(href='/login') Already have an account? Log in.
 
     else
         h2 Welcome!
-                
+
         p You are logged in as '#{authUser.name}'.
 
         hr
-        
-        h4 What now?
 
-        h5
-            a(href='/applications') Register an Application
-        h5
-            a(href='/apis') View APIs
+        h4 What's next?
+
         h5
             a(href='/') Go to the home page
         h5
-            a(href='/users/me') Your User Profile        
+            a(href='/apis') View APIs
+        h5
+            a(href='/applications') Register and View Your Applications
+        h5
+            a(href='/users/me') User Profile
+        h5
+            a(href='/users/help') Help
         br
-    
+
         p Not you? <a href="/login/logout">Logout</a> first and then login with your own account.
