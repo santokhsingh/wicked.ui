@@ -29,6 +29,11 @@ if (portalGlobals.glob.auth.google) {
     router.use('/google', require('./google'));
 }
 
+if (portalGlobals.glob.auth.oauth2) {
+    require('./oauth2/passport').setup();
+    router.use('/oauth2', require('./oauth2'));
+}
+
 //In case we want to have custom manipulation of the user data that gets stored in the session, for all strategies used.
 passport.serializeUser(function(user, done) {
     // var decodedUser = jwt.decode(user);
