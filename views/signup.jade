@@ -62,8 +62,9 @@ block content
         - var useAdfs = glob.auth.adfs && glob.auth.adfs.useAdfs
         - var useGithub = glob.auth.github && glob.auth.github.useGithub
         - var useGoogle = glob.auth.google && glob.auth.google.useGoogle
+        - var useOauth2 = glob.auth.oauth2 && glob.auth.oauth2.useOauth2
         - var useLocal = glob.auth.local && glob.auth.local.useLocal
-        - var useSocial = useAdfs || useGithub || useGoogle   
+        - var useSocial = useAdfs || useGithub || useGoogle || useOauth2
 
         h4.
             By signing up to this portal, you agree to our <a href='/content/terms-and-conditions'>Terms
@@ -86,6 +87,10 @@ block content
                 a(href="/login/google").btn.btn-lg.btn-block.btn-google
                     i.fa.fa-google.fa-lg
                     span &nbsp; Sign up with Google
+            if useOauth2
+                a(href="/login/oauth2").btn.btn-lg.btn-block.btn-oauth2
+                    i.fa.fa-sign-in.fa-lg
+                    span &nbsp; Sign up
 
             if useLocal
                 hr
