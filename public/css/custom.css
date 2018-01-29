@@ -2,3 +2,7 @@
 
 .apis_list { display: flex; flex-wrap: wrap; flex-direction: row; width: 100%; margin: auto;}
 .apis_list > .panel { padding: 0; box-sizing: border-box; margin: 0 7px 20px; width: calc(1/3*96% - (1 - 1/3)*10px); }
+
+@media only screen and (max-width: 670px)  { .apis_list > .panel { width: 100%; } }
+
+/*@media only screen and (min-width: 571px) and (max-width: 991px) { .apis_list > .panel { width: 44% } }*/
