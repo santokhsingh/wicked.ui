@@ -66,11 +66,17 @@ block content
         .row
             - var length = apilist.length
             
-            .col-md-3
-                if (apiTags.length > 0)
+            if (apiTags.length > 0)
+                .col-md-3                
                     +apiCategories(apiTags, params)
-            .col-md-9
-                .row.apis_list
-                    each api, i in apilist
-                        .col-md-4.panel.panel-default
-                            +apiDef(apilist[i])
+                .col-md-9
+                    .row.apis_list
+                        each api, i in apilist
+                            .col-md-4.panel.panel-default
+                                +apiDef(apilist[i])
+            else
+                .col-md-12
+                    .row.apis_list
+                        each api, i in apilist
+                            .col-md-4.panel.panel-default
+                                +apiDef(apilist[i])
