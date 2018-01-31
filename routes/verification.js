@@ -94,6 +94,10 @@ function handleEmailVerification(req, res, verifInfo, next) {
     }, function (err, apiResponse, apiBody) {
         if (err)
             return next(err);
+        // HACK: Update passport's session state
+        if (req.session && req.session.passport && req.session.passport.user)
+            req.session.passport.user.validated = true;
+
         if (!utils.acceptJson(req)) {
             res.render('verification_email_success', {
                 title: 'Verification Successful',
