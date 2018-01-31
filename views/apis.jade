@@ -66,17 +66,17 @@ block content
         if desc
             p!= desc
         p &nbsp;
-        div(style="display: table; width:100%")
-          div(style="display: table-row;")
+        div(class="row")
           - var length = apilist.length
-          div(style="display: table-cell; vertical-align:top")
           if (apiTags.length > 0)
+            div(class="col-md-2")
               +apiCategories(apiTags, params)
-            div(style="display: table-cell;  vertical-align:top;")
-            each api, i in apilist
-                if (i % 3 == 0)
-                    +apiDef(apilist[i])
-                    if (i+1) < length
-                      +apiDef(apilist[i+1])
-                    if (i+2) < length
-                      +apiDef(apilist[i+2])
+          div(class="col-md-9")
+              each api, i in apilist
+                  if (i % 3 == 0)
+                    div(class="row")
+                      +apiDef(apilist[i])
+                      if (i+1) < length
+                        +apiDef(apilist[i+1])
+                      if (i+2) < length
+                        +apiDef(apilist[i+2])
