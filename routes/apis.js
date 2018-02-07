@@ -1,7 +1,6 @@
 'use strict';
 
 var express = require('express');
-var where = require("lodash");
 var router = express.Router();
 var debug = require('debug')('portal:apis');
 var utils = require('./utils');
@@ -31,14 +30,15 @@ router.get('/', function (req, res, next) {
             for (var i = 0; i < apiList.length; ++i) {
                 if (apiList[i].desc)
                     apiList[i].desc = marked(apiList[i].desc);
-                if(apiList[i].tags.length>0){
+                if(apiList[i].tags && apiList[i].tags.length>0){
                   for (var j = 0; j < apiList[i].tags.length; ++j) {
                     apiTags.push(apiList[i].tags[j]);
                   }
                 }
             }
             if(req.query["filter"]){
-              apiList=where.filter(apiList, function(api) {
+              apiList = apiList.filter(function(api) {
+                if(!api.tags) return false;
                 for(var i=0; i< api.tags.length; i++){
                   if(req.query[api.tags[i]]){
                     return true;
