@@ -50,6 +50,8 @@ router.get('/status', function (req, res, next) {
           var body = statusResponse.body;
           for(var i = 0; i < body.length; ++i){
             apiStatus[i]["health"] = body[i].health;
+            if(body[i].errorTypes)
+              apiStatus[i]["errorTypes"] = body[i].errorTypes;
           }
           res.json({
             status: apiStatus
@@ -148,6 +150,9 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
 
 function getAPIStatus(req, res, data, callback) {
   var uri = "http://apps.dev-snapshot.clarivate.com/api/mapsResolver/strict";
+  if(req.app.portalGlobals.network.apiStatusUrl){
+    uri = req.app.portalGlobals.network.apiStatusUrl;
+  }
   request.get(
     {
       url: uri,
