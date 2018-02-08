@@ -9,6 +9,56 @@ var fs = require('fs');
 var util = require('util');
 var utils = require('./utils');
 
+router.get('/status', function (req, res, next) {
+  debug("get('/status')");
+  utils.getFromAsync(req, res, '/apis', 200, function (err, apisResponse) {
+     if (err)
+         return next(err);
+     var apiIds = [];
+     var apis = apisResponse.apis;
+     var apiHash = {};
+     for (var i = 0; i < apis.length; ++i){
+         apiIds.push(apis[i].id);
+         apiHash[apis[i].id] = apis[i].name;
+      }
+
+     // This is the expensive part:
+     async.map(apiIds, function (appiId, callback) {
+       utils.getFromAsync(req, res, '/apis/' + appiId +'/config', 200, callback);
+    }, function (err, apiConfigs) {
+        if (err)
+          return next(err);
+        var uris = [];
+        var apiStatus = [];
+        for(var i = 0; i < apiConfigs.length; ++i){
+          if(apiConfigs[i].api.uris){
+            for(var j = 0; j < apiConfigs[i].api.uris.length; ++j){
+              var uri = {}; var status = {};
+              uri["url"] = apiConfigs[i].api.uris[j]+"/*";
+              status["api"] = apiHash[apiConfigs[i].api.name];
+              status["id"] = apiConfigs[i].api.name;
+              status["path"] = apiConfigs[i].api.uris[j];
+              uris.push(uri);
+              apiStatus.push(status);
+            }
+          }
+        }
+      //Go find status
+      getAPIStatus(req, res, uris, function (err, statusResponse) {
+        if (err)
+          return next(err);
+          var body = statusResponse.body;
+          for(var i = 0; i < body.length; ++i){
+            apiStatus[i]["health"] = body[i].health;
+          }
+          res.json({
+            status: apiStatus
+          });
+      });
+    });
+  });
+});
+
 router.get('/subscriptions', function (req, res, next) {
     debug("get('/subscriptions')");
     getAdmin(req, res, '/consumers', function (err, consumersResponse) {
@@ -95,6 +145,16 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
     res.json(pluginsResponse);
   });
 });
+
+function getAPIStatus(req, res, data, callback) {
+  var uri = "http://apps.dev-snapshot.clarivate.com/api/mapsResolver/strict";
+  request.get(
+    {
+      url: uri,
+      body: data,
+      json: true,
+    }, callback);
+};
 
 function getBaseUri(req){
   var baseUrl = "http://localhost:8001";
