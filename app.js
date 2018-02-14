@@ -201,6 +201,18 @@ app.initialize = function (done) {
             });
     }
 
+    if (portalGlobals.glob.auth.oauth2 && portalGlobals.glob.auth.oauth2.useOauth2) {
+        debug('Activating Oauth 2 passport.');
+        app.use('/callback/oauth2',
+            passport.authenticate('oauth2', {
+                failureRedirect: '/login'
+            }),
+            function (req, res) {
+                res.redirect('/signup');
+            });
+    }
+
+
     if (portalGlobals.glob.auth.adfs && portalGlobals.glob.auth.adfs.useAdfs) {
         debug('Activating ADFS passport.');
         app.use('/callback',
