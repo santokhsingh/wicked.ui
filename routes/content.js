@@ -54,8 +54,8 @@ router.get('/*', function (req, res, next) {
                     authUser: req.user,
                     glob: req.app.portalGlobals,
                     route: '/content/toc',
-                    title: 'Table of Content',
-                    subTitle: 'This is the site map for this API Portal, for your user.',
+                    title: 'Site Map',
+                    subTitle: 'This site map displays API content and general site content. Note that API content varies depending on the user group to which you belong.',
                     toc: toc
                 });
             });
