@@ -142,6 +142,11 @@ html
                                         a(href='/admin/verifications') Pending Verifications
                                     li
                                         a(href='/admin/health') System Health
+                                else if authUser.approver
+                                    li(role='separator' class='divider')
+                                    li
+                                      a(href='/admin/approvals') Pending Approvals
+
 
     block content
 

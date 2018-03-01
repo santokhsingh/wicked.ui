@@ -22,7 +22,7 @@ block scripts
                 if (password != password2)
                     password2Error = 'Passwords do not match.';
             }
-                
+
             try {
                 $('#errorFirstname').text(firstnameError);
                 $('#errorLastname').text(lastnameError);
@@ -32,16 +32,16 @@ block scripts
                 alert('Validation errored! Check your input values.');
                 return false;
             }
-            
-            var somethingBad = 
+
+            var somethingBad =
                 !!firstnameError
                 || !!lastnameError
                 || !!passwordError
                 || !!password2Error;
-                
+
             return !somethingBad;
         }
-        
+
         function setAction(thisAction) {
             $('#__action').val(thisAction);
         }
@@ -56,21 +56,21 @@ block content
     .jumbotron.wicked-admin-title
         .container.wicked-title-container
             h1= userInfo.name
-            
+
             p Review and edit user information.
-            
+
     .container.wicked-container
-    
+
         br
         br
         form(role='form' action='/users/#{userInfo.id}' method='post' onsubmit='return verifyContent()')
-        
+
             input(type='hidden' name='__action' id='__action' value='none')
-            
+
             .form-group
                 label(for='firstname') First name:
                 input(id='firstname' name='firstname' value='#{userInfo.firstName}').form-control
-                small 
+                small
                     span(id='errorFirstname' style='color:red')
             .form-group
                 label(for='lastname') Last name:
@@ -96,7 +96,7 @@ block content
                             table(width='100%')
                                 tr
                                     td
-                                        h5.panel-title 
+                                        h5.panel-title
                                             a(data-toggle='collapse' href='#collapse') Change/Set Password
                                     td(style='text-align:right')
                                         if userInfo.hasPassword
@@ -149,8 +149,10 @@ block content
                                         small &nbsp;<i>This is the default group for users with a validated email address.</i>
                                     if group.adminGroup
                                         strong &nbsp;Admin group
+                                    if group.approverGroup
+                                            strong &nbsp;Approver group
                 br
-            
+
             if glob.api && glob.api.portal && glob.api.portal.enableApi && authUser.clientId && authUser.clientSecret
                 .panel.panel-default
                     .panel-heading
@@ -191,4 +193,3 @@ block content
                     else
                         form(role='form' action='/users/#{userInfo.id}/delete' onsubmit='return confirmDelete();' method='post')
                             button(type='submit').btn.btn-danger Delete User
-    
