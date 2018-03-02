@@ -4,8 +4,10 @@ var express = require('express');
 var debug = require('debug')('portal:login');
 var router = express.Router();
 var request = require('request');
+var qs = require('querystring');
 // var passport = require('passport');
 var utils = require('./utils');
+var wicked = require('wicked-sdk');
 
 /* GET login page. */
 router.get('/', function (req, res, next) {
@@ -81,7 +83,8 @@ router.get('/callback', function (req, res, next) {
         debug(tokenResult);
         if (apiRes.statusCode !== 200)
             return utils.fail(apiRes.statusCode, tokenResult.message || 'Could not retrieve an access token.', next);
-        // Now also retrieve the profile via the OIDC Profile end point.
+        // Now also retrieve the profile via the OIDC Profile end point, and
+        // the user profile directly from wicked as well please.
         const profileUrl = authServerBase + authMethod.config.profileEndpoint;
         request.get({
             url: profileUrl,
@@ -94,12 +97,29 @@ router.get('/callback', function (req, res, next) {
             debug('Retrieved user profile.');
             const profile = utils.getJson(apiBody);
             debug(profile);
-            req.session.user = {
-                authMethodId: authMethodId,
-                profile: profile,
-                token: tokenResult
-            };
-            res.redirect('/');
+            const userId = profile.sub;
+            wicked.apiGet(`/users/${userId}`, userId, function (err, userInfo) {
+                if (err) {
+                    const statusCode = err.statusCode || 500;
+                    return utils.fail(statusCode, 'Failed getting user data from API.', err, next);
+                }
+
+                debug('Wicked user profile:');
+                debug(userInfo);
+
+                // Note that this is only to make sure the UI behaves; there are some specialties
+                // for admins and approvers. There are backend checks for all of these things as well
+                // so that this is not very security relevant.
+                profile.admin = userInfo.admin;
+                profile.approver = userInfo.approver;
+
+                req.session.user = {
+                    authMethodId: authMethodId,
+                    profile: profile,
+                    token: tokenResult
+                };
+                res.redirect('/');
+            });
         });
     });
 });
@@ -109,7 +129,10 @@ router.get('/logout', function (req, res, next) {
     utils.logoutUser(req, function (err) {
         if (err)
             return next(err);
-        res.redirect('/');
+        const authServerUrl = req.app.authConfig.authServerUrl;
+        const portalUrl = qs.escape(wicked.getExternalPortalUrl());
+
+        res.redirect(`${authServerUrl}/logout?redirect_uri=${portalUrl}`);
     });
 });
 
