@@ -9,6 +9,17 @@ var fs = require('fs');
 var util = require('util');
 var utils = require('./utils');
 
+router.get('/kong-status', function (req, res, next) {
+  debug("get('/kong-status')");
+  getAdmin(adminReq, adminRes, '/status', function (err, consumersResponse) {
+    if (err) {
+      return next(err);
+    }
+
+    res.json(utils.getJson(adminRes.body));
+  });  
+});
+
 router.get('/status', function (req, res, next) {
   debug("get('/status')");
   utils.getFromAsync(req, res, '/apis', 200, function (err, apisResponse) {
