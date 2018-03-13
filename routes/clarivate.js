@@ -11,12 +11,27 @@ var utils = require('./utils');
 
 router.get('/kong-status', function (req, res, next) {
   debug("get('/kong-status')");
-  getAdmin(adminReq, adminRes, '/status', function (err, consumersResponse) {
+  getAdmin(req, res, '/status', function (err, adminRes) {
     if (err) {
       return next(err);
     }
+    
+    var data = utils.getJson(adminRes);
 
-    res.json(utils.getJson(adminRes.body));
+    debug("Kong returned: " + adminRes);
+
+    var rows = [
+      {'database_reachable': (data && data.database ? data.database.reachable : false)},
+      {'server_connections_writing': (data && data.server ? data.server.connections_writing : -1)},
+      {'server_total_requests': (data && data.server ? data.server.total_requests : -1)},
+      {'server_connections_handled': (data && data.server ? data.server.connections_handled : -1)},
+      {'server_connections_accepted': (data && data.server ? data.server.connections_reading : -1)},
+      {'server_connections_reading': (data && data.server ? data.server.connections_reading : -1)},
+      {'server_connections_active': (data && data.server ? data.server.connections_active : -1)},
+      {'server_connections_waiting': (data && data.server ? data.server.connections_waiting : -1)}
+    ];
+
+    res.json({status: rows});  
   });  
 });
 
