@@ -11,12 +11,14 @@ var utils = require('./utils');
 
 router.get('/kong-status', function (req, res, next) {
   debug("get('/kong-status')");
-  getAdmin(adminReq, adminRes, '/status', function (err, consumersResponse) {
+  getAdmin(req, res, '/status', function (err, adminRes) {
     if (err) {
       return next(err);
     }
     
-    var data = utils.getJson(adminRes.body);
+    var data = utils.getJson(adminRes);
+
+    debug("Kong returned: " + adminRes);
 
     var rows = [
       {'database_reachable': (data && data.database ? data.database.reachable : false)},
