@@ -2,16 +2,16 @@ extends layout
 
 block content
 
-  .jumbotron.wicked-error-title
+  .jumbotron.wicked-api-title
     .container.wicked-title-container
       h1 Something Went Wrong
 
       h2 Status Code: #{error.status}
 
       p= message
-      
+
       a(class='btn btn-lg btn-warning' onclick='window.history.back();') Go back &raquo
-  
+
   .container.wicked-container
 
     h4.
