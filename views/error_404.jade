@@ -2,22 +2,17 @@ extends layout
 
 block content
 
-  .jumbotron.wicked-error-title
+  .jumbotron.wicked-api-title
     .container.wicked-title-container
-      h1 Not Found  
+      h1 Not Found
 
       h2 Status Code: #{error.status}
 
       p= message
-      
+
       a(class='btn btn-lg btn-warning' onclick='window.history.back();') Go back &raquo
-  
+
   .container.wicked-container
-
-    img(src='/images/wicked-256.png').center-block
-
-    br
-    br
 
     h4.
       This page could not be found.

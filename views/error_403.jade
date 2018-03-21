@@ -2,22 +2,17 @@ extends layout
 
 block content
 
-  .jumbotron.wicked-error-title
+  .jumbotron.wicked-api-title
     .container.wicked-title-container
-      h1 Insufficient Rights  
+      h1 Insufficient Rights
 
       h2 Status Code: #{error.status}
 
       p= message
-      
+
       a(class='btn btn-lg btn-warning' onclick='window.history.back();') Go back &raquo
-  
+
   .container.wicked-container
-
-    img(src='/images/wicked-256.png').center-block
-
-    br
-    br
 
     h4.
       Access to this page has been restricted by the API Portal Administrators.
@@ -37,6 +32,6 @@ block content
 
     p.
       Correlation ID: <code>#{correlationId}</code>
-        
+
     if error.stack
       pre #{error.stack}
