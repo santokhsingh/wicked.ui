@@ -77,19 +77,19 @@ block content
                 h4 Use account federation
 
             if useAdfs
-                a(href='/login/adfs').btn.btn-block.btn-lg.btn-primary
+                a(href='/login/adfs').btn.btn-block.btn-primary
                     i.fa.fa-cloud.fa-lg
                     span &nbsp; Sign up with ADFS
             if useGithub
-                a(href="/login/github").btn.btn-lg.btn-block.btn-github
+                a(href="/login/github").btn.btn-block.btn-github
                     i.fa.fa-github.fa-lg
                     span &nbsp; Sign up with GitHub
             if useGoogle
-                a(href="/login/google").btn.btn-lg.btn-block.btn-google
+                a(href="/login/google").btn.btn-block.btn-google
                     i.fa.fa-google.fa-lg
                     span &nbsp; Sign up with Google
             if useOauth2
-                a(href="/login/oauth2").btn.btn-lg.btn-block.btn-oauth2
+                a(href="/login/oauth2").btn.btn-block.btn-oauth2
                     i.fa.fa-sign-in.fa-lg
                     span &nbsp; Sign up
 
@@ -130,7 +130,7 @@ block content
                 if glob.recaptcha && glob.recaptcha.useRecaptcha
                     div(class='g-recaptcha' data-sitekey='#{glob.recaptcha.websiteKey}')
                     br
-                button(class='btn btn-primary btn-lg btn-block' type='submit') Register
+                button(class='btn btn-primary btn-block' type='submit') Register
 
             h5
                 a(href='/forgotpassword') Forgot password?

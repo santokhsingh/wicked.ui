@@ -19,9 +19,9 @@ block content
                 .panel-body
                     p You are not logged in. Applications can only be created if you are logged in.
 
-                    a(href="/login?redirect=/applications").btn.btn-default Log in &raquo;
+                    a(href="/login?redirect=/applications" title="Log in").btn.btn-default Log in &raquo;
                     | &nbsp;&nbsp;
-                    a(href="/signup").btn.btn-default Sign up &raquo;
+                    a(href="/signup" title="Sign up").btn.btn-default Sign up &raquo;
 
         else
             .panel-group
@@ -76,5 +76,5 @@ block content
                             tr
                                 td= app.id
                                 td
-                                    a(href='/applications/#{app.id}')= app.name
+                                    a(href='/applications/#{app.id}' title='#{app.name}')= app.name
                                 td= app.userRole
