@@ -24,7 +24,7 @@ html(class="no-js", lang="en")
     script(src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/highlight.min.js")
 
     block scripts
-  body(class=authUser? '': 'notLogged')
+  body(class=(authUser || (authUser && authUser.id == '1'))? '': 'nonLogin')
 
     nav.navbar.navbar-default.navbar-fixed-top
         .container
