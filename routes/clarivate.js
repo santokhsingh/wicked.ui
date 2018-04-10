@@ -9,6 +9,32 @@ var fs = require('fs');
 var util = require('util');
 var utils = require('./utils');
 
+router.get('/kong-status', function (req, res, next) {
+  debug("get('/kong-status')");
+  getAdmin(req, res, '/status', function (err, adminRes) {
+    if (err) {
+      return next(err);
+    }
+    
+    var data = utils.getJson(adminRes.body);
+
+    debug("Kong returned: " + JSON.stringify(data));
+
+    var rows = [
+      {'database_reachable': (data && data.database ? data.database.reachable : false),
+       'server_connections_writing': (data && data.server ? data.server.connections_writing : -1),
+       'server_total_requests': (data && data.server ? data.server.total_requests : -1),
+       'server_connections_handled': (data && data.server ? data.server.connections_handled : -1),
+       'server_connections_accepted': (data && data.server ? data.server.connections_accepted : -1),
+       'server_connections_reading': (data && data.server ? data.server.connections_reading : -1),
+       'server_connections_active': (data && data.server ? data.server.connections_active : -1),
+       'server_connections_waiting': (data && data.server ? data.server.connections_waiting : -1)}
+    ];
+
+    res.json({status: rows});  
+  });  
+});
+
 router.get('/status', function (req, res, next) {
   debug("get('/status')");
   utils.getFromAsync(req, res, '/apis', 200, function (err, apisResponse) {
@@ -116,7 +142,6 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
   var key = body.key;
   var apiId = body.api;
   var headers = body.headers;
-  var body_headers = body.body_headers;
   var pdata =  utils.getJson(body.pdata);
   var data=[];
   var foundExisting = false;
@@ -141,9 +166,6 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
     params.push(data[i]);
   }
   myObject["config"]["parameters"]=params;
-  myObject["config"]["add_headers_to_body"]=body_headers.split(',').map(function(item) {
-    return item.trim();
-  });
 
   patchAdmin(req, res, '/apis/'+apiId+'/plugins/'+pluginId, myObject, function (err, pluginsResponse) {
     if (err)
@@ -197,7 +219,6 @@ function getAdmin(req, res, uri, callback) {
 router.get('/customheaders/:apiId', function (req, res, next) {
   var apiId = req.params.apiId;
   var payload=[];
-  var mbody_headers = [];
   getAdmin(req, res, '/apis/'+apiId+'/plugins', function (err, pluginsResponse) {
      if (err)
        return next(err);
@@ -208,15 +229,13 @@ router.get('/customheaders/:apiId', function (req, res, next) {
         var plugin_name = body.data[i].name;
         if(plugin_name === 'custom-key-headers'){
           var params = body.data[i].config.parameters;
-          var bdyheaders = body.data[i].config.add_headers_to_body;
-          mbody_headers  = (bdyheaders) ? bdyheaders.join() : mbody_headers;
           pid = body.data[i].id;
           for (var j = 0; j < params.length; ++j){
             payload.push(utils.getJson(params[j]));
           }
         }
      }
-     res.json({ headers: payload, pluginid:  pid, body_headers: mbody_headers});
+     res.json({ headers: payload, pluginid:  pid});
   });
 });
 
