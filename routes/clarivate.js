@@ -116,6 +116,7 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
   var key = body.key;
   var apiId = body.api;
   var headers = body.headers;
+  var body_headers = body.body_headers;
   var pdata =  utils.getJson(body.pdata);
   var data=[];
   var foundExisting = false;
@@ -140,6 +141,9 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
     params.push(data[i]);
   }
   myObject["config"]["parameters"]=params;
+  myObject["config"]["add_headers_to_body"]=body_headers.split(',').map(function(item) {
+    return item.trim();
+  });
 
   patchAdmin(req, res, '/apis/'+apiId+'/plugins/'+pluginId, myObject, function (err, pluginsResponse) {
     if (err)
@@ -193,6 +197,7 @@ function getAdmin(req, res, uri, callback) {
 router.get('/customheaders/:apiId', function (req, res, next) {
   var apiId = req.params.apiId;
   var payload=[];
+  var mbody_headers = [];
   getAdmin(req, res, '/apis/'+apiId+'/plugins', function (err, pluginsResponse) {
      if (err)
        return next(err);
@@ -203,13 +208,15 @@ router.get('/customheaders/:apiId', function (req, res, next) {
         var plugin_name = body.data[i].name;
         if(plugin_name === 'custom-key-headers'){
           var params = body.data[i].config.parameters;
+          var bdyheaders = body.data[i].config.add_headers_to_body;
+          mbody_headers  = (bdyheaders) ? bdyheaders.join() : mbody_headers;
           pid = body.data[i].id;
           for (var j = 0; j < params.length; ++j){
             payload.push(utils.getJson(params[j]));
           }
         }
      }
-     res.json({ headers: payload, pluginid:  pid});
+     res.json({ headers: payload, pluginid:  pid, body_headers: mbody_headers});
   });
 });
 
