@@ -23,40 +23,40 @@ block scripts
                 alert('Validation errored! Check your input values.');
                 return false;
             }
-
+            
             var somethingBad = !!emailError
                 || !!passwordError;
-
+            
             return !somethingBad;
         }
 
 block content
     h2 Log in
-
+    
     p Welcome to the #{glob.title}.
 
     if displayRedirectMessage
         h4 You will be redirected to the desired page right after successfully logging in.
 
     if glob.auth.adfs && glob.auth.adfs.useAdfs
-        a(href='/login/adfs').btn.btn-block.btn-primary
+        a(href='/login/adfs').btn.btn-block.btn-lg.btn-primary
             i.fa.fa-cloud.fa-lg
             span &nbsp; Login with ADFS
     if glob.auth.github && glob.auth.github.useGithub
-        a(href="/login/github").btn.btn-block.btn-github
+        a(href="/login/github").btn.btn-lg.btn-block.btn-github
             i.fa.fa-github.fa-lg
             span &nbsp; Log in with GitHub
     if glob.auth.google && glob.auth.google.useGoogle
-        a(href="/login/google").btn.btn-block.btn-google
+        a(href="/login/google").btn.btn-lg.btn-block.btn-google
             i.fa.fa-google.fa-lg
             span &nbsp; Log in with Google
     if glob.auth.oauth2 && glob.auth.oauth2.useOauth2
-        a(href="/login/oauth2").btn.btn-block.btn-oauth2
+        a(href="/login/oauth2").btn.btn-lg.btn-block.btn-oauth2
             i.fa.fa-sign-in.fa-lg
             span &nbsp; Log in
 
     if glob.auth.local && glob.auth.local.useLocal
-        br
+        br                            
         hr
         br
 
@@ -70,15 +70,15 @@ block content
             .form-group
                 label(for='email') Email:
                 input(type='string' name='email' id='email').form-control
-                small
+                small 
                     span(id='errorEmail' style='color:red')
             .form-group
                 label(for='password') Password:
                 input(type='password' name='password' id='password').form-control
                 small
                     span(id='errorPassword' style='color:red')
-            button(class='btn btn-primary btn-block' type='submit') Login
-
+            button(class='btn btn-lg btn-primary btn-block' type='submit') Login
+        
         h5
             a(href='/forgotpassword') Forgot password?
         h5
