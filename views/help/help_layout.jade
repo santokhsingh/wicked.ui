@@ -5,7 +5,7 @@ mixin helpItem(anchor, title)
     br
   - toc.push({ anchor: anchor, title: title })
   a(name='#{anchor}')
-  h4= title
+  h4= title  
 
 block content
   - var toc = []
@@ -15,13 +15,13 @@ block content
       .col-md-8
 
         block help_content
-
+    
       .col-md-4.col-md-push-8(style='position:fixed')
 
         h3
           a(href='/help') Help Index
 
-        h4 Site Map
+        h4 Table of Content
 
         ul
           for tocItem in toc

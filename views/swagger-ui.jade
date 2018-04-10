@@ -115,14 +115,14 @@ body.swagger-section
 
   div(id='header')
     div(style="color:#cccccc;").swagger-ui-wrap
-      a(id="logo" href="#{glob.network.schema}://#{glob.network.portalHost}/apis")
-      a(href="#{glob.network.schema}://#{glob.network.portalHost}/")= glob.layouts.swaggerUi.menu.homeLinkText
+      a(id="logo" href="#{glob.network.schema}://#{glob.network.portalHost}/")= glob.layouts.swaggerUi.menu.homeLinkText
       a(href="#{glob.network.schema}://#{glob.network.portalHost}/apis").header-item APIs
       a(href="#{glob.network.schema}://#{glob.network.portalHost}/applications").header-item Applications
       if glob.layouts.swaggerUi.menu.showContactLink
         a(href="#{glob.network.schema}://#{glob.network.portalHost}/content/contact").header-item Contact
       if glob.layouts.swaggerUi.menu.showContentLink
         a(href="#{glob.network.schema}://#{glob.network.portalHost}/content/toc").header-item Content
+
   div(id="message-bar" class="swagger-ui-wrap" data-sw-translate) &nbsp;
   div(id="swagger-ui-container" class="swagger-ui-wrap")
 
@@ -134,4 +134,4 @@ body.swagger-section
         tr
           td(style='text-align:left; color: #999999;')!= glob.footer
           td(style='text-align:right; color:#999999;')
-        
+            | Built by <a href='http://www.haufe-lexware.com' target='_blank'>Haufe-Lexware</a>, powered by <a href='http://getkong.org' target='_blank'>Mashape Kong</a>.

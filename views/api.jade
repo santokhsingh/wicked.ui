@@ -43,26 +43,25 @@ block content
                         This API has been deprecated by the API Portal maintainers. This means it can no longer be subscribed to.
                         Existing subscriptions are still valid.
 
-        if authUser || !apiInfo.requiredGroup                  
-            .panel.panel-default
-                .panel-heading
-                    +panelTitle('API Settings', '/help/api')
-                .panel-body
-                    label API URL:
+        .panel.panel-default
+            .panel-heading
+                +panelTitle('API Settings', '/help/api')
+            .panel-body
+                label API URL:
+                br
+                input(readonly type='string' value='#{apiUri}' style='font-family: monospace;').form-control
+                if authServers && authServers.length > 0 && apiInfo.auth == 'oauth2' && apiInfo.settings && (apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code || apiInfo.settings.enable_password_grant)
                     br
-                    input(readonly type='string' value='#{apiUri}' style='font-family: monospace;').form-control
-                    if authServers && authServers.length > 0 && apiInfo.auth == 'oauth2' && apiInfo.settings && (apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code || apiInfo.settings.enable_password_grant)
-                        br
-                        if (authServers.length == 1)
-                            label Authorization Server:
-                        else
-                            label Authorization Servers:
-                            p Any of the following Authorization Servers can be used to retrieve an access token for the API.
-                        for authServer in authServers
-                            h5 #{authServer.desc}:
-                            input(readonly type='string' value=authServer.url style='font-family: monospace;').form-control
-                            if authServer.urlDescription
-                                p!= authServer.urlDescription
+                    if (authServers.length == 1)
+                        label Authorization Server:
+                    else
+                        label Authorization Servers:
+                        p Any of the following Authorization Servers can be used to retrieve an access token for the API.
+                    for authServer in authServers
+                        h5 #{authServer.desc}:
+                        input(readonly type='string' value=authServer.url style='font-family: monospace;').form-control
+                        if authServer.urlDescription
+                            p!= authServer.urlDescription
 
         .panel.panel-default
             .panel-heading

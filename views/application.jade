@@ -7,12 +7,12 @@ block scripts
                 return false;
             return confirm("Last chance: THIS CANNOT BE UNDONE!");
         }
-
+        
 block content
     .jumbotron.wicked-application-title
         .container.wicked-title-container
             h1= application.name
-
+            
             p.
                 This page lets you administer the owners of this application. You can add and remove
                 co-owners of the application. New co-owners must be already be registered in the portal
@@ -27,12 +27,12 @@ block content
                 if subscriptions.length == 0
                     p.
                         Your application does not have any API subscriptions currently. You may add
-                        subscriptions on the API pages.
+                        subscriptions on the API pages. 
                     a(href='/apis').btn.btn-default View APIs &raquo;
                 else
                     p.
                         Your application has the following API subscriptions:
-
+                    
                     table.table.table-striped
                         thead
                             tr
@@ -129,7 +129,7 @@ block content
                                             .form-group
                                                 label(for='owneremail') Owner Email:
                                                 input(type='email' name='owneremail').form-control
-                                                p
+                                                p 
                                                     small Additional owners must already be registered with this API Portal.
                                             label(for='ownerrole') Owner Role:
                                             select(name='ownerrole').form-control
@@ -140,8 +140,8 @@ block content
                                             p
                                                 button(class='btn btn-primary' type='submit') Register Co-Owner &raquo;
                     else
-                        i Only owners and admins may add and delete owners.
-
+                        i Only owners and admins may add and delete owners.                        
+        
         if application._links.deleteApplication
             .panel.panel-danger
                 .panel-heading
