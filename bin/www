@@ -43,7 +43,8 @@ debug('Waiting for API to be available.');
 app.initState = 'Waiting for API...';
 wicked.initialize({
     userAgentName: 'wicked.portal',
-    userAgentVersion: utils.getVersion()
+    userAgentVersion: utils.getVersion(),
+    doNotPollConfigHash: true
 }, function (err) {
     if (err) {
         console.error(err);
