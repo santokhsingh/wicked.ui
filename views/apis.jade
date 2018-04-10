@@ -27,7 +27,6 @@ mixin apiCategories(apiTags, params)
 
 mixin apiDef(anApi)
     .panel-body.wicked-api-body(style="flex: 1;")
-      .box
         if glob.views.apis.showApiIcon
             img(src='/images/api-icon.png')
         if anApi.auth == 'oauth2'
@@ -37,15 +36,12 @@ mixin apiDef(anApi)
         else
             a(href='/help/apis' target='_blank')
                 img.pull-right(src='/images/key-icon-32.png' title='API is secured over API keys')
-
-      .box-body
         a(href='/apis/#{anApi.id}')
             h4= anApi.name
         if anApi.deprecated
             p.red <b>Deprecated</b>
         p!= anApi.desc
-      .box-footer.pull-right
-        a.btn.btn-default(href="/apis/#{anApi.id}" role="button" title="Information") Information &raquo;
+        a.btn.btn-default.pull-right(href="/apis/#{anApi.id}" role="button" title="Information") Information &raquo;
 
 
 block scripts
@@ -67,6 +63,7 @@ block content
         if desc
             p!= desc
         p &nbsp;
+
             //-.owl-item
                 .item
                     .card
