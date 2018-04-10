@@ -6,14 +6,14 @@ block content
         .jumbotron.wicked-index-title
             .container.wicked-title-container
                 h1= title
-
+                
                 p!= subTitle
 
                 if !authUser
                     p
-                        a(class="btn btn-primary btn-lg" href="/signup" role="button" title="Sign up") Sign up &raquo;
+                        a(class="btn btn-primary btn-lg" href="/signup" role="button") Sign up &raquo;
                         span &nbsp;
-                        a(class="btn btn-primary btn-lg" href="/login" role="button" title="Log in") Log in &raquo;
+                        a(class="btn btn-primary btn-lg" href="/login" role="button") Log in &raquo;
                 else
                     p Good to see you, #{authUser.name}!
 
