@@ -45,6 +45,7 @@ wicked.initialize({
     userAgentName: 'wicked.portal',
     userAgentVersion: utils.getVersion(),
     doNotPollConfigHash: true
+    
 }, function (err) {
     if (err) {
         console.error(err);
