@@ -235,7 +235,7 @@ router.get('/customheaders/:apiId', function (req, res, next) {
         if(plugin_name === 'custom-key-headers'){
           var params = body.data[i].config.parameters;
           var bdyheaders = body.data[i].config.add_headers_to_body;
-          mbody_headers  = (bdyheaders) ? bdyheaders.join() : mbody_headers;
+          mbody_headers  = (bdyheaders && && bdyheaders.length > 0) ? bdyheaders.join() : mbody_headers;
           pid = body.data[i].id;
           for (var j = 0; j < params.length; ++j){
             payload.push(utils.getJson(params[j]));
