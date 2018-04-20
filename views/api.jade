@@ -155,7 +155,9 @@ block content
                                             td
                                                 if apiInfo.auth == "key-auth"
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=#{app.apiKey}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
-                                                else if apiInfo.auth == "oauth2" 
+                                                else if apiInfo.auth == "oauth2" && app.redirectUri
+                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&redirect_uri=#{app.redirectUri}' target='_blank').btn.btn-default Try it!
+                                                else if apiInfo.auth == "oauth2"
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
                                                 else
                                                     | ---
