@@ -34,11 +34,6 @@ html
         else
           client_secret = null;
 
-        var redirect_uri = window.location.search.match(/redirect_uri=([^&]+)/);
-        if (redirect_uri && redirect_uri.length > 1)
-          redirect_uri = decodeURIComponent(redirect_uri[1]);
-        else
-          redirect_uri = null;
         var supportedMethods = [];
         if (apikey || client_id)
           supportedMethods = ['get', 'post', 'put', 'delete', 'patch'];
@@ -50,7 +45,6 @@ html
         const ui = SwaggerUIBundle({
           url: url,
           dom_id: '#swagger-ui-container',
-          oauth2RedirectUrl: redirect_uri,
           presets: [
             SwaggerUIBundle.presets.apis,
             SwaggerUIBundle.SwaggerUIStandalonePreset
