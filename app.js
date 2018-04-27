@@ -173,7 +173,7 @@ app.initialize = function (done) {
     app.use('/validateemail', validateemail);
     app.use('/swagger-ui', swaggerUi);
     app.use('/swagger-ui', express.static(path.join(__dirname, 'swagger-ui')));
-    app.use('/swagger-ui', express.static(path.join(__dirname, 'node_modules/swagger-ui/dist')));
+    app.use('/swagger-ui', express.static(path.join(__dirname, 'node_modules/swagger-ui-dist')));
     app.use('/help', help);
     app.use('/kill', kill);
 
