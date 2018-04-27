@@ -243,6 +243,7 @@ router.get('/:api', function (req, res, next) {
                 if (subsResults[i]) {
                     thisApp.hasSubscription = true;
                     thisApp.plan = plansMap[subsResults[i].plan];
+                    thisApp.redirectUri = appsResults[i].redirectUri;
                     thisApp.apiKey = subsResults[i].apikey;
                     thisApp.clientId = subsResults[i].clientId;
                     thisApp.clientSecret = subsResults[i].clientSecret;
