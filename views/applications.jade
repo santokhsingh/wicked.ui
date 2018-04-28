@@ -3,15 +3,14 @@ extends layout
 block content
     .jumbotron.wicked-application-title
         .container.wicked-title-container
-            h1 Your Applications
+            h1 Register and View Your Applications
 
             p= glob.views.applications.titleTagline
 
     .container.wicked-container
 
         p.
-            An application is the entity to which you attach your API subscriptions. You can own or co-own
-            applications with other developers.
+            An application is the entity to which you attach your API subscriptions. You can own or co-own applications with other developers. Once you have registered an application, you can create and assign APIs that use it. You can assign only one application to an API.
 
         if !authUser
             .panel.panel-danger
@@ -33,11 +32,11 @@ block content
                         .panel-body
                             form(role='form' action='/applications/register' method='POST')
                                 .form-group
-                                    label(for='appid') App ID:
+                                    label(for='appid') Application ID:
                                     input(type='string' name='appid').form-control
                                     small Application IDs must be all lower case, and may only contain the following characters: a-z, 0-9, -, _
                                 .form-group
-                                    label(for='appname') App Name:
+                                    label(for='appname') Application Name:
                                     input(type='string' name='appname').form-control
                                     small A human readable description/name of the your application, e.g. 'My Awesome Application'
 
