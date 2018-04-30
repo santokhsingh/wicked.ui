@@ -156,7 +156,9 @@ block content
                                                 if apiInfo.auth == "key-auth"
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=#{app.apiKey}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
                                                 else if apiInfo.auth == "oauth2" && apiInfo.settings && apiInfo.settings.enable_client_credentials
-                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
+                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.name}' target='_blank').btn.btn-default Try it!
+                                                else if apiInfo.auth == "oauth2" && app.redirectUri && app.redirectUri.indexOf("swagger-ui/oauth2-redirect.html") > 0
+                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.name}&redirect_uri=#{app.redirectUri}' target='_blank').btn.btn-default Try it!
                                                 else
                                                     | ---
                                         else
