@@ -163,6 +163,16 @@ app.initialize = function (done) {
         throw new Error('You are running in "production" mode (NODE_ENV), but not using https. This is not supported (Cookies cannot be transported).');
     }
 
+    app.use(function (req, res, next) {
+        const hostHeader = req.get('Host');
+        const network = app.portalGlobals.network;
+        if (network.portalHost !== hostHeader) {
+            debug('Host header: ' + hostHeader + ' -- MISMATCH, redirecting to ' + network.portalHost);
+            return res.redirect(`${network.schema}://${network.portalHost}${req.url}`);
+        }
+        return next();
+    });
+
     app.get('/', index);
     app.use('/signup', signup);
     app.use('/forgotpassword', forgotpassword);
