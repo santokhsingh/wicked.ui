@@ -122,32 +122,36 @@ function registerApplicationAndSubscribe(callback) {
                 return callback(null, subsInfo);
             });
         },
+        // (subsInfo, callback) => {
+        //     if (!subsInfo) {
+        //         debug('Create subscription: Not yet present, nothing to do.');
+        //         return callback(null);
+        //     } else {
+        //         debug('Deleting previously present subscription.');
+        //         wicked.apiDelete('applications/__portal/subscriptions/portal-api', callback);
+        //     }
+        // },
         (subsInfo, callback) => {
             if (!subsInfo) {
-                debug('Create subscription: Not yet present, nothing to do.');
-                return callback(null);
+                debug('Creating subscription.');
+                const portalSubs = {
+                    application: '__portal',
+                    api: 'portal-api',
+                    plan: '__internal_api_unlimited',
+                    trusted: true
+                };
+                debug('POST applications/__portal/subscriptions...');
+                wicked.apiPost('applications/__portal/subscriptions', portalSubs, function (err, subsInfo) {
+                    if (err) {
+                        debug('... but failed!');
+                        return callback(err);
+                    }
+                    debug('... and succeeded!');
+                    return callback(null, subsInfo);
+                });
             } else {
-                debug('Deleting previously present subscription.');
-                wicked.apiDelete('applications/__portal/subscriptions/portal-api', callback);
-            }
-        },
-        callback => {
-            debug('Creating subscription.');
-            const portalSubs = {
-                application: '__portal',
-                api: 'portal-api',
-                plan: '__internal_api_unlimited',
-                trusted: true
-            };
-            debug('POST applications/__portal/subscriptions...');
-            wicked.apiPost('applications/__portal/subscriptions', portalSubs, function (err, subsInfo) {
-                if (err) {
-                    debug('... but failed!');
-                    return callback(err);
-                }
-                debug('... and succeeded!');
                 return callback(null, subsInfo);
-            });
+            }
         }
     ], function (err, subscriptionInfo) {
         if (err) {
