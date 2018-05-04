@@ -4,3 +4,4 @@ Dockerfile-alpine
 node_modules
 .DS_Store
 *.log
+*.tgz
