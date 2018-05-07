@@ -1,7 +1,7 @@
 'use strict';
 
 var express = require('express');
-var debug = require('debug')('portal:ping');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:ping');
 var router = express.Router();
 var utils = require('./utils');
 

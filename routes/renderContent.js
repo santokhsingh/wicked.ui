@@ -1,6 +1,6 @@
 'use strict';
 
-var debug = require('debug')('portal:renderMarkdown');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:renderMarkdown');
 var marked = require('marked');
 var highlightJs = require('highlight.js');
 var jade = require('jade');

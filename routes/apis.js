@@ -2,7 +2,7 @@
 
 var express = require('express');
 var router = express.Router();
-var debug = require('debug')('portal:apis');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:apis');
 var utils = require('./utils');
 var marked = require('marked');
 var async = require('async');

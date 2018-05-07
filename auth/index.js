@@ -3,7 +3,7 @@
 var express = require('express');
 var passport = require('passport');
 var portalGlobals = require('../portalGlobals');
-var debug = require('debug')('portal:auth');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:auth');
 
 var router = express.Router();
 

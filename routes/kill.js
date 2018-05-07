@@ -1,6 +1,6 @@
 'use strict';
 
-var debug = require('debug')('portal:kill');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:kill');
 
 var kill = require('express').Router();
 

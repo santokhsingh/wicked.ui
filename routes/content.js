@@ -2,7 +2,7 @@
 
 var express = require('express');
 var request = require('request');
-var debug = require('debug')('portal:content');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:content');
 var router = express.Router();
 var contentRenderer = require('./renderContent');
 var utils = require('./utils');

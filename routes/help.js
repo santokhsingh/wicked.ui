@@ -1,7 +1,7 @@
 'use strict';
 
 var express = require('express');
-var debug = require('debug')('portal:help');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:help');
 var path = require('path');
 var router = express.Router();
 

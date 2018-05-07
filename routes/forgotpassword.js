@@ -1,7 +1,7 @@
 'use strict';
 
 var express = require('express');
-var debug = require('debug')('portal:forgotpassword');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:forgotpassword');
 var router = express.Router();
 var passport = require('passport');
 var request = require('request');

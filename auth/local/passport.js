@@ -1,7 +1,7 @@
 'use strict';
 
 var passport = require('passport');
-var debug = require('debug')('portal:auth:local');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:auth:local');
 var LocalStrategy = require('passport-local').Strategy;
 var utils = require('../../routes/utils');
 var portalGlobals = require('../../portalGlobals');

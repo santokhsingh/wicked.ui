@@ -3,7 +3,7 @@
 
 var passport = require('passport');
 var request = require('request');
-var debug = require('debug')('portal:auth:adfs');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:auth:adfs');
 var OAuth2Strategy = require('passport-oauth').OAuth2Strategy;
 var jwt = require('jsonwebtoken');
 var fs = require('fs');

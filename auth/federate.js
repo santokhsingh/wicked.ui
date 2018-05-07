@@ -1,7 +1,7 @@
 'use strict';
 /* jshint loopfunc: true */
 
-var debug = require('debug')('portal:auth');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:auth');
 
 var utils = require('../routes/utils');
 

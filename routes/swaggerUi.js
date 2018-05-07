@@ -1,7 +1,7 @@
 'use strict';
 
 var express = require('express');
-var debug = require('debug')('portal:swagger-ui');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:swagger-ui');
 var router = express.Router();
 //var request = require('request');
 //var utils = require('./utils');

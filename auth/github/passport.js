@@ -2,7 +2,7 @@
 
 var passport = require('passport');
 var request = require('request');
-var debug = require('debug')('portal:auth:github');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:auth:github');
 
 var GithubStrategy = require('passport-github2');
 

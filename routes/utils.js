@@ -2,7 +2,7 @@
 
 const request = require('request');
 const async = require('async');
-const debug = require('debug')('portal:utils');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:utils');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -172,14 +172,14 @@ function refreshPersonalToken(req, callback) {
         }
     }, function (err, res, tokenResponse) {
         if (err) {
-            console.error('ERROR: Could not refresh token for personal access');
-            console.error(err);
+            error('ERROR: Could not refresh token for personal access');
+            error(err);
             return callback(err);
         }
 
         debug(tokenResponse);
         if (!tokenResponse.access_token) {
-            console.error('ERROR: Could not refresh access_token, logging out forcefully.');
+            error('ERROR: Could not refresh access_token, logging out forcefully.');
             // We'll log ourselves out then
             utils.logoutUser(req, (err) => {
                 // if (err)
@@ -260,14 +260,14 @@ function createAnonymousTokenInternal(req, callback) {
         }
     }, function (err, res, body) {
         if (err) {
-            console.error('ERROR: Could not get access token for anonymous access');
-            console.error(err);
+            error('ERROR: Could not get access token for anonymous access');
+            error(err);
             return callback(err);
         }
 
         debug(body);
         if (!body.access_token) {
-            console.error('ERROR: Did not receive expected access_token.');
+            error('ERROR: Did not receive expected access_token.');
             return callback(new Error('Did not receive anonymous access token.'));
         }
         debug('Successfully retrieved anonymous access token.');
@@ -513,7 +513,7 @@ utils.getVersion = function () {
                 if (packageInfo.version)
                     utils._packageVersion = packageInfo.version;
             } catch (ex) {
-                console.error(ex);
+                error(ex);
             }
         }
         if (!utils._packageVersion) // something went wrong

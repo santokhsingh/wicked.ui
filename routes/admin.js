@@ -3,7 +3,7 @@
 var express = require('express');
 var router = express.Router();
 var async = require('async');
-var debug = require('debug')('portal:admin');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:admin');
 var tmp = require('tmp');
 var fs = require('fs');
 var util = require('util');

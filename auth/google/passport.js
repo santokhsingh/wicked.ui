@@ -2,7 +2,7 @@
 
 var passport = require('passport');
 var request = require('request');
-var debug = require('debug')('portal:auth:google');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:auth:google');
 
 var GoogleStrategy = require('passport-google-oauth20').Strategy;
 

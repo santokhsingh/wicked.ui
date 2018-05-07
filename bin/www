@@ -6,7 +6,7 @@
  * Module dependencies.
  */
 
-const debug = require('debug')('portal:www');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:www');
 const async = require('async');
 const http = require('http');
 const request = require('request');
@@ -155,11 +155,10 @@ function registerApplicationAndSubscribe(callback) {
         }
     ], function (err, subscriptionInfo) {
         if (err) {
-            console.error('ERROR: Could not register portal application and/or subscribe to the portal API');
-            console.error(err);
+            error('ERROR: Could not register portal application and/or subscribe to the portal API');
+            error(err);
             return callback(err);
         }
-        //console.log(subscriptionInfo);
         debug('Subscription Info: ' + JSON.stringify(subscriptionInfo));
 
         const clientId = subscriptionInfo.clientId;
@@ -266,7 +265,7 @@ async.series({
     authConfig: callback => configureAuthServer(callback)
 }, function (err, results) {
     if (err) {
-        console.error(err);
+        error(err);
         throw Error('Could not initialize portal. See above error.');
     }
 
@@ -345,11 +344,11 @@ function onError(error) {
     // handle specific listen errors with friendly messages
     switch (error.code) {
         case 'EACCES':
-            console.error(bind + ' requires elevated privileges');
+            error(bind + ' requires elevated privileges');
             process.exit(1);
             break;
         case 'EADDRINUSE':
-            console.error(bind + ' is already in use');
+            error(bind + ' is already in use');
             process.exit(1);
             break;
         default:

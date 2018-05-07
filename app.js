@@ -2,7 +2,7 @@
 
 /* global app */
 var express = require('express');
-var debug = require('debug')('portal:app');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:app');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
@@ -105,16 +105,13 @@ app.initialize = function (done) {
         app.set('trust proxy', 1);
         sessionArgs.cookie.secure = true;
     } else {
-        console.log('*************************************');
-        console.log('*************************************');
-        console.log('');
-        console.log('PORTAL IS RUNNING IN DEVELOPMENT MODE');
-        console.log('');
-        console.log('If you see this in your production');
-        console.log('logs, you have done something wrong.');
-        console.log('');
-        console.log('*************************************');
-        console.log('*************************************');
+        warn('*************************************');
+        warn('*************************************');
+        warn('PORTAL IS RUNNING IN DEVELOPMENT MODE');
+        warn('If you see this in your production');
+        warn('logs, you have done something wrong.');
+        warn('*************************************');
+        warn('*************************************');
         app.isProduction = false;
     }
 

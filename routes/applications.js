@@ -3,7 +3,7 @@
 var express = require('express');
 var router = express.Router();
 var async = require('async');
-var debug = require('debug')('portal:applications');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:applications');
 var utils = require('./utils');
 
 router.get('/:appId', function (req, res, next) {
@@ -117,7 +117,7 @@ function findUserRole(appInfo, userInfo) {
         if (userEmail == appInfo.owners[i].email)
             return appInfo.owners[i].role;
     }
-    console.error('findUserRole() - Could not find user role, data inconsistent: ' + userEmail + ', appId: ' + appInfo.id);
+    warn('findUserRole() - Could not find user role, data inconsistent: ' + userEmail + ', appId: ' + appInfo.id);
     return '(undefined)';
 }
 

@@ -1,7 +1,7 @@
 'use strict';
 
 var express = require('express');
-var debug = require('debug')('portal:verification');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:verification');
 var router = express.Router();
 //var async = require('async');
 var request = require('request');
@@ -117,8 +117,7 @@ function handleEmailVerification(req, res, verifInfo, next) {
         utils.delete(req, '/verifications/' + verifInfo.id, function (err, apiResponse, apiBody) {
             // Just log any errors in case we have some.
             if (err) {
-                debug(err);
-                console.error(err);
+                error(err);
             }
         });
     });

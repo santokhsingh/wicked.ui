@@ -1,7 +1,7 @@
 'use strict';
 
 var express = require('express');
-var debug = require('debug')('portal:validateemail');
+var { debug, info, warn, error } = require('portal-env').Logger('portal:validateemail');
 var router = express.Router();
 //var async = require('async');
 var utils = require('./utils');
