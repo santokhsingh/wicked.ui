@@ -62,7 +62,6 @@ const wickedOptions = {
  * 
  * @param callback 
  */
-
 function registerApplicationAndSubscribe(callback) {
     debug('registerApplicationAndSubscribe()');
     let callbackUrl = wicked.getExternalPortalUrl();
@@ -117,20 +116,11 @@ function registerApplicationAndSubscribe(callback) {
                     debug('... but subscription returned 404');
                     return callback(null, null);
                 }
-                debug('... and succeeded.');
-                debug('subsInfo: ' + JSON.stringify(subsInfo));
+                debug('... and succeeded:');
+                debug(subsInfo);
                 return callback(null, subsInfo);
             });
         },
-        // (subsInfo, callback) => {
-        //     if (!subsInfo) {
-        //         debug('Create subscription: Not yet present, nothing to do.');
-        //         return callback(null);
-        //     } else {
-        //         debug('Deleting previously present subscription.');
-        //         wicked.apiDelete('applications/__portal/subscriptions/portal-api', callback);
-        //     }
-        // },
         (subsInfo, callback) => {
             if (!subsInfo) {
                 debug('Creating subscription.');
