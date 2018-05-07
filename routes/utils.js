@@ -44,6 +44,18 @@ utils.getLoggedInUserEmail = function (req) {
     return req.user.email;
 };
 
+utils.appendSlash = function (url) {
+    if (url.endsWith('/'))
+        return url;
+    return url + '/';
+};
+
+utils.ensureNoSlash = function (url) {
+    if (url.endsWith('/'))
+        return url.substring(0, url.length - 1);
+    return url;
+};
+
 function makeHeaders(req, userId) {
     const headers = {
         'User-Agent': 'wicked.portal/' + utils.getVersion(),

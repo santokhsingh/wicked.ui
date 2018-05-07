@@ -2,6 +2,7 @@
 
 var express = require('express');
 var { debug, info, warn, error } = require('portal-env').Logger('portal:ping');
+var wicked = require('wicked-sdk');
 var router = express.Router();
 var utils = require('./utils');
 
@@ -22,7 +23,7 @@ router.get('/', function (req, res, next) {
     }
 
     // We're initialized, we can access the globals
-    var portalUrl = req.app.portalGlobals.network.schema + '://' + req.app.portalGlobals.network.portalHost;
+    var portalUrl = wicked.getExternalPortalUrl();
     res.json({
         name: 'portal',
         message: 'Up and running',

@@ -59,10 +59,22 @@ block content
                             label Authorization Servers:
                             p Any of the following Authorization Servers can be used to retrieve an access token for the API.
                         for authServer in authServers
-                            h5 #{authServer.desc}:
-                            input(readonly type='string' value=authServer.url style='font-family: monospace;').form-control
-                            if authServer.urlDescription
-                                p!= authServer.urlDescription
+                            for authMethod in authServer.authMethods
+                                h5 #{authMethod.friendlyShort} (#{authServer.desc}):
+                                p #{authMethod.friendlyLong}
+                                if authMethod.authorizeEndpoint
+                                    input(readonly type='string' value=authMethod.authorizeEndpoint style='font-family: monospace;').form-control
+                                    p.small Authorization Endpoint
+                                if authMethod.tokenEndpoint
+                                    input(readonly type='string' value=authMethod.tokenEndpoint style='font-family: monospace;').form-control
+                                    p.small Token Endpoint
+                                if authMethod.profileEndpoint
+                                    input(readonly type='string' value=authMethod.profileEndpoint style='font-family: monospace;').form-control
+                                    p.small Profile Endpoint
+                                
+                            //- input(readonly type='string' value=authServer.url style='font-family: monospace;').form-control
+                            //- if authServer.urlDescription
+                            //-     p!= authServer.urlDescription
 
         .panel.panel-default
             .panel-heading

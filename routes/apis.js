@@ -8,6 +8,7 @@ var marked = require('marked');
 var async = require('async');
 var cors = require('cors');
 var mustache = require('mustache');
+var wicked = require('wicked-sdk');
 
 router.get('/', function (req, res, next) {
     debug("get('/')");
@@ -30,22 +31,23 @@ router.get('/', function (req, res, next) {
             for (var i = 0; i < apiList.length; ++i) {
                 if (apiList[i].desc)
                     apiList[i].desc = marked(apiList[i].desc);
-                if(apiList[i].tags && apiList[i].tags.length>0){
-                  for (var j = 0; j < apiList[i].tags.length; ++j) {
-                    apiTags.push(apiList[i].tags[j]);
-                  }
+                if (apiList[i].tags && apiList[i].tags.length > 0) {
+                    for (var j = 0; j < apiList[i].tags.length; ++j) {
+                        apiTags.push(apiList[i].tags[j]);
+                    }
                 }
             }
-            if(req.query["filter"]){
-              apiList = apiList.filter(function(api) {
-                if(!api.tags) return false;
-                for(var i=0; i< api.tags.length; i++){
-                  if(req.query[api.tags[i]]){
-                    return true;
-                  }
-                }
-                return false;
-              });
+            if (req.query && req.query.filter) {
+                apiList = apiList.filter(function (api) {
+                    if (!api.tags)
+                        return false;
+                    for (var i = 0; i < api.tags.length; i++) {
+                        if (req.query[api.tags[i]]) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
             }
             var desc = results.getDesc;
             if (!utils.acceptJson(req)) {
@@ -68,8 +70,8 @@ router.get('/', function (req, res, next) {
 
 function unique(arr) {
     var u = {}, a = [];
-    for(var i = 0, l = arr.length; i < l; ++i){
-        if(!u.hasOwnProperty(arr[i])) {
+    for (var i = 0, l = arr.length; i < l; ++i) {
+        if (!u.hasOwnProperty(arr[i])) {
             a.push(arr[i]);
             u[arr[i]] = 1;
         }
@@ -212,7 +214,7 @@ router.get('/:api', function (req, res, next) {
             debug(subsResults);
             const authServers = results.getAuthServers;
             if (authServers && authServers.length > 0) {
-                for (let i=0; i<authServers.length; ++i) {
+                for (let i = 0; i < authServers.length; ++i) {
                     if (authServers[i].urlDescription)
                         authServers[i].urlDescription = marked(authServers[i].urlDescription); // May be markdown.
                 }
@@ -252,20 +254,56 @@ router.get('/:api', function (req, res, next) {
                     thisApp.subscriptionApproved = subsResults[i].approved;
                     if (subsResults[i]._links.deleteSubscription)
                         thisApp.mayUnsubscribe = true;
-                    thisApp.swaggerLink = req.app.portalGlobals.network.schema + '://' +
-                        req.app.portalGlobals.network.portalHost +
+                    thisApp.swaggerLink = wicked.getExternalPortalUrl() +
                         '/apis/' + apiId + '/swagger?forUser=' + loggedInUserId;
                 }
                 apps.push(thisApp);
                 debug(thisApp);
             }
 
+            // if (authServers) {
+            //     for (let i=0; i<authServers.length; ++i) {
+            //         authServers[i].url = mustache.render(authServers[i].url, {
+            //             apiId: apiInfo.id
+            //         });
+            //     }
+            // }
+            const apiUrl = utils.ensureNoSlash(wicked.getExternalApiUrl());
             if (authServers) {
-                for (let i=0; i<authServers.length; ++i) {
-                    authServers[i].url = mustache.render(authServers[i].url, {
-                        apiId: apiInfo.id
-                    });
+                const endpoints = [
+                    "authorizeEndpoint",
+                    "tokenEndpoint",
+                    "profileEndpoint"
+                ];
+                for (let i = 0; i < authServers.length; ++i) {
+                    const authServer = authServers[i];
+                    if (!(authServer.config && authServer.config.api && authServer.config.api.uris && authServer.config.api.uris.length > 0)) {
+                        error("Erroneous configuration of Auth Server '${authServer.id} - config.apis.uris is not an array, or is empty.");
+                        continue;
+                    }
+                    // TODO: This is also Kong specific!
+                    const authServerUrl = apiUrl + authServer.config.api.uris[0];
+                    // Iterate over the Auth Methods which are configured for this API
+                    if (authServer.authMethods && authServer.authMethods.length > 0) {
+                        for (let j = 0; j < authServer.authMethods.length; ++j) {
+                            const authMethod = authServer.authMethods[j];
+                            const authMethodName = authMethod.name;
+                            for (let k = 0; k < endpoints.length; ++k) {
+                                const endpoint = endpoints[k];
+                                if (authMethod.config && authMethod.config[endpoint]) {
+                                    authMethod[endpoint] = authServerUrl + mustache.render(authMethod.config[endpoint], { api: apiId, name: authMethodName });
+                                } else {
+                                    warn(`Auth server ${authServer.name} does not have definition for endpoint ${endpoint}`);
+                                }
+                            }
+                        }
+                    } else {
+                        warn('Auth server ' + authServer.name + ' does not have any authMethods.');
+                    }
+
                 }
+                debug('Augmented auth server list:');
+                debug(authServers);
             }
 
             // See also views/models/api.json for how this looks
@@ -305,7 +343,7 @@ var corsOptionsDelegate = function (req, callback) {
     debug('Origin: ' + req.header('Origin'));
     if (!corsOptions) {
         corsOptions = {
-            origin: req.app.portalGlobals.network.schema + '://' + req.app.portalGlobals.network.apiHost,
+            origin: wicked.getExternalApiUrl(),
             credentials: true
         };
     }

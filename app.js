@@ -156,7 +156,7 @@ app.initialize = function (done) {
     });
 
     if (app.get('env') === 'production' &&
-        portalGlobals.glob.network.schema != 'https') {
+        portalGlobals.glob.network.schema !== 'https') {
         throw new Error('You are running in "production" mode (NODE_ENV), but not using https. This is not supported (Cookies cannot be transported).');
     }
 
