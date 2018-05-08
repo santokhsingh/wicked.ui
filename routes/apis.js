@@ -255,6 +255,7 @@ router.get('/:api', function (req, res, next) {
                     thisApp.swaggerLink = req.app.portalGlobals.network.schema + '://' +
                         req.app.portalGlobals.network.portalHost +
                         '/apis/' + apiId + '/swagger?forUser=' + loggedInUserId;
+                    thisApp.swaggerLink =   encodeURIComponent(thisApp.swaggerLink);
                 }
                 apps.push(thisApp);
                 debug(thisApp);
