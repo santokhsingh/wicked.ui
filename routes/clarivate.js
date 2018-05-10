@@ -15,7 +15,7 @@ router.get('/kong-status', function (req, res, next) {
     if (err) {
       return next(err);
     }
-    
+
     var data = utils.getJson(adminRes.body);
 
     debug("Kong returned: " + JSON.stringify(data));
@@ -31,8 +31,8 @@ router.get('/kong-status', function (req, res, next) {
        'server_connections_waiting': (data && data.server ? data.server.connections_waiting : -1)}
     ];
 
-    res.json({status: rows});  
-  });  
+    res.json({status: rows});
+  });
 });
 
 router.get('/status', function (req, res, next) {
@@ -120,8 +120,9 @@ router.get('/subscriptions', function (req, res, next) {
                  for (var j = 0; j < sub.length; ++j){
                     var application = sub[j].application;
                     var api = sub[j].api;
-                    sub[j]["consumer"] = consumers[application+"$"+api];
-                    sub[j]["consumerid"] = sub[j]["consumer"].id;
+                    var consumer = consumers[application+"$"+api];
+                    sub[j]["consumer"] = consumer;
+                    sub[j]["consumerid"] = (consumer && consumer.id) ? consumer.id: "";
                   subs.push(sub[j]);
                 }
             }
