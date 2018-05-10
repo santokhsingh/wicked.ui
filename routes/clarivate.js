@@ -121,6 +121,7 @@ router.get('/subscriptions', function (req, res, next) {
                     var application = sub[j].application;
                     var api = sub[j].api;
                     sub[j]["consumer"] = consumers[application+"$"+api];
+                    sub[j]["consumerid"] = sub[j]["consumer"].id;
                   subs.push(sub[j]);
                 }
             }
