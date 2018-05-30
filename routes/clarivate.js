@@ -89,7 +89,7 @@ router.get('/status', function (req, res, next) {
 
 router.get('/subscriptions', function (req, res, next) {
     debug("get('/subscriptions')");
-    getAdmin(req, res, '/consumers', function (err, consumersResponse) {
+    getAdmin(req, res, '/consumers?size=20000000', function (err, consumersResponse) {
       if (err)
         return next(err);
       var consumers = {}
