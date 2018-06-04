@@ -88,12 +88,14 @@ function byName(a, b) {
 
 router.get('/users', function (req, res, next) {
     debug("get('/users')");
-    utils.getFromAsync(req, res, '/users', 200, function (err, apiResponse) {
+    utils.getFromAsync(req, res, '/registrations/pools/wicked', 200, function (err, apiResponse) {
         if (err)
             return next(err);
+        const userList = apiResponse.items;
+        debug(userList);
 
         // Sort by name
-        apiResponse.sort(byName);
+        userList.sort(byName);
 
         if (!utils.acceptJson(req)) {
             res.render('admin_users',
@@ -101,12 +103,12 @@ router.get('/users', function (req, res, next) {
                     authUser: req.user,
                     glob: req.app.portalGlobals,
                     title: 'All Users',
-                    users: apiResponse
+                    users: userList
                 });
         } else {
             res.json({
                 title: 'All Users',
-                users: apiResponse
+                users: userList
             });
         }
     });

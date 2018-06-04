@@ -98,13 +98,6 @@ html
                             a(href="/content/toc") Content
                 ul(class='nav navbar-nav navbar-#{glob.layouts.menu.classForLoginSignupPosition}')
                     if !authUser
-                        if glob.layouts.menu.showSignupLink
-                            if route == '/signup'
-                                li.active
-                                    a(href="/signup") Sign up
-                            else
-                                li
-                                    a(href="/signup") Sign up
                         if route == '/login'
                             li.active
                                 a(href="/login")= glob.layouts.menu.loginLinkText

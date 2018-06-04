@@ -7,7 +7,8 @@ var request = require('request');
 var utils = require('./utils');
 var passport = require('passport');
 
-/* GET home page. */
+/*
+// GET home page.
 router.get('/', function (req, res, next) {
     debug("get('/')");
     debug(req.session);
@@ -72,14 +73,5 @@ router.post('/', function (req, res, next) {
         signupLocal();
     }
 });
-
-/*
-router.post('/', passport.authenticate('local-signup', {
-        failureFlash: true,
-        successRedirect: '/login',
-        failureRedirect: '/signup'
-     })
-);
 */
-
 module.exports = router;

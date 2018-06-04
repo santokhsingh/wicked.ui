@@ -14,15 +14,16 @@ block content
                 tr
                     th ID
                     th Name
-                    th Email
+                    //- th Email
                     th Custom ID
             tbody
                 for user in users
                     tr
-                        td= user.id
+                        td= user.userId
                         td
-                            a(href='/users/#{user.id}')= user.name
-                        td= user.email
+                            a(href='/users/#{user.userId}')= user.name
+                        //- td
+                        //-     a(href='/users/#{user.id}')= user.email
                         if user.customId
                             td= user.customId
                         else

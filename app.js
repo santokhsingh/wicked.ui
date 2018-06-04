@@ -171,8 +171,8 @@ app.initialize = function (done) {
     });
 
     app.get('/', index);
-    app.use('/signup', signup);
-    app.use('/forgotpassword', forgotpassword);
+    // app.use('/signup', signup);
+    // app.use('/forgotpassword', forgotpassword);
     app.use('/apis', apis);
     app.use('/applications', applications);
 
