@@ -344,7 +344,7 @@ function apiAction(req, method, body, callback, iteration) {
 
 utils.get = function (req, uri, callback) {
     debug('get(): ' + uri);
-    var baseUrl = req.app.get('api_url');
+    const baseUrl = req.app.get('api_url');
 
     apiAction(req, 'GET', {
         url: baseUrl + uri,
@@ -354,7 +354,7 @@ utils.get = function (req, uri, callback) {
 
 utils.pipe = function (req, res, uri, isRetry) {
     debug('pipe()');
-    var baseUrl = req.app.get('api_url');
+    const baseUrl = req.app.get('api_url');
     getAnonymousToken(req, (err, accessToken) => {
         const pipeReq = request({
             url: baseUrl + uri,
@@ -386,7 +386,7 @@ utils.pipe = function (req, res, uri, isRetry) {
 
 utils.getAsUser = function (req, uri, userId, callback) {
     debug('getAsUser(): ' + uri + ', userId = ' + userId);
-    var baseUrl = req.app.get('api_url');
+    const baseUrl = req.app.get('api_url');
 
     apiAction(req, 'GET', {
         url: baseUrl + uri,
@@ -399,9 +399,9 @@ utils.handleError = function (res, apiResponse, apiBody, next) {
     // debug(apiResponse);
     debug('statusCode: ' + apiResponse.statusCode);
     debug(apiBody);
-    var errorText = utils.getText(apiBody);
+    let errorText = utils.getText(apiBody);
     try {
-        var jsonBody = utils.getJson(apiBody);
+        const jsonBody = utils.getJson(apiBody);
         if (jsonBody.message)
             errorText = jsonBody.message;
     } catch (err) {
@@ -410,7 +410,7 @@ utils.handleError = function (res, apiResponse, apiBody, next) {
         // Ignore this, it was worth a try
     }
 
-    var err = new Error(errorText);
+    const err = new Error(errorText);
     err.status = apiResponse.statusCode;
     return next(err);
 };
@@ -424,8 +424,8 @@ utils.getFromAsync = function (req, res, uri, expectedStatus, callback) {
             return callback(err);
         if (expectedStatus != apiResponse.statusCode)
             return utils.handleError(res, apiResponse, apiBody, callback);
-        var contentType = apiResponse.headers['content-type'];
-        var returnValue = null;
+        const contentType = apiResponse.headers['content-type'];
+        let returnValue = null;
         if (contentType.startsWith('text'))
             returnValue = utils.getText(apiBody);
         else
@@ -437,7 +437,7 @@ utils.getFromAsync = function (req, res, uri, expectedStatus, callback) {
 utils.post = function (req, uri, body, callback) {
     debug('post(): ' + uri);
     debug(body);
-    var baseUrl = req.app.get('api_url');
+    const baseUrl = req.app.get('api_url');
 
     apiAction(req, 'POST', {
         url: baseUrl + uri,
@@ -450,7 +450,7 @@ utils.post = function (req, uri, body, callback) {
 utils.patch = function (req, uri, body, callback) {
     debug('patch(): ' + uri);
     debug(body);
-    var baseUrl = req.app.get('api_url');
+    const baseUrl = req.app.get('api_url');
 
     apiAction(req, 'PATCH', {
         url: baseUrl + uri,
@@ -463,7 +463,7 @@ utils.patch = function (req, uri, body, callback) {
 utils.patchAsUser = function (req, uri, userId, body, callback) {
     debug('patchAsUser(): ' + uri + ', userId = ' + userId);
     debug(body);
-    var baseUrl = req.app.get('api_url');
+    const baseUrl = req.app.get('api_url');
 
     apiAction(req, 'PATCH', {
         url: baseUrl + uri,
@@ -473,9 +473,22 @@ utils.patchAsUser = function (req, uri, userId, body, callback) {
     }, callback);
 };
 
+utils.put = function (req, uri, body, callback) {
+    debug('put(): ' + uri);
+    debug(body);
+    const baseUrl = req.app.get('api_url');
+
+    apiAction(req, 'PUT', {
+        url: baseUrl + uri,
+        headers: makeHeaders(req),
+        json: true,
+        body: body
+    }, callback);
+};
+
 utils.delete = function (req, uri, callback) {
     debug('delete(): ' + uri);
-    var baseUrl = req.app.get('api_url');
+    const baseUrl = req.app.get('api_url');
 
     apiAction(req, 'DELETE', {
         url: baseUrl + uri,
@@ -509,7 +522,7 @@ utils.getText = function (ob) {
 utils.acceptJson = function (req) {
     if (!req.headers || !req.headers.accept)
         return false;
-    var headers = req.headers.accept.split(',');
+    const headers = req.headers.accept.split(',');
     if (headers.find(function (h) { return h.toLowerCase().startsWith('application/json'); }))
         return true;
     return false;
