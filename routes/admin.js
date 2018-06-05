@@ -1,13 +1,14 @@
 'use strict';
 
-var express = require('express');
-var router = express.Router();
-var async = require('async');
-var { debug, info, warn, error } = require('portal-env').Logger('portal:admin');
-var tmp = require('tmp');
-var fs = require('fs');
-var util = require('util');
-var utils = require('./utils');
+const express = require('express');
+const router = express.Router();
+const async = require('async');
+const mustache = require('mustache');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:admin');
+const tmp = require('tmp');
+const fs = require('fs');
+const util = require('util');
+const utils = require('./utils');
 
 router.get('/approvals', function (req, res, next) {
     debug('get("/approvals")');
@@ -34,10 +35,10 @@ router.get('/approvals', function (req, res, next) {
 
 router.post('/approvals/approve', function (req, res, next) {
     debug("post('/approvals/approve')");
-    var appId = req.body.app;
-    var apiId = req.body.api;
+    const appId = req.body.app;
+    const apiId = req.body.api;
     if (!appId || !apiId) {
-        var err = new Error('Bad request. Both App and API need to be specificed.');
+        const err = new Error('Bad request. Both App and API need to be specificed.');
         err.status = 400;
         return next(err);
     }
@@ -59,10 +60,10 @@ router.post('/approvals/approve', function (req, res, next) {
 
 router.post('/approvals/decline', function (req, res, next) {
     debug("post('/approvals/decline')");
-    var appId = req.body.app;
-    var apiId = req.body.api;
+    const appId = req.body.app;
+    const apiId = req.body.api;
     if (!appId || !apiId) {
-        var err = new Error('Bad request. Both App and API need to be specificed.');
+        const err = new Error('Bad request. Both App and API need to be specificed.');
         err.status = 400;
         return next(err);
     }
@@ -120,8 +121,8 @@ router.get('/applications', function (req, res, next) {
     utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
         if (err)
             return next(err);
-        var appIds = [];
-        for (var i = 0; i < appsResponse.length; ++i)
+        const appIds = [];
+        for (let i = 0; i < appsResponse.length; ++i)
             appIds.push(appsResponse[i].id);
 
         // This is the expensive part:
@@ -130,10 +131,10 @@ router.get('/applications', function (req, res, next) {
         }, function (err, appsInfos) {
             if (err)
                 return next(err);
-            for (var i = 0; i < appsInfos.length; ++i) {
-                var thisApp = appsInfos[i];
-                var mainOwner = null;
-                for (var j = 0; j < thisApp.owners.length; ++i) {
+            for (let i = 0; i < appsInfos.length; ++i) {
+                const thisApp = appsInfos[i];
+                let mainOwner = null;
+                for (let j = 0; j < thisApp.owners.length; ++i) {
                     if ("owner" == thisApp.owners[j].role) {
                         mainOwner = thisApp.owners[j];
                         break;
@@ -177,8 +178,8 @@ router.get('/subscribe', function (req, res, next) {
         if (err)
             return next(err);
 
-        var apps = results.getApplications;
-        var apis = results.getApis;
+        const apps = results.getApplications;
+        const apis = results.getApis;
 
         res.render('admin_subscribe', {
             authUser: req.user,
@@ -213,8 +214,8 @@ router.get('/listeners', function (req, res, next) {
 
 router.get('/listeners/:listenerId', function (req, res, next) {
     debug("get('/listeners/:listenerId')");
-    var listenerId = req.params.listenerId;
-    var regex = /^[a-zA-Z0-9\-_]+$/;
+    const listenerId = req.params.listenerId;
+    const regex = /^[a-zA-Z0-9\-_]+$/;
     if (!regex.test(listenerId))
         return req.status(400).jsonp({ message: 'Bad Request.' });
     utils.getFromAsync(req, res, '/webhooks/events/' + listenerId, 200, function (err, appsResponse) {
@@ -241,6 +242,7 @@ router.get('/verifications', function (req, res, next) {
     utils.getFromAsync(req, res, '/verifications', 200, function (err, verifResponse) {
         if (err)
             return next(err);
+        verifResponse.forEach(v => v.link = mustache.render(v.link, { id: v.id }));
         if (!utils.acceptJson(req)) {
             res.render('admin_verifications', {
                 authUser: req.user,
@@ -265,15 +267,15 @@ function padLeft(n) {
 
 function fixUptimes(healths) {
     debug('fixUptimes()');
-    for (var i = 0; i < healths.length; ++i) {
-        var uptimeSeconds = Number(healths[i].uptime);
+    for (let i = 0; i < healths.length; ++i) {
+        const uptimeSeconds = Number(healths[i].uptime);
         if (uptimeSeconds >= 0) {
-            var days = Math.floor(uptimeSeconds / 86400);
-            var remain = uptimeSeconds - (days * 86400);
-            var hours = Math.floor(remain / 3600);
+            const days = Math.floor(uptimeSeconds / 86400);
+            let remain = uptimeSeconds - (days * 86400);
+            const hours = Math.floor(remain / 3600);
             remain = remain - (hours * 3600);
-            var minutes = Math.floor(remain / 60);
-            var seconds = remain - (minutes * 60);
+            const minutes = Math.floor(remain / 60);
+            const seconds = remain - (minutes * 60);
             if (days > 0)
                 healths[i].uptimeText = util.format('%d days, %d:%s:%s', days, hours, padLeft(minutes), padLeft(seconds));
             else

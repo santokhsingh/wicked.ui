@@ -21,7 +21,8 @@ block content
             tbody
                 for v in verifications
                     tr
-                        td= v.id
+                        td
+                            a(href='#{v.link}')= v.id
                         td= v.type
                         td= v.email
                         td
