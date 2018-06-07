@@ -39,7 +39,7 @@ block bodyScripts
                     }
                  },
                  { name: "plan.name", type: "text", title: "Plan" },
-                 { type: "actions",  type: "control", width: "75",
+                 { type: "actions",  type: "control", width: "90",
                          _createFilterSwitchButton: function() {
                           return this._createOnOffSwitchButton("filtering", this.searchModeButtonClass, false);
                          },
@@ -61,7 +61,7 @@ block bodyScripts
                                                            $form.attr("action","/admin/approvals/decline");
                                                            $form.submit();
                                                          });
-                          return $("<td>").append($approveBtn)
+                          return $("<td nowrap>").append($approveBtn)
                                           .append("<span>&nbsp;</span>")
                                           .append($declineBtn)
                                           .append($form);
@@ -70,8 +70,8 @@ block bodyScripts
              ]
            });
            $("#approvalsGrid").jsGrid("option", "filtering", false);
+           $(".jsgrid-cell" ).css( "word-wrap", "break-word" );
         });
-
 block content
     .jumbotron.wicked-admin-title
         .container.wicked-title-container
@@ -80,5 +80,8 @@ block content
             p Please review the pending subscription approvals. You may either approve of or decline the subscription.
 
     .container.wicked-container
-          div#approvalsGrid
-          br
+      if count == 0
+        h3 No pending approvals
+      else
+        div#approvalsGrid
+      br
