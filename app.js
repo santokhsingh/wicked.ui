@@ -1,39 +1,39 @@
 'use strict';
 
 /* global app */
-var express = require('express');
-var { debug, info, warn, error } = require('portal-env').Logger('portal:app');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var flash = require('connect-flash');
+const express = require('express');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:app');
+const path = require('path');
+const favicon = require('serve-favicon');
+const logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const flash = require('connect-flash');
 
-var index = require('./routes/index');
-var signup = require('./routes/signup');
-var forgotpassword = require('./routes/forgotpassword');
-var apis = require('./routes/apis');
-var applications = require('./routes/applications');
-var content = require('./routes/content');
-var users = require('./routes/users');
-var admin = require('./routes/admin');
-var verification = require('./routes/verification');
-var validateemail = require('./routes/validateemail');
-var swaggerUi = require('./routes/swaggerUi');
-var ping = require('./routes/ping');
-var help = require('./routes/help');
-var kill = require('./routes/kill');
-var utils = require('./routes/utils');
-var portalGlobals = require('./portalGlobals');
-var wicked = require('wicked-sdk');
-var correlationIdHandler = wicked.correlationIdHandler();
+const index = require('./routes/index');
+// const signup = require('./routes/signup');
+// const forgotpassword = require('./routes/forgotpassword');
+const apis = require('./routes/apis');
+const applications = require('./routes/applications');
+const content = require('./routes/content');
+const users = require('./routes/users');
+const admin = require('./routes/admin');
+// const verification = require('./routes/verification');
+// const validateemail = require('./routes/validateemail');
+const swaggerUi = require('./routes/swaggerUi');
+const ping = require('./routes/ping');
+const help = require('./routes/help');
+const kill = require('./routes/kill');
+const utils = require('./routes/utils');
+const portalGlobals = require('./portalGlobals');
+const wicked = require('wicked-sdk');
+const correlationIdHandler = wicked.correlationIdHandler();
 
-var passport = require('passport');
-var fs = require('fs');
-var session = require('express-session');
+const passport = require('passport');
+const fs = require('fs');
+const session = require('express-session');
 
-var app = express();
+const app = express(); // jshint ignore:line
 app.initialized = false;
 app.initState = 'Starting up...';
 app.isProduction = true;
@@ -47,11 +47,11 @@ app.use(correlationIdHandler);
 
 // Configure logger; log in JSON format.
 logger.token('user-id', function (req, res) {
-    var userId = utils.getLoggedInUserId(req);
+    const userId = utils.getLoggedInUserId(req);
     return userId ? userId : '-';
 });
 logger.token('user-email', function (req, res) {
-    var email = utils.getLoggedInUserEmail(req);
+    const email = utils.getLoggedInUserEmail(req);
     return email ? email : '-';
 });
 logger.token('correlation-id', function (req, res) {
@@ -85,11 +85,11 @@ app.initialize = function (done) {
 
     // The session type is configured via the globals.json sessionStore property,
     // This is why this has to go in here instead of in the above initialization.
-    var sessionStore = require('./sessionstore')(app.portalGlobals, session);
-    var SECRET = 'ThisIsASecret';
+    const sessionStore = require('./sessionstore')(app.portalGlobals, session);
+    const SECRET = 'ThisIsASecret';
 
     // Session: 15 minutes
-    var sessionArgs = {
+    const sessionArgs = {
         name: 'portal.cookie.sid',
         store: sessionStore,
         secret: SECRET,
@@ -124,7 +124,7 @@ app.initialize = function (done) {
     // Session checker middleware
     app.use(function (req, res, next) {
         if (!req.session) {
-            var err = new Error('Session not found (redis not available?)');
+            const err = new Error('Session not found (redis not available?)');
             err.status = 500;
             return next(err);
         }
@@ -180,8 +180,8 @@ app.initialize = function (done) {
     app.use('/content', content);
     app.use('/users', users);
     app.use('/admin', admin);
-    app.use('/verification', verification);
-    app.use('/validateemail', validateemail);
+    // app.use('/verification', verification);
+    // app.use('/validateemail', validateemail);
     app.use('/swagger-ui', swaggerUi);
     app.use('/swagger-ui', express.static(path.join(__dirname, 'swagger-ui')));
     app.use('/swagger-ui', express.static(path.join(__dirname, 'node_modules/swagger-ui/dist')));
@@ -189,56 +189,56 @@ app.initialize = function (done) {
     app.use('/kill', kill);
 
     // Late loading as it requires things from portalGlobals!
-    var login = require('./routes/login');
+    const login = require('./routes/login');
     app.use('/login', login);
 
-    // Plugin Authentication with PassportJS modules, if defined
-    if (portalGlobals.glob.auth.github && portalGlobals.glob.auth.github.useGithub) {
-        debug('Activating Github passport.');
-        app.use('/callback/github',
-            passport.authenticate('github', {
-                failureRedirect: '/login'
-            }),
-            function (req, res) {
-                res.redirect('/signup');
-            });
-    }
+    // // Plugin Authentication with PassportJS modules, if defined
+    // if (portalGlobals.glob.auth.github && portalGlobals.glob.auth.github.useGithub) {
+    //     debug('Activating Github passport.');
+    //     app.use('/callback/github',
+    //         passport.authenticate('github', {
+    //             failureRedirect: '/login'
+    //         }),
+    //         function (req, res) {
+    //             res.redirect('/signup');
+    //         });
+    // }
 
-    if (portalGlobals.glob.auth.google && portalGlobals.glob.auth.google.useGoogle) {
-        debug('Activating Google passport.');
-        app.use('/callback/google',
-            passport.authenticate('google', {
-                failureRedirect: '/login'
-            }),
-            function (req, res) {
-                res.redirect('/signup');
-            });
-    }
+    // if (portalGlobals.glob.auth.google && portalGlobals.glob.auth.google.useGoogle) {
+    //     debug('Activating Google passport.');
+    //     app.use('/callback/google',
+    //         passport.authenticate('google', {
+    //             failureRedirect: '/login'
+    //         }),
+    //         function (req, res) {
+    //             res.redirect('/signup');
+    //         });
+    // }
 
-    if (portalGlobals.glob.auth.oauth2 && portalGlobals.glob.auth.oauth2.useOauth2) {
-        debug('Activating Oauth 2 passport.');
-        app.use('/callback/oauth2',
-            passport.authenticate('oauth2', {
-                failureRedirect: '/login'
-            }),
-            function (req, res) {
-                res.redirect('/signup');
-            });
-    }
+    // if (portalGlobals.glob.auth.oauth2 && portalGlobals.glob.auth.oauth2.useOauth2) {
+    //     debug('Activating Oauth 2 passport.');
+    //     app.use('/callback/oauth2',
+    //         passport.authenticate('oauth2', {
+    //             failureRedirect: '/login'
+    //         }),
+    //         function (req, res) {
+    //             res.redirect('/signup');
+    //         });
+    // }
 
 
-    if (portalGlobals.glob.auth.adfs && portalGlobals.glob.auth.adfs.useAdfs) {
-        debug('Activating ADFS passport.');
-        app.use('/callback',
-            passport.authenticate('adfs'),
-            function (req, res) {
-                res.redirect('/signup');
-            });
-    }
+    // if (portalGlobals.glob.auth.adfs && portalGlobals.glob.auth.adfs.useAdfs) {
+    //     debug('Activating ADFS passport.');
+    //     app.use('/callback',
+    //         passport.authenticate('adfs'),
+    //         function (req, res) {
+    //             res.redirect('/signup');
+    //         });
+    // }
 
     // catch 404 and forward to error handler
     app.use(function (req, res, next) {
-        var err = new Error('Not Found');
+        const err = new Error('Not Found');
         err.status = 404;
         next(err);
     });
@@ -281,10 +281,10 @@ app.initialize = function (done) {
             res.redirect('/login?redirect=' + encodeURIComponent(req.url));
         } else {
             debug(err);
-            var status = err.status || 500;
+            const status = err.status || 500;
             res.status(status);
             if (!utils.acceptJson(req)) {
-                var errorTemplate = 'error'; // default error template
+                let errorTemplate = 'error'; // default error template
 
                 switch (status) {
                     case 403: errorTemplate = 'error_403'; break;
@@ -313,8 +313,5 @@ app.initialize = function (done) {
     if (done)
         done();
 };
-
-
-
 
 module.exports = app;

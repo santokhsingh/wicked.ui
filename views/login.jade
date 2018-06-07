@@ -49,6 +49,9 @@ block content
         - if (authMethod.type === 'google') { buttonClass = 'btn btn-block btn-lg btn-google'; faClass = 'fa fa-google fa-lg' }
         - if (authMethod.type === 'github') { buttonClass = 'btn btn-block btn-lg btn-github'; faClass = 'fa fa-github fa-lg' }
         - if (authMethod.type === 'adfs') { buttonClass = 'btn btn-block btn-lg btn-github'; faClass = 'fa fa-cloud fa-lg' }
+        - if (authMethod.type === 'twitter') { buttonClass = 'btn btn-block btn-lg btn-twitter'; faClass = 'fa fa-twitter fa-lg' }
+        - if (authMethod.type === 'oauth2') { buttonClass = 'btn btn-block btn-lg btn-openid'; faClass = 'fa fa-openid fa-lg' }
+        - if (authMethod.type === 'facebook') { buttonClass = 'btn btn-block btn-lg btn-facebook'; faClass = 'fa fa-facebook fa-lg' }
         - var authUrl = authConfig.authServerUrl + authMethod.config.authorizeEndpoint + '?response_type=code&client_id=' + clientId + '&state=' + authMethod.name + '-' + nonce
         a(href=authUrl class=buttonClass)
             i(class=faClass)

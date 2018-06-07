@@ -19,14 +19,14 @@ utils.createRandomId = function () {
     return crypto.randomBytes(20).toString('hex');
 };
 
-utils.fail = function (statusCode, message, internalError, callback) {
+utils.fail = function (statusCode, message, internalErrorOrCallback, callback) {
     debug(`fail(${statusCode}, ${message})`);
     const err = new Error(message);
     err.status = statusCode;
-    if (typeof (internalError) === 'function')
-        callback = internalError;
+    if (typeof (internalErrorOrCallback) === 'function')
+        callback = internalErrorOrCallback;
     else
-        err.internalError = internalError;
+        err.internalError = internalErrorOrCallback;
     return callback(err);
 };
 
@@ -581,6 +581,33 @@ utils.getBuildDate = function () {
             utils._buildDate = '(unknown build date)';
     }
     return utils._buildDate;
+};
+
+// https://stackoverflow.com/questions/263965/how-can-i-convert-a-string-to-boolean-in-javascript
+utils.parseBool = (str) => {
+    debug(`parseBool(${str})`);
+    if (str == null)
+        return false;
+
+    if (typeof (str) === 'boolean')
+        return (str === true);
+
+    if (typeof (str) === 'string') {
+        if (str == "")
+            return false;
+
+        str = str.replace(/^\s+|\s+$/g, '');
+        if (str.toLowerCase() == 'true' || str.toLowerCase() == 'yes')
+            return true;
+
+        str = str.replace(/,/g, '.');
+        str = str.replace(/^\s*\-\s*/g, '-');
+    }
+
+    if (!isNaN(str))
+        return (parseFloat(str) != 0);
+
+    return false;
 };
 
 module.exports = utils;

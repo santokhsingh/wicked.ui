@@ -208,10 +208,22 @@ function configureAuthServer(callback) {
             const authMethodName = tmp[1];
             if (authServer !== 'default')
                 return callback(new Error(`currently, only default server auth methods are supported for portal login: ${wantedAuthMethod}`));
-            const defaultAuthMethod = defaultAuthServer.authMethods.find(am => am.name === authMethodName);
-            if (!defaultAuthMethod)
-                return callback(new Error(`unknown/unsupported auth method ${wantedAuthMethod}`));
-            const templateUrl = function (url) {
+            const defaultAuthMethod = defaultAuthServer.authMethods.find(am => am.name === authMethodName); // jshint ignore:line
+            if (!defaultAuthMethod) {
+                // We will not fail just because we couldn't retrieve a specific auth method,
+                // but we will warn about it in the logs.
+                warn(`Unknown/unsupported auth method ${wantedAuthMethod}`);
+                continue;
+            }
+            // Is this auth method enabled?
+            let enabled = true;
+            if (defaultAuthMethod.hasOwnProperty('enabled'))
+                enabled = utils.parseBool(defaultAuthMethod.enabled);
+            if (!enabled) {
+                warn(`Auth method ${wantedAuthMethod} is configured, but not enabled. Skipping.`);
+                continue;
+            }
+            const templateUrl = function (url) { // jshint ignore:line
                 return mustache.render(url, {
                     name: authMethodName,
                     api: 'portal-api'
@@ -224,18 +236,22 @@ function configureAuthServer(callback) {
             debug(config);
             if (!config)
                 return callback(new Error(`Auth method ${wantedAuthMethod} does not have a config property.`));
-            if (config.authorizeEndpoint)
-                config.authorizeEndpoint = templateUrl(config.authorizeEndpoint);
-            else
-                return callback(new Error(`Auth method ${wantedAuthMethod} does not have an authorizeEndpoint.`));
-            if (config.tokenEndpoint)
-                config.tokenEndpoint = templateUrl(config.tokenEndpoint);
-            else
-                return callback(new Error(`Auth method ${wantedAuthMethod} does not have a tokenEndpoiunt.`));
-            if (config.profileEndpoint)
-                config.profileEndpoint = templateUrl(config.profileEndpoint);
-            else
-                return callback(new Error(`Auth method ${wantedAuthMethod} does not have a profileEndpoiunt.`));
+
+            // Check for required end point configurations
+            if (!config.authorizeEndpoint)
+                return callback(new Error(`Auth method ${wantedAuthMethod} config does not have an authorizeEndpoint.`));
+            if (!config.tokenEndpoint)
+                return callback(new Error(`Auth method ${wantedAuthMethod} config does not have a tokenEndpoiunt.`));
+            if (!config.profileEndpoint)
+                return callback(new Error(`Auth method ${wantedAuthMethod} config does not have a profileEndpoiunt.`));
+            
+            // Template the configuration properties, if necessary (mustache)
+            for (let key in config) {
+                if (typeof config[key] !== 'string')
+                    continue;
+                if (config[key].indexOf('{{') >= 0)
+                    config[key] = templateUrl(config[key]);
+            }
 
             authMethods.push(defaultAuthMethod);
         }

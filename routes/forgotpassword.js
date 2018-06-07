@@ -7,7 +7,7 @@ var passport = require('passport');
 var request = require('request');
 var utils = require('./utils');
 
-/* GET home page. */
+/*
 router.get('/', function (req, res, next) {
     debug("get('/')");
     res.render('forgotpassword',
@@ -72,5 +72,6 @@ function postEmailAndRenderConfirm(req, res, email, next) {
             });
     });
 }
+*/
 
 module.exports = router;

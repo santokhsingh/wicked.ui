@@ -48,9 +48,22 @@ function getUser(loggedInUserId, userId, req, res, next) {
             }
         }
 
+        // Build the link to the "verify email" functionality, this depends on the auth method the
+        // user selected when logging in.
+        const authMethodId = req.session.user.authMethodId;
+        if (!authMethodId)
+            return utils.fail(500, 'Could not retrieve auth method ID from user session.', next);
+        const authMethod = req.app.authConfig.authMethods.find(am => am.name == authMethodId);
+        if (!authMethod)
+            return utils.fail(500, 'Could not retrieve auth method configuration.', next);
+        let verifyEmailLink = '';
+        if (authMethod.config.verifyEmailEndpoint)
+            verifyEmailLink = `${req.app.authConfig.authServerUrl}${authMethod.config.verifyEmailEndpoint}`;
+
         if (!utils.acceptJson(req)) {
             res.render('user', {
                 authUser: req.user,
+                verifyEmailLink: verifyEmailLink,
                 glob: req.app.portalGlobals,
                 title: userInfo.name,
                 userInfo: userInfo,

@@ -88,21 +88,11 @@ block content
 
             input(type='hidden' name='__action' id='__action' value='none')
 
-            //- .form-group
-            //-     label(for='firstname') First name:
-            //-     input(id='firstname' name='firstname' value='#{userInfo.firstName}').form-control
-            //-     small
-            //-         span(id='errorFirstname' style='color:red')
-            //- .form-group
-            //-     label(for='lastname') Last name:
-            //-     input(id='lastname' name='lastname' value='#{userInfo.lastName}').form-control
-            //-     small
-            //-         span(id='errorLastname' style='color:red')
             .form-group
                 label(for='email') Email:
                 input(id='email' name='email' value='#{userInfo.email}' readonly).form-control
                 if (!userInfo.validated)
-                    small Email address has not yet been validated. <a href="/validateemail">Validate email address.</a>
+                    small Email address has not yet been validated. <a href="#{verifyEmailLink}" target="_blank">Validate email address.</a>
                 else
                     small Email address is valid.
             if userInfo.customId
