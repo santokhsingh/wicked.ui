@@ -1,29 +1,56 @@
 extends layout
+block bodyScripts
+    script(type='text/javascript').
+        $(document).ready(function(){
+           $('#usersGrid').jsGrid({
+             width: "100%", pageSize: 10, sorting: true, paging: true, filtering: true, autoload: true,
+             controller: {
+              loadData: function (filter) {
+                  var d = $.Deferred();
+                  var data = !{users};
+                  if (isEmptyGridFilter(filter)) {
+                    d.resolve(data);
+                    return d.promise();
+                  }
+                  data = $.grep(data, function (item) {
+                    if (applyGridFilter(filter, item))
+                       return item;
+                  });
+                  d.resolve(data);
+                  return d.promise();
+              }
+            },
+            fields: [
+                 { name: "id", type: "text", title: "ID", width: "80" },
+                 { name: "name", type: "text", title: "Name", width: "60",
+                   itemTemplate: function(value, item) {
+                     return $("<a>").attr("href", "/users/"+item.id).text(value);
+                    }
+                 },
+                 { name: "email", type: "text", title: "Email", width: "80" },
+                 { name: "customId", type: "text", title: "Custom ID", width: "40",
+                   itemTemplate: function(value, item) {
+                     return (value) ? value : "---";
+                    }
+                 },
+                 { type: "control", width: "10", editButton: false, deleteButton: false,
+                   _createFilterSwitchButton: function() {
+                    return this._createOnOffSwitchButton("filtering", this.searchModeButtonClass, false);
+                   }
+                 }
+             ]
+           });
+           $("#usersGrid").jsGrid("option", "filtering", false);
+        });
 
 block content
     .jumbotron.wicked-admin-title
         .container.wicked-title-container
             h1 All Users
-            
+
             p Index of all users of the API Portal.
-    
+
     .container.wicked-container
         br
-        table(class='table table-striped')
-            thead
-                tr
-                    th ID
-                    th Name
-                    th Email
-                    th Custom ID
-            tbody
-                for user in users
-                    tr
-                        td= user.id
-                        td
-                            a(href='/users/#{user.id}')= user.name
-                        td= user.email
-                        if user.customId
-                            td= user.customId
-                        else
-                            td ---
+        div#usersGrid
+        br

@@ -1,43 +1,84 @@
 extends layout
 
+block bodyScripts
+    script(type='text/javascript').
+        $(document).ready(function(){
+           $('#approvalsGrid').jsGrid({
+             width: "100%", pageSize: 10, sorting: true, paging: true, filtering: true, autoload: true,
+             controller: {
+              loadData: function (filter) {
+                  var d = $.Deferred();
+                  var data = !{approvals};
+                  if (isEmptyGridFilter(filter)) {
+                    d.resolve(data);
+                    return d.promise();
+                  }
+                  data = $.grep(data, function (item) {
+                    if (applyGridFilter(filter, item))
+                       return item;
+                  });
+                  d.resolve(data);
+                  return d.promise();
+              }
+            },
+            fields: [
+                 { name: "user.name", type: "text", title: "User Name",
+                   itemTemplate: function(value, item) {
+                     return $("<a>").attr("href", "/users/"+item.user.id).text(value);
+                    }
+                 },
+                 { name: "user.email", type: "text", title: "Email"},
+                 { name: "application.name", type: "text", title: "Application",
+                   itemTemplate: function(value, item) {
+                     return $("<a>").attr("href", "/applications/"+item.application.id).text(value);
+                    }
+                  },
+                 { name: "api.id", type: "text", title: "API",
+                   itemTemplate: function(value, item) {
+                     return $("<a>").attr("href", "/apis/"+item.api.id).text(value);
+                    }
+                 },
+                 { name: "plan.name", type: "text", title: "Plan" },
+                 { type: "actions",  type: "control", width: "75",
+                         _createFilterSwitchButton: function() {
+                          return this._createOnOffSwitchButton("filtering", this.searchModeButtonClass, false);
+                         },
+                        itemTemplate: function(value,item) {
+                          var $form = $("<form>").attr("role", "form").attr("method","post")
+                                                 .append("<input type='hidden' name='api' value='"+item.api.id+"'>")
+                                                 .append("<input type='hidden' name='app' value='"+item.application.id+"'>");
+                          var $approveBtn = $("<button>").attr("type", "submit")
+                                                         .attr("class", "btn btn-sm btn-success")
+                                                         .text("Approve")
+                                                         .on("click", function () {
+                                                            $form.attr("action","/admin/approvals/approve");
+                                                            $form.submit();
+                                                         });
+                          var $declineBtn = $("<button>").attr("type", "submit")
+                                                         .attr("class", "btn btn-sm btn-danger")
+                                                         .text("Decline")
+                                                         .on("click", function () {
+                                                           $form.attr("action","/admin/approvals/decline");
+                                                           $form.submit();
+                                                         });
+                          return $("<td>").append($approveBtn)
+                                          .append("<span>&nbsp;</span>")
+                                          .append($declineBtn)
+                                          .append($form);
+                       }
+                 }
+             ]
+           });
+           $("#approvalsGrid").jsGrid("option", "filtering", false);
+        });
+
 block content
     .jumbotron.wicked-admin-title
         .container.wicked-title-container
             h1 Pending Subscription Approvals
-            
+
             p Please review the pending subscription approvals. You may either approve of or decline the subscription.
-    
+
     .container.wicked-container
-        if approvals.length == 0
-            h3 No pending approvals
-        else
-            table(class='table table-striped')
-                thead
-                    tr
-                        th User Name
-                        th Email
-                        th Application
-                        th API
-                        th Plan
-                        th Actions
-                tbody
-                    for approval in approvals
-                        tr
-                            td
-                                a(href='/users/#{approval.user.id}')= approval.user.name
-                            td= approval.user.email
-                            td
-                                a(href='/applications/#{approval.application.id}')= approval.application.name
-                            td
-                                a(href='/apis/#{approval.api.id}')= approval.api.name
-                            td= approval.plan.name
-                            td
-                                form(style='display:inline;' role='form' action='/admin/approvals/approve' method='post')
-                                    input(type='hidden' name='api' value='#{approval.api.id}')
-                                    input(type='hidden' name='app' value='#{approval.application.id}')
-                                    button(style='display:inline;' class='btn btn-sm btn-success' type='submit') Approve
-                                span &nbsp;
-                                form(style='display:inline;' role='form' action='/admin/approvals/decline' method='post')
-                                    input(type='hidden' name='api' value='#{approval.api.id}')
-                                    input(type='hidden' name='app' value='#{approval.application.id}')
-                                    button(style='display:inline;' class='btn btn-sm btn-danger' type='submit') Decline
+          div#approvalsGrid
+          br
