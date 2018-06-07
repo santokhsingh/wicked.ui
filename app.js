@@ -64,6 +64,8 @@ app.use(logger('{"date":":date[clf]","method":":method","url":":url","remote-add
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
 app.use('/bootstrap-show-password', express.static(path.join(__dirname, 'node_modules/bootstrap-show-password')));
+app.use('/assets/bootstrap', express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
+app.use('/assets/jsgrid', express.static(path.join(__dirname, 'node_modules/jsgrid/dist')));
 
 // Initializing state
 app.use('/ping', ping);
