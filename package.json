@@ -16,6 +16,7 @@
     "express-session": "1.15.3",
     "highlight.js": "9.3.0",
     "jade": "1.11.0",
+    "jsgrid": "1.5.3",
     "jsonwebtoken": "5.7.0",
     "marked": "0.3.9",
     "morgan": "1.7.0",
