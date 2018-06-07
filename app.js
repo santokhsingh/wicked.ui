@@ -18,6 +18,8 @@ var applications = require('./routes/applications');
 var content = require('./routes/content');
 var users = require('./routes/users');
 var admin = require('./routes/admin');
+var clarivate = require('./routes/clarivate');
+
 var verification = require('./routes/verification');
 var validateemail = require('./routes/validateemail');
 var swaggerUi = require('./routes/swaggerUi');
@@ -168,11 +170,12 @@ app.initialize = function (done) {
     app.use('/content', content);
     app.use('/users', users);
     app.use('/admin', admin);
+    app.use('/clarivate', clarivate);
     app.use('/verification', verification);
     app.use('/validateemail', validateemail);
     app.use('/swagger-ui', swaggerUi);
     app.use('/swagger-ui', express.static(path.join(__dirname, 'swagger-ui')));
-    app.use('/swagger-ui', express.static(path.join(__dirname, 'node_modules/swagger-ui/dist')));
+    app.use('/swagger-ui', express.static(path.join(__dirname, 'node_modules/swagger-ui-dist')));
     app.use('/help', help);
     app.use('/kill', kill);
 

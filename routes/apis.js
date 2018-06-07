@@ -243,6 +243,7 @@ router.get('/:api', function (req, res, next) {
                 if (subsResults[i]) {
                     thisApp.hasSubscription = true;
                     thisApp.plan = plansMap[subsResults[i].plan];
+                    thisApp.redirectUri = appsResults[i].redirectUri;
                     thisApp.apiKey = subsResults[i].apikey;
                     thisApp.clientId = subsResults[i].clientId;
                     thisApp.clientSecret = subsResults[i].clientSecret;
@@ -254,6 +255,7 @@ router.get('/:api', function (req, res, next) {
                     thisApp.swaggerLink = req.app.portalGlobals.network.schema + '://' +
                         req.app.portalGlobals.network.portalHost +
                         '/apis/' + apiId + '/swagger?forUser=' + loggedInUserId;
+                    thisApp.swaggerLink =   encodeURIComponent(thisApp.swaggerLink);
                 }
                 apps.push(thisApp);
                 debug(thisApp);
