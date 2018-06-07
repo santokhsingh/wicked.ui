@@ -15,12 +15,12 @@ router.get('/approvals', function (req, res, next) {
         if (err)
             return next(err);
         if (!utils.acceptJson(req)) {
-
             res.render('admin_approvals',
                 {
                     authUser: req.user,
                     glob: req.app.portalGlobals,
                     title: 'Pending Subscription Approvals',
+                    count: apiResponse.length,
                     approvals: JSON.stringify(apiResponse)
                 });
         } else {

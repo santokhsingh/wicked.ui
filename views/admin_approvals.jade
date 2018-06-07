@@ -22,12 +22,12 @@ block bodyScripts
               }
             },
             fields: [
-                 { name: "user.name", type: "text", title: "User Name",
+                 { name: "user.name", type: "text", title: "User Name", width: "70",
                    itemTemplate: function(value, item) {
                      return $("<a>").attr("href", "/users/"+item.user.id).text(value);
                     }
                  },
-                 { name: "user.email", type: "text", title: "Email"},
+                 { name: "user.email", type: "text", title: "Email", width: "130"},
                  { name: "application.name", type: "text", title: "Application",
                    itemTemplate: function(value, item) {
                      return $("<a>").attr("href", "/applications/"+item.application.id).text(value);
@@ -80,5 +80,8 @@ block content
             p Please review the pending subscription approvals. You may either approve of or decline the subscription.
 
     .container.wicked-container
-          div#approvalsGrid
-          br
+      if count == 0
+        h3 No pending approvals
+      else
+        div#approvalsGrid
+      br
