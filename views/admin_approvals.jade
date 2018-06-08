@@ -49,6 +49,7 @@ block bodyScripts
                                                  .append("<input type='hidden' name='app' value='"+item.application.id+"'>");
                           var $approveBtn = $("<button>").attr("type", "submit")
                                                          .attr("class", "btn btn-sm btn-success")
+                                                         .attr("style", "float: left; margin: 2px; width: 6em")
                                                          .text("Approve")
                                                          .on("click", function () {
                                                             $form.attr("action","/admin/approvals/approve");
@@ -56,6 +57,7 @@ block bodyScripts
                                                          });
                           var $declineBtn = $("<button>").attr("type", "submit")
                                                          .attr("class", "btn btn-sm btn-danger")
+                                                         .attr("style", "float: left; margin: 2px; width: 6em")
                                                          .text("Decline")
                                                          .on("click", function () {
                                                            $form.attr("action","/admin/approvals/decline");
