@@ -22,8 +22,7 @@ block content
                         td= user.userId
                         td
                             a(href='/users/#{user.userId}')= user.name
-                        //- td
-                        //-     a(href='/users/#{user.id}')= user.email
+                        td= user.email
                         if user.customId
                             td= user.customId
                         else
