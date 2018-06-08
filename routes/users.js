@@ -59,6 +59,7 @@ function getUser(loggedInUserId, userId, req, res, next) {
         let verifyEmailLink = '';
         if (authMethod.config.verifyEmailEndpoint)
             verifyEmailLink = `${req.app.authConfig.authServerUrl}${authMethod.config.verifyEmailEndpoint}`;
+        debug(`verifyEmailLink: ${verifyEmailLink}`);
 
         if (!utils.acceptJson(req)) {
             res.render('user', {
