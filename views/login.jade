@@ -52,7 +52,7 @@ block content
         - if (authMethod.type === 'twitter') { buttonClass = 'btn btn-block btn-social btn-lg btn-twitter'; faClass = 'fa fa-twitter fa-lg' }
         - if (authMethod.type === 'oauth2') { buttonClass = 'btn btn-block btn-social btn-lg btn-openid'; faClass = 'fa fa-openid fa-lg' }
         - if (authMethod.type === 'facebook') { buttonClass = 'btn btn-block btn-social btn-lg btn-facebook'; faClass = 'fa fa-facebook fa-lg' }
-        - var authUrl = authConfig.authServerUrl + authMethod.config.authorizeEndpoint + '?response_type=code&client_id=' + clientId + '&state=' + authMethod.name + '-' + nonce
+        - var authUrl = authConfig.authServerUrl + authMethod.config.authorizeEndpoint + '?response_type=code&client_id=' + clientId + '&state=' + authMethod.name + '-' + nonce + '&redirect_uri=' + callbackUrl
         a(href=authUrl class=buttonClass)
             i(class=faClass)
             span &nbsp; #{authMethod.friendlyShort}

@@ -10,9 +10,10 @@ const wicked = require('wicked-sdk');
 
 const utils = function () { };
 
-utils.setOAuth2Credentials = function (clientId, clientSecret) {
+utils.setOAuth2Credentials = function (clientId, clientSecret, callbackUrl) {
     utils.CLIENT_ID = clientId;
     utils.CLIENT_SECRET = clientSecret;
+    utils.CALLBACK_URL = callbackUrl;
 };
 
 utils.createRandomId = function () {

@@ -31,6 +31,7 @@ router.get('/', function (req, res, next) {
         route: '/login',
         nonce: nonce,
         authConfig: req.app.authConfig,
+        callbackUrl: qs.escape(utils.CALLBACK_URL),
         clientId: req.app.clientCredentials.clientId,
         displayRedirectMessage: displayRedirectMessage,
         // error: req.flash().error

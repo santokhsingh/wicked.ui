@@ -83,7 +83,7 @@ function registerApplicationAndSubscribe(callback) {
                     debug('GET applications/__portal returned 404.');
                     return callback(null, null); // App not present
                 }
-                debug('GET applications__portal returned application');
+                debug('GET applications/__portal returned application');
                 return callback(null, appInfo);
             });
         },
@@ -159,7 +159,7 @@ function registerApplicationAndSubscribe(callback) {
         }
 
         // Now we know our application and set the id and secret for later use.
-        utils.setOAuth2Credentials(clientId, clientSecret);
+        utils.setOAuth2Credentials(clientId, clientSecret, callbackUrl);
 
         return callback(null, {
             clientId: clientId,
