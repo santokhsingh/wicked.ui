@@ -27,7 +27,7 @@ block bodyScripts
                 }
              },
              { name: "name", type: "text", title: "Name" },
-             { name: "mainOwner.email", type: "text", title: "Owner",
+             { name: "mainOwner.email", type: "text", title: "Owner", filtering: false,
                itemTemplate: function(value, item) {
                  return $("<a>").attr("href", "/users/"+item.mainOwner.userId).text(value);
                 }
@@ -40,7 +40,6 @@ block bodyScripts
          ]
        });
        $("#applicationsGrid").jsGrid("option", "filtering", false);
-       $(".jsgrid-cell" ).css( "word-wrap", "break-word" );
     });
 block content
     .jumbotron.wicked-admin-title

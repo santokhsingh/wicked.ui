@@ -21,27 +21,26 @@ block bodyScripts
               }
             },
             fields: [
-                 { name: "id", type: "text", title: "ID", width: "80" },
-                 { name: "name", type: "text", title: "Name", width: "60",
+                 { name: "id", type: "text", title: "ID", filtering: false },
+                 { name: "name", type: "text", title: "Name",
                    itemTemplate: function(value, item) {
                      return $("<a>").attr("href", "/users/"+item.id).text(value);
                     }
                  },
-                 { name: "email", type: "text", title: "Email", width: "80" },
-                 { name: "customId", type: "text", title: "Custom ID", width: "40",
+                 { name: "email", type: "text", title: "Email", },
+                 { name: "customId", type: "text", title: "Custom ID", filtering: false,
                    itemTemplate: function(value, item) {
                      return (value) ? value : "---";
                     }
                  },
                  { type: "control", width: "10", editButton: false, deleteButton: false,
                    _createFilterSwitchButton: function() {
-                    return this._createOnOffSwitchButton("filtering", this.searchModeButtonClass, false);
+                      return this._createOnOffSwitchButton("filtering", this.searchModeButtonClass, false);
                    }
                  }
              ]
            });
            $("#usersGrid").jsGrid("option", "filtering", false);
-           $(".jsgrid-cell" ).css( "word-wrap", "break-word" );
         });
 
 block content
