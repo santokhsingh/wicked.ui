@@ -131,6 +131,7 @@ router.post('/register', function (req, res, next) {
     debug("post('/register')");
     const appId = req.body.appid;
     const appName = req.body.appname;
+    const appDesc = req.body.appdesc;
     const hasRedirectUri = req.body.hasredirecturi;
     const redirectUri = req.body.redirecturi;
 
@@ -145,6 +146,9 @@ router.post('/register', function (req, res, next) {
         id: appId,
         name: appName
     };
+
+    if(appDesc)
+        newApp.description = appDesc;
     if (hasRedirectUri)
         newApp.redirectUri = redirectUri;
 
@@ -254,6 +258,7 @@ router.post('/:appId/patch', function (req, res, next) {
     debug("post('/:appId/patch')");
     var appId = req.params.appId;
     var appName = req.body.appname;
+    var appDesc = req.body.appdesc;
     var redirectUri = req.body.redirecturi;
 
     if (!appName) {
@@ -265,6 +270,7 @@ router.post('/:appId/patch', function (req, res, next) {
     const appData = {
         id: appId,
         name: appName,
+        description: appDesc,
         redirectUri: redirectUri
     };
 
@@ -318,10 +324,10 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
             subscribeError = 'You cannot subscribe to an OAuth 2.0 Implicit Grant/Authorization Code Grant API with an application which does not have a valid Redirect URI. Please specify a Redirect URI on the Application page';
         }
 
-        if (((apiInfo.auth === 'oauth2' && 
-              apiInfo.settings && 
-              apiInfo.settings.enable_client_credentials && 
-              !apiInfo.settings.enable_authorization_code && 
+        if (((apiInfo.auth === 'oauth2' &&
+              apiInfo.settings &&
+              apiInfo.settings.enable_client_credentials &&
+              !apiInfo.settings.enable_authorization_code &&
               !apiInfo.settings.enable_implicit_grant) ||
              apiInfo.auth === 'key-auth') &&
             application.redirectUri) {

@@ -39,7 +39,10 @@ block content
                                     label(for='appname') Application Name:
                                     input(type='string' name='appname').form-control
                                     small A human readable description/name of the your application, e.g. 'My Awesome Application'
-
+                                .form-group
+                                    label(for='appdesc') Application Description:
+                                    input(type='string' name='appdesc').form-control
+                                    small The Application Description field can be used to provide additional details about your application use case, including any relevant URLs. If you are subscribing to an API that requires approvals, completing this field will aid in processing time
                                 .checkbox
                                     label
                                         input(type='checkbox' name='hasredirecturi' data-toggle='collapse' data-target='#redirecturipanel')
