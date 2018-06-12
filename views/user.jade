@@ -152,6 +152,9 @@ block content
                                     li
                                         a(href='/applications/#{app.id}')= app.id
 
+            a(href='#{grantsLink}' target='_blank') Review Application Grants <i class="glyphicon glyphicon-new-window"></i>
+
+            br
             br
             if authUser.admin
                 input(type='hidden' name='__updategroups' value='true')

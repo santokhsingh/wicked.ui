@@ -59,12 +59,14 @@ function getUser(loggedInUserId, userId, req, res, next) {
         let verifyEmailLink = '';
         if (authMethod.config.verifyEmailEndpoint)
             verifyEmailLink = `${req.app.authConfig.authServerUrl}${authMethod.config.verifyEmailEndpoint}`;
+        const grantsLink = `${req.app.authConfig.authServerUrl}${authMethod.config.grantsEndpoint}`;
         debug(`verifyEmailLink: ${verifyEmailLink}`);
 
         if (!utils.acceptJson(req)) {
             res.render('user', {
                 authUser: req.user,
                 verifyEmailLink: verifyEmailLink,
+                grantsLink: grantsLink,
                 glob: req.app.portalGlobals,
                 title: userInfo.name,
                 userInfo: userInfo,
@@ -76,6 +78,7 @@ function getUser(loggedInUserId, userId, req, res, next) {
             res.json({
                 title: userInfo.name,
                 userInfo: userInfo,
+                grantsLink: grantsLink,
                 registrationInfo: registrationInfo,
                 poolInfo: poolInfo,
                 groups: groups
