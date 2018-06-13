@@ -137,7 +137,10 @@ router.get('/:api', function (req, res, next) {
             apiDesc = '';
         var userInfo = results.getUser;
         var apiConfig = results.getApiConfig;
-        var apiSubscriptions = results.getSubscriptions;
+
+        let apiSubscriptions = null;
+        if (results.getSubscriptions && results.getSubscriptions.items)
+            apiSubscriptions = results.getSubscriptions.items;
         // TODO: This makes me a little unhappy, as this is Kong specific.
         // The "right" thing to do here would be to have the API, and more specific
         // even the Kong Adapter (or something) translate this into this Request URI.

@@ -92,6 +92,12 @@ router.get('/users', function (req, res, next) {
     utils.getFromAsync(req, res, '/registrations/pools/wicked', 200, function (err, apiResponse) {
         if (err)
             return next(err);
+        // apiResponse looks like this:
+        // {
+        //   items: [...],
+        //   count: <# records in total>
+        //   count_cached: true/false
+        // }
         const userList = apiResponse.items;
         debug(userList);
 
@@ -118,12 +124,21 @@ router.get('/users', function (req, res, next) {
 router.get('/applications', function (req, res, next) {
     debug("get('/applications')");
     // This is not super good; this is expensive. Lots of calls.
+    // TODO: This has to be changed to support lazy loading and pagin
+    //       We will need an additional end point for Ajax calls; this
+    //       call to /applications now supports ?offset=...&limit=...,
+    //       and will return an "items" and "count" property.
     utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
         if (err)
             return next(err);
+        // appsResponse: {
+        //   items: [...],
+        //   count: _n_
+        //   count_cached: true/false
+        // }
         const appIds = [];
-        for (let i = 0; i < appsResponse.length; ++i)
-            appIds.push(appsResponse[i].id);
+        for (let i = 0; i < appsResponse.items.length; ++i)
+            appIds.push(appsResponse.items[i].id);
 
         // This is the expensive part:
         async.map(appIds, function (appId, callback) {
@@ -317,7 +332,7 @@ router.get('/apis/:apiId/subscriptions_csv', function (req, res, next) {
         tmp.file(function (err, path, fd, cleanup) {
             if (err)
                 return next(err);
-            async.mapLimit(applicationList, 10, function (appEntry, callback) {
+            async.mapLimit(applicationList.items, 10, function (appEntry, callback) {
                 utils.getFromAsync(req, res, '/applications/' + appEntry.application, 200, callback);
             }, function (err, results) {
                 if (err) {
@@ -333,7 +348,7 @@ router.get('/apis/:apiId/subscriptions_csv', function (req, res, next) {
                         const ownerLine = apiId + ';' +
                             thisApp.id + ';' +
                             thisApp.name + ';' +
-                            applicationList[i].plan + ';' +
+                            applicationList.items[i].plan + ';' +
                             thisOwner.userId + ';' +
                             thisOwner.email + ';' +
                             thisOwner.role + '\n';
@@ -366,7 +381,7 @@ router.post('/apis/:apiId/delete_subscriptions', function (req, res, next) {
         if (err) {
             return next(err);
         }
-        async.eachSeries(applicationList, function (appEntry, callback) {
+        async.eachSeries(applicationList.items, function (appEntry, callback) {
             utils.delete(req, '/applications/' + appEntry.application + '/subscriptions/' + apiId, callback);
         }, function (err, results) {
             if (err)
