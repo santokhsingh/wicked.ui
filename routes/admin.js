@@ -89,6 +89,11 @@ function byName(a, b) {
 
 router.get('/users', function (req, res, next) {
     debug("get('/users')");
+    // This endpoint now also takes the following parameters:
+    //   offset, limit
+    //   filter: URI encoded JSON, e.g. {"name":"michael"}
+    //   order_by: e.g. name%20DESC, or customId%20ASC
+    //   no_cache: 0 or 1, set to 1 to really count the records, otherwise the result may be read from a cache
     utils.getFromAsync(req, res, '/registrations/pools/wicked', 200, function (err, apiResponse) {
         if (err)
             return next(err);
