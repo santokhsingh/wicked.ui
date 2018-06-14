@@ -123,11 +123,19 @@ router.get('/users', function (req, res, next) {
 
 router.get('/applications', function (req, res, next) {
     debug("get('/applications')");
-    // This is not super good; this is expensive. Lots of calls.
     // TODO: This has to be changed to support lazy loading and pagin
     //       We will need an additional end point for Ajax calls; this
     //       call to /applications now supports ?offset=...&limit=...,
     //       and will return an "items" and "count" property.
+    //       By passing the parameter &embed=1, the application data
+    //       is automatically embedded in the response, so there is no
+    //       need to loop over the applications and retrieve the data.
+    //       This HAS to be done server side, otherwise filtering and
+    //       sorting cannot be done sensibly.
+    //
+    // Typical request:
+    // 
+    //       GET /applications?embed=1&filter=...&order_by=name%20ASC&offset=0&limit=20
     utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
         if (err)
             return next(err);
