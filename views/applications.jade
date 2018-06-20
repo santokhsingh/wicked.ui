@@ -1,5 +1,45 @@
 extends layout
 
+block scripts
+    script(type='text/javascript').
+        function validateNewApplication() {
+            var appid = $('#appid').val();
+            var appname = $('#appname').val();
+
+            var appidError = '';
+            var appnameError = '';
+            if (!appid)
+                appidError = 'Please enter a value for the application ID.';
+            if (!appname)
+                appnameError = 'Please enter a value for the application name.';
+
+            try {
+                $('#errorAppid').text(appidError);
+                $('#errorAppname').text(appnameError);
+            } catch (err) {
+                alert('Validation errored! Check your input values.');
+                return;
+            }
+            
+            var somethingBad = !!appidError
+                || !!appnameError;
+
+            if (!somethingBad) {
+                $('#submit_new').prop("disabled", true);
+                $.post('/applications/check-app', {
+                    app_id: appid
+                }, function (data, status) {
+                    $('#submit_new').prop("disabled", false);
+                    if (!data.valid) {
+                        $('#errorAppid').text(data.message);
+                    } else {
+                        $('#new_app_form').submit();
+                    }
+                });
+            }
+        }
+
+
 block content
     .jumbotron.wicked-application-title
         .container.wicked-title-container
@@ -30,15 +70,19 @@ block content
                         +panelTitle('Register a new Application', '/help/applications', '#collapse')
                     div(id='collapse' class='panel-collapse collapse #{showRegister}')
                         .panel-body
-                            form(role='form' action='/applications/register' method='POST')
+                            form(role='form' id='new_app_form' action='/applications/register' method='POST')
                                 .form-group
                                     label(for='appid') Application ID:
-                                    input(type='string' name='appid').form-control
+                                    input(type='string' id='appid' name='appid').form-control
                                     small Application IDs must be all lower case, and may only contain the following characters: a-z, 0-9, -, _
+                                    small 
+                                        span(id='errorAppid' style='color:red')
                                 .form-group
                                     label(for='appname') Application Name:
-                                    input(type='string' name='appname').form-control
+                                    input(type='string' id='appname' name='appname').form-control
                                     small A human readable description/name of the your application, e.g. 'My Awesome Application'
+                                    small 
+                                        span(id='errorAppname' style='color:red')
 
                                 .checkbox
                                     label
@@ -49,13 +93,16 @@ block content
                                 div(id='redirecturipanel' class='panel-collapse collapse')
                                     .form-group
                                         label(for='redirecturi') Redirect URI:
-                                        input(type='string' name='redirecturi' value='https://').form-control
+                                        input(type='string' id='redirecturi' name='redirecturi' value='https://').form-control
                                         small.
                                             The callback under which your web application can be called back, passing the access token in the fragment.
                                             <b>Must be an <code>https://</code> URI</b>, except for testing purposes, for which also <code>http://localhost</code> is accepted.
-
-                                p
-                                    button(type='submit').btn.btn-success Register Application
+                                        small 
+                                            span(id='errorRedirecturi' style='color:red')
+                            // Note that this button is _outside_ of the form, and calls submit() over jQuery
+                            // in Javascript. It validates the data partly over an Ajax call.
+                            p
+                                button(id='submit_new' onclick='javascript:validateNewApplication()').btn.btn-success Register Application
 
             hr
 

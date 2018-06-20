@@ -5,6 +5,7 @@ var router = express.Router();
 var async = require('async');
 var { debug, info, warn, error } = require('portal-env').Logger('portal:applications');
 var utils = require('./utils');
+const wicked = require('wicked-sdk');
 
 router.get('/:appId', function (req, res, next) {
     debug("get('/:appId')");
@@ -126,6 +127,36 @@ function findUserRole(appInfo, userInfo) {
 // ====== ======= =======
 
 // Registering new applications
+
+const applicationRegex = /^[a-z0-9\-_]+$/;
+const isValidApplicationId = (appId) => {
+    if (!applicationRegex.test(appId))
+        return false;
+    if (appId.length < 4 || appId.length > 50)
+        return false;
+    return true;
+};
+
+router.post('/check-app', function (req, res, next) {
+    const loggedInUserId = utils.getLoggedInUserId(req);
+    if (!loggedInUserId)
+        return res.status(403).json({ message: 'You must be logged in to check for applications IDs.' });
+    const appId = req.body.app_id;
+    // Don't answer this too fast, so that we don't open up for calling 
+    // this too often to find valid/already registered application IDs.
+    setTimeout(() => {
+        if (!isValidApplicationId(appId))
+            return res.json({ valid: false, app_id: appId, message: 'Application ID is not valid; it must only contain lower case characters, 0-9, - and _, and be between 4 and 50 characters long.' });
+        // Note the usage of the Wicked API here; it will use the "backdoor" to the portal API,
+        // using the portal's machine user ID. Usually, the logged in user cannot get other user's
+        // applications.
+        wicked.apiGet(`/applications/${appId}`, (err, appInfo) => {
+            if (err && (err.status === 404 || err.statusCode === 404))
+                return res.json({ valid: true, app_id: appId, message: 'Valid application ID' });
+            return res.json({ valid: false, app_id: appId, message: 'Application ID is already present. Please choose a different ID.' });
+        });
+    }, 200);
+});
 
 router.post('/register', function (req, res, next) {
     debug("post('/register')");
@@ -318,12 +349,12 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
             subscribeError = 'You cannot subscribe to an OAuth 2.0 Implicit Grant/Authorization Code Grant API with an application which does not have a valid Redirect URI. Please specify a Redirect URI on the Application page';
         }
 
-        if (((apiInfo.auth === 'oauth2' && 
-              apiInfo.settings && 
-              apiInfo.settings.enable_client_credentials && 
-              !apiInfo.settings.enable_authorization_code && 
-              !apiInfo.settings.enable_implicit_grant) ||
-             apiInfo.auth === 'key-auth') &&
+        if (((apiInfo.auth === 'oauth2' &&
+            apiInfo.settings &&
+            apiInfo.settings.enable_client_credentials &&
+            !apiInfo.settings.enable_authorization_code &&
+            !apiInfo.settings.enable_implicit_grant) ||
+            apiInfo.auth === 'key-auth') &&
             application.redirectUri) {
             subscribeWarning = 'You are about to subscribe to an API which is intended only for machine to machine communication with an application with a registered Redirect URI. Please note that API Keys and/or Client Credentials (such as the Client Secret) must NEVER be deployed to a public client, such as a JavaScript SPA or Mobile Application.';
         }
