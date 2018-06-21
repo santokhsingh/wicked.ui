@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const mustache = require('mustache');
 
-//var envReader = require('portal-env');
+//const envReader = require('portal-env');
 const wicked = require('wicked-sdk');
 
 const utils = require('../routes/utils');
@@ -319,7 +319,7 @@ function getBuildDate() {
  */
 
 function normalizePort(val) {
-    var port = parseInt(val, 10);
+    const port = parseInt(val, 10);
 
     if (isNaN(port)) {
         // named pipe

@@ -1,8 +1,8 @@
 'use strict';
 
-var { debug, info, warn, error } = require('portal-env').Logger('portal:kill');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:kill');
 
-var kill = require('express').Router();
+const kill = require('express').Router();
 
 // ===== MIDDLEWARE =====
 

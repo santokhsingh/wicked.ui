@@ -1,11 +1,10 @@
 'use strict';
 
-var express = require('express');
-var { debug, info, warn, error } = require('portal-env').Logger('portal:index');
-var contentRenderer = require('./renderContent');
-var request = require('request');
-var router = express.Router();
-var utils = require('./utils');
+const express = require('express');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:index');
+const contentRenderer = require('./renderContent');
+const router = express.Router();
+const utils = require('./utils');
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -18,17 +17,6 @@ router.get('/', function (req, res, next) {
             return utils.handleError(res, apiResponse, apiBody, next);
         contentRenderer.renderContent(req, res, '/', 'index', apiResponse, apiBody);
     });
-
-    // request({
-    //     url: apiUrl + '/content',
-    //     headers: { 'Correlation-Id': req.correlationId }
-    // }, function (err, apiResponse, apiBody) {
-    //     if (err)
-    //         return next(err);
-    //     if (200 != apiResponse.statusCode)
-    //         return utils.handleError(res, apiResponse, apiBody, next);
-    //     contentRenderer.renderContent(req, res, '/', 'index', apiResponse, apiBody);
-    // });
 });
 
 module.exports = router;

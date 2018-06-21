@@ -1,11 +1,11 @@
 'use strict';
 
-var express = require('express');
-var { debug, info, warn, error } = require('portal-env').Logger('portal:help');
-var path = require('path');
-var router = express.Router();
+const express = require('express');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:help');
+const path = require('path');
+const router = express.Router();
 
-var HELP_IDS = {
+const HELP_IDS = {
     'apis': 'API Index',
     'api': 'API Page',
     'api-access': 'API Access',
@@ -25,7 +25,7 @@ router.get('/', function (req, res, next) {
 });
 
 router.get('/:helpId', function (req, res, next) {
-    var helpId = req.params.helpId;
+    const helpId = req.params.helpId;
     debug("get('/help/" + helpId + "')");
 
     if (!HELP_IDS[helpId])

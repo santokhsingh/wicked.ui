@@ -1,11 +1,11 @@
 'use strict';
 
-var express = require('express');
-var request = require('request');
-var { debug, info, warn, error } = require('portal-env').Logger('portal:content');
-var router = express.Router();
-var contentRenderer = require('./renderContent');
-var utils = require('./utils');
+const express = require('express');
+const request = require('request');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:content');
+const router = express.Router();
+const contentRenderer = require('./renderContent');
+const utils = require('./utils');
 
 function isPublic(uriName) {
     return uriName.endsWith('jpg') ||
@@ -28,7 +28,7 @@ router.get('/*', function (req, res, next) {
     } else {
         if (req.path !== '/toc') {
             debug('Normal content');
-            var contentPath = '/content' + req.path;
+            const contentPath = '/content' + req.path;
             // Let's do dis
             utils.get(req, contentPath,
                 function (err, apiResponse, apiBody) {
@@ -48,8 +48,8 @@ router.get('/*', function (req, res, next) {
                     if (200 != apiResponse.statusCode)
                         return utils.handleError(res, apiResponse, apiBody, next);
                     debug(apiBody);
-                    var jsonBody = utils.getJson(apiBody);
-                    var toc = categorize(jsonBody);
+                    const jsonBody = utils.getJson(apiBody);
+                    const toc = categorize(jsonBody);
                     res.render('content_toc', {
                         authUser: req.user,
                         glob: req.app.portalGlobals,
@@ -64,9 +64,9 @@ router.get('/*', function (req, res, next) {
 });
 
 function categorize(rawToc) {
-    var toc = {};
-    for (var i = 0; i < rawToc.length; ++i) {
-        var tocEntry = rawToc[i];
+    const toc = {};
+    for (let i = 0; i < rawToc.length; ++i) {
+        const tocEntry = rawToc[i];
         if (!toc[tocEntry.category])
             toc[tocEntry.category] = {
                 name: catName(tocEntry.category),

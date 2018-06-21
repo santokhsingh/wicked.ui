@@ -1,4 +1,6 @@
-var { debug, info, warn, error } = require('portal-env').Logger('portal:sessionstore');
+'use strict';
+
+const { debug, info, warn, error } = require('portal-env').Logger('portal:sessionstore');
 
 function initSessionStore(globals, session){
     let sessionStoreType = 'file';
@@ -10,8 +12,8 @@ function initSessionStore(globals, session){
     }
     debug('SESSION_STORE_TYPE: ' + sessionStoreType);
 
-    var sessionStoreOptions = {};
-    var SessionStore;
+    const sessionStoreOptions = {};
+    let SessionStore;
     switch (sessionStoreType){
         case 'file':
             SessionStore = require('session-file-store')(session);

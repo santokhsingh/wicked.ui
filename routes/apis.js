@@ -1,14 +1,14 @@
 'use strict';
 
-var express = require('express');
-var router = express.Router();
-var { debug, info, warn, error } = require('portal-env').Logger('portal:apis');
-var utils = require('./utils');
-var marked = require('marked');
-var async = require('async');
-var cors = require('cors');
-var mustache = require('mustache');
-var wicked = require('wicked-sdk');
+const express = require('express');
+const router = express.Router();
+const { debug, info, warn, error } = require('portal-env').Logger('portal:apis');
+const utils = require('./utils');
+const marked = require('marked');
+const async = require('async');
+const cors = require('cors');
+const mustache = require('mustache');
+const wicked = require('wicked-sdk');
 
 router.get('/', function (req, res, next) {
     debug("get('/')");
@@ -25,14 +25,14 @@ router.get('/', function (req, res, next) {
         function (err, results) {
             if (err)
                 return next(err);
-            var apiList = results.getApis.apis;
+            let apiList = results.getApis.apis;
             // Markdownify short descriptions.
-            var apiTags = [];
-            for (var i = 0; i < apiList.length; ++i) {
+            const apiTags = [];
+            for (let i = 0; i < apiList.length; ++i) {
                 if (apiList[i].desc)
                     apiList[i].desc = marked(apiList[i].desc);
                 if (apiList[i].tags && apiList[i].tags.length > 0) {
-                    for (var j = 0; j < apiList[i].tags.length; ++j) {
+                    for (let j = 0; j < apiList[i].tags.length; ++j) {
                         apiTags.push(apiList[i].tags[j]);
                     }
                 }
@@ -41,7 +41,7 @@ router.get('/', function (req, res, next) {
                 apiList = apiList.filter(function (api) {
                     if (!api.tags)
                         return false;
-                    for (var i = 0; i < api.tags.length; i++) {
+                    for (let i = 0; i < api.tags.length; i++) {
                         if (req.query[api.tags[i]]) {
                             return true;
                         }
@@ -49,7 +49,7 @@ router.get('/', function (req, res, next) {
                     return false;
                 });
             }
-            var desc = results.getDesc;
+            const desc = results.getDesc;
             if (!utils.acceptJson(req)) {
                 res.render('apis',
                     {
@@ -69,8 +69,8 @@ router.get('/', function (req, res, next) {
 });
 
 function unique(arr) {
-    var u = {}, a = [];
-    for (var i = 0, l = arr.length; i < l; ++i) {
+    const u = {}, a = [];
+    for (let i = 0, l = arr.length; i < l; ++i) {
         if (!u.hasOwnProperty(arr[i])) {
             a.push(arr[i]);
             u[arr[i]] = 1;
@@ -102,8 +102,8 @@ router.get('/:api', function (req, res, next) {
     // And possibly also the Auth Server of the API:
     // /auth-servers/:serverId
 
-    var apiId = req.params.api;
-    var loggedInUserId = utils.getLoggedInUserId(req);
+    const apiId = req.params.api;
+    const loggedInUserId = utils.getLoggedInUserId(req);
 
     async.parallel({
         getApi: callback => utils.getFromAsync(req, res, '/apis/' + apiId, 200, callback),
@@ -119,7 +119,7 @@ router.get('/:api', function (req, res, next) {
             if (loggedInUserId)
                 utils.getFromAsync(req, res, '/users/' + loggedInUserId, 200, callback);
             else {
-                var nullUser = {
+                const nullUser = {
                     applications: []
                 };
                 callback(null, nullUser);
@@ -129,14 +129,14 @@ router.get('/:api', function (req, res, next) {
     }, function (err, results) {
         if (err)
             return next(err);
-        var apiInfo = results.getApi;
+        const apiInfo = results.getApi;
         if (apiInfo.desc)
             apiInfo.desc = marked(apiInfo.desc);
-        var apiDesc = results.getApiDesc;
+        let apiDesc = results.getApiDesc;
         if (!apiDesc)
             apiDesc = '';
-        var userInfo = results.getUser;
-        var apiConfig = results.getApiConfig;
+        const userInfo = results.getUser;
+        const apiConfig = results.getApiConfig;
 
         let apiSubscriptions = null;
         if (results.getSubscriptions && results.getSubscriptions.items)
@@ -147,16 +147,16 @@ router.get('/:api', function (req, res, next) {
         // Idea: Make this part of the generic configuration, as it would be a
         // necessary configuration option for any API gateway.
         // console.log(JSON.stringify(apiConfig));
-        var apiRequestUri = apiConfig.api.uris[0];
-        var nw = req.app.portalGlobals.network;
-        var apiUri = nw.schema + '://' + nw.apiHost + apiRequestUri;
+        const apiRequestUri = apiConfig.api.uris[0];
+        const nw = req.app.portalGlobals.network;
+        const apiUri = nw.schema + '://' + nw.apiHost + apiRequestUri;
 
-        var plans = results.getPlans;
-        var plansMap = {};
+        const plans = results.getPlans;
+        const plansMap = {};
         for (let i = 0; i < plans.length; ++i)
             plansMap[plans[i].id] = plans[i];
 
-        var appIds = [];
+        const appIds = [];
         if (userInfo.applications) {
             for (let i = 0; i < userInfo.applications.length; ++i)
                 appIds.push(userInfo.applications[i].id);
@@ -225,9 +225,9 @@ router.get('/:api', function (req, res, next) {
             debug("authServers:");
             debug(authServers);
 
-            var apps = [];
-            for (var i = 0; i < userInfo.applications.length; ++i) {
-                var thisApp = userInfo.applications[i];
+            const apps = [];
+            for (let i = 0; i < userInfo.applications.length; ++i) {
+                const thisApp = userInfo.applications[i];
                 thisApp.name = appsResults[i].name;
                 if (appsResults[i]._links.addSubscription)
                     thisApp.maySubscribe = true;
@@ -340,8 +340,8 @@ router.get('/:api', function (req, res, next) {
 });// /apis/:apiId
 
 // Dynamically allow CORS for this end point. Otherwise: No.
-var corsOptions = null;
-var corsOptionsDelegate = function (req, callback) {
+let corsOptions = null;
+const corsOptionsDelegate = function (req, callback) {
     debug('corsOptionDelegate()');
     debug('Origin: ' + req.header('Origin'));
     if (!corsOptions) {
@@ -356,16 +356,16 @@ var corsOptionsDelegate = function (req, callback) {
 
 router.get('/:api/swagger', cors(corsOptionsDelegate), function (req, res, next) {
     debug("get('/:api/swagger')");
-    var apiId = req.params.api;
+    const apiId = req.params.api;
 
-    var apiCallback = function (err, response, body) {
+    const apiCallback = function (err, response, body) {
         if (err)
             return next(err);
         if (200 != response.statusCode)
             return utils.handleError(res, response, body, next);
 
         try {
-            var swaggerJson = utils.getJson(body);
+            const swaggerJson = utils.getJson(body);
             // Pipe it
             return res.json(swaggerJson);
         } catch (err) {
@@ -375,10 +375,10 @@ router.get('/:api/swagger', cors(corsOptionsDelegate), function (req, res, next)
     };
 
     // Let's call the API, it has all the data we need.
-    var swaggerUri = '/apis/' + apiId + '/swagger';
+    const swaggerUri = '/apis/' + apiId + '/swagger';
 
     // Do we have a forUser query parameter?
-    var forUser = req.query.forUser;
+    let forUser = req.query.forUser;
     if (!/^[a-z0-9]+$/.test(forUser)) {
         debug("get('/:api/swagger') - invalid forUser used: " + forUser);
         forUser = null;

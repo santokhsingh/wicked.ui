@@ -65,10 +65,10 @@ utils.makePagingUri = function (req, uri, filterFields) {
     uri = (req.query.pageSize) ? `${uri}&limit=${qs.escape(req.query.pageSize)}` : uri;
     uri = (req.query.sortField) ? `${uri}&order_by=${qs.escape(req.query.sortField)}%20${qs.escape(req.query.sortOrder)}` : uri;
     uri = (startIndex == 0) ? `${uri}&no_cache=1` : uri;
-    var filterParams = {};
-    var hasFilter = false;
+    const filterParams = {};
+    let hasFilter = false;
     for (let i = 0; i < filterFields.length; ++i) {
-        var field = filterFields[i];
+        const field = filterFields[i];
         if (req.query[field]) {
             filterParams[field] = req.query[field];
             hasFilter = true;
@@ -83,59 +83,8 @@ function makeHeaders(req, userId) {
         'X-Config-Hash': wicked.getConfigHash(),
         'Correlation-Id': req.correlationId,
     };
-    // if (!userId) {
-    //     var loggedInUserId = utils.getLoggedInUserId(req);
-    //     if (loggedInUserId)
-    //         headers['X-UserId'] = loggedInUserId;
-    //     return headers;
-    // }
-    // headers['X-UserId'] = userId;
     return headers;
 }
-
-// utils._anonymousAccessToken = null;
-// function checkAccessToken(req, callback) {
-//     debug('checkAccessToken()');
-//     if (utils._anonymousAccessToken)
-//         return callback(null, utils._anonymousAccessToken);
-
-//     debug('Requesting new anonymous access token');
-//     const baseUrl = req.app.get('api_url');
-//     const tokenUrl = baseUrl + '/oauth2/token';
-//     let headers = null;
-//     if (tokenUrl.startsWith('http:')) {
-//         headers = {
-//             'X-Forwarded-Proto': 'https'
-//         };
-//     }
-
-//     request.post({
-//         url: tokenUrl,
-//         json: true,
-//         body: {
-//             grant_type: 'client_credentials',
-//             client_id: utils.CLIENT_ID,
-//             client_secret: utils.CLIENT_SECRET
-//         },
-//         headers: headers
-//     }, function (err, res, body) {
-//         if (err) {
-//             console.error('ERROR: Could not get access token for anonymous access');
-//             console.error(err);
-//             return callback(err);
-//         }
-
-//         debug(body);
-//         if (!body.access_token) {
-//             console.error('ERROR: Did not receive expected access_token.');
-//             return callback(new Error('Did not receive anonymous access token.'));
-//         }
-//         debug('Successfully retrieved anonymous access token.');
-//         // Cache it
-//         utils._anonymousAccessToken = body.access_token;
-//         return callback(null, body.access_token);
-//     });
-// }
 
 function hasPersonalToken(req) {
     return !!(req.session.user && req.session.user.authMethodId && req.session.user.token && req.session.user.token.access_token && req.session.user.token.refresh_token);
@@ -259,19 +208,6 @@ function renewAnonymousToken(req, callback) {
     });
 }
 
-// function createAnonymousToken(req, callback) {
-//     debug('createAnonymousToken()');
-//     if (_creatingAnonymousToken) {
-//         debug('Already creating anonymous token somewhere else, waiting 200ms.');
-//         return setTimeout(getAnonymousToken, 100, req, callback);
-//     }
-//     _creatingAnonymousToken = true;
-//     createAnonymousTokenInternal(req, function (err, accessToken) {
-//         _creatingAnonymousToken = false;
-//         return callback(err, accessToken);
-//     });
-// }
-
 function createAnonymousTokenInternal(req, callback) {
     debug('createAnonymousTokenInternal()');
     if (!req.app.authConfig || !req.app.authConfig.authServerUrl || !req.app.authConfig.authMethods || req.app.authConfig.authMethods.length <= 0)
@@ -342,25 +278,6 @@ function apiAction(req, method, body, callback, iteration) {
             }
         });
     });
-
-    // async.waterfall([
-    //     callback => getAccessToken(req, callback),
-    //     (accessToken, callback) => {
-    //         body.method = method;
-    //         body.headers.Authorization = 'Bearer ' + accessToken;
-    //         request(body, (err, apiResponse, apiBody) => {
-    //             if (err) {
-    //                 return callback(err);
-    //             }
-    //             return callback(null, apiResponse, apiBody);
-    //         });
-    //     }
-    // ], function (err, apiResponse, apiBody) {
-    //     if (err) {
-    //         return callback(err);
-    //     }
-    //     return callback(null, apiResponse, apiBody);
-    // });
 }
 
 utils.get = function (req, uri, callback) {

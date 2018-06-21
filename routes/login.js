@@ -1,17 +1,17 @@
 'use strict';
 
-var express = require('express');
-var { debug, info, warn, error } = require('portal-env').Logger('portal:login');
-var router = express.Router();
-var request = require('request');
-var qs = require('querystring');
-var utils = require('./utils');
-var wicked = require('wicked-sdk');
+const express = require('express');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:login');
+const router = express.Router();
+const request = require('request');
+const qs = require('querystring');
+const utils = require('./utils');
+const wicked = require('wicked-sdk');
 
 /* GET login page. */
 router.get('/', function (req, res, next) {
     debug("get('/')");
-    var displayRedirectMessage = null;
+    let displayRedirectMessage = null;
     if (utils.getLoggedInUserId(req)) {
         req.session.redirectAfterLogin = null;
     } else if (req.query.redirect) {
