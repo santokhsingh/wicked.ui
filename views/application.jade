@@ -1,13 +1,22 @@
 extends layout
 
 block scripts
+    script(src='/assets/marked/marked.min.js')
     script(type='text/javascript').
         function confirmUnregister() {
             if (!confirm("This will delete this application and its corresponding subscriptions. Are you really sure you want to do this? The operation CANNOT BE UNDONE!"))
                 return false;
             return confirm("Last chance: THIS CANNOT BE UNDONE!");
         }
-        
+        document.addEventListener('DOMContentLoaded', function() {
+            $('#desc').on('change keyup paste', function() {
+                var text = $('#desc').val();
+                $('#markdown').html(marked(text));
+            });
+            // First time
+             $('#markdown').html(marked($('#desc').val()));      
+        });
+
 block content
     .jumbotron.wicked-application-title
         .container.wicked-title-container
@@ -72,6 +81,10 @@ block content
                             .form-group
                                 label(for='appname') Application Name:
                                 input(value=application.name name='appname').form-control
+                            .form-group
+                                label(for='appdesc') Application Description:
+                                textarea(name='appdesc' id='desc' style='height:100px').form-control= application.description
+                                div(id='markdown')
                             .form-group
                                 label(for='redirecturi') Redirect URI:
                                 input(value=application.redirectUri name='redirecturi').form-control

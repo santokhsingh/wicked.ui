@@ -64,6 +64,9 @@ app.use(logger('{"date":":date[clf]","method":":method","url":":url","remote-add
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/assets/bootstrap', express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
 app.use('/assets/jquery', express.static(path.join(__dirname, 'node_modules/jquery/dist')));
+app.use('/assets/jsgrid', express.static(path.join(__dirname, 'node_modules/jsgrid/dist')));
+app.use('/assets/highlight', express.static(path.join(__dirname, 'node_modules/highlight.js/lib')));
+app.use('/assets/marked', express.static(path.join(__dirname, 'node_modules/marked')));
 
 // Initializing state
 app.use('/ping', ping);
@@ -245,43 +248,19 @@ app.initialize = function (done) {
 
     // error handlers
 
-    // development error handler
-    // will print stacktrace
-    if (wicked.isDevelopmentMode()) {
-        app.use(function (err, req, res, next) {
-            debug(err);
-            res.status(err.status || 500);
-            if (!utils.acceptJson(req)) {
-                res.render('error', {
-                    title: 'Error',
-                    glob: app.portalGlobals,
-                    message: err.message,
-                    error: err,
-                    correlationId: req.correlationId
-                });
-            } else {
-                res.json({
-                    statusCode: res.statusCode,
-                    message: err.message,
-                    error: err,
-                    correlationId: req.correlationId
-                });
-            }
-        });
-    }
-
     // production error handler
-    // no stacktraces leaked to user
     app.use(function (err, req, res, next) {
         // 403 and not logged in? And not an API/JSON user?
         if (err.status &&
-            403 === err.status &&
+            (403 === err.status || 403 === err.statusCode) &&
             !utils.getLoggedInUserId(req) &&
             !utils.acceptJson(req)) {
             res.redirect('/login?redirect=' + encodeURIComponent(req.url));
         } else {
-            debug(err);
+            error(err);
             const status = err.status || 500;
+            // Will print stacktrace if in development mode
+            const displayError = wicked.isDevelopmentMode() ? err : { status: status };
             res.status(status);
             if (!utils.acceptJson(req)) {
                 let errorTemplate = 'error'; // default error template
@@ -297,14 +276,14 @@ app.initialize = function (done) {
                     title: 'Error',
                     glob: app.portalGlobals,
                     message: err.message,
-                    error: { status: status },
+                    error: displayError,
                     correlationId: req.correlationId
                 });
             } else {
                 res.json({
                     statusCode: res.statusCode,
                     message: err.message,
-                    error: { status: status },
+                    error: displayError,
                     correlationId: req.correlationId
                 });
             }

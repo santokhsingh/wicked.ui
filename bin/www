@@ -272,7 +272,7 @@ async.series({
 }, function (err, results) {
     if (err) {
         error(err);
-        throw Error('Could not initialize portal. See above error.');
+        throw new Error('Could not initialize portal. See above error.');
     }
 
     let apiUrl = wicked.getExternalApiUrl();
@@ -338,9 +338,9 @@ function normalizePort(val) {
  * Event listener for HTTP server "error" event.
  */
 
-function onError(error) {
-    if (error.syscall !== 'listen') {
-        throw error;
+function onError(err) {
+    if (err.syscall !== 'listen') {
+        throw err;
     }
 
     const bind = typeof port === 'string' ?
@@ -348,7 +348,7 @@ function onError(error) {
         'Port ' + port;
 
     // handle specific listen errors with friendly messages
-    switch (error.code) {
+    switch (err.code) {
         case 'EACCES':
             error(bind + ' requires elevated privileges');
             process.exit(1);
@@ -358,7 +358,7 @@ function onError(error) {
             process.exit(1);
             break;
         default:
-            throw error;
+            throw err;
     }
 }
 

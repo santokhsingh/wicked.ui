@@ -1,7 +1,9 @@
-extends layout
+extends layout  
 
-block scripts
+block bodyScripts
+    script(src='/assets/marked/marked.min.js')
     script(type='text/javascript').
+      
         function validateNewApplication() {
             var appid = $('#appid').val();
             var appname = $('#appname').val();
@@ -38,7 +40,49 @@ block scripts
                 });
             }
         }
-
+         $(document).ready(function(){
+            $('#desc').on('change keyup paste', function() {
+                var text = $('#desc').val();
+                $('#markdown').html(marked(text));
+            });
+            // First time
+            $('#markdown').html(marked($('#desc').val()));      
+      
+            $('#applicationsGrid').jsGrid({
+                width: "100%", pageSize: 10, sorting: true, paging: true, filtering: true, autoload: true,
+                controller: {
+                    loadData: function (filter) {
+                        var d = $.Deferred();
+                        var data = !{applications};
+                        if (isEmptyGridFilter(filter)) {
+                            d.resolve(data);
+                            return d.promise();
+                        }
+                        data = $.grep(data, function (item) {
+                            if (applyGridFilter(filter, item))
+                            return item;
+                        });
+                        d.resolve(data);
+                        return d.promise();
+                    }
+                },
+                fields: [
+                    { name: "id", type: "text", title: "ID" },
+                    { name: "name", type: "text", title: "Name", 
+                        itemTemplate: function(value, item) {
+                            return $("<a>").attr("href", "/applications/"+item.id).text(value);
+                        }
+                    },
+                    { name: "userRole", type: "text", title: "Role" },
+                    { type: "control", width: "10", editButton: false, deleteButton: false,
+                        _createFilterSwitchButton: function() {
+                            return this._createOnOffSwitchButton("filtering", this.searchModeButtonClass, false);
+                        }
+                    }
+                ]
+            });
+            $("#applicationsGrid").jsGrid("option", "filtering", false);
+        });
 
 block content
     .jumbotron.wicked-application-title
@@ -83,7 +127,11 @@ block content
                                     small A human readable description/name of the your application, e.g. 'My Awesome Application'
                                     small 
                                         span(id='errorAppname' style='color:red')
-
+                                .form-group
+                                    label(for='appdesc') Application Description:
+                                    textarea(name='appdesc' id='desc' style='height:100px').form-control= appdesc
+                                    small The Application Description field can be used to provide additional details about your application use case, including any relevant URLs. If you are subscribing to an API that requires approvals, completing this field will aid in processing time
+                                    div(id='markdown')
                                 .checkbox
                                     label
                                         input(type='checkbox' name='hasredirecturi' data-toggle='collapse' data-target='#redirecturipanel')
@@ -106,22 +154,11 @@ block content
 
             hr
 
-            if applications.length == 0
+            if count == 0
                 br
                 h4 You don't have any registered applications
             else
                 p To review owners, view API keys for this application or to unregister an application, please click the application name.
+                div#applicationsGrid
 
-                table.table.table-striped
-                    thead
-                        tr
-                            th ID
-                            th Name
-                            th Role
-                    tbody
-                        each app, i in applications
-                            tr
-                                td= app.id
-                                td
-                                    a(href='/applications/#{app.id}')= app.name
-                                td= app.userRole
+           

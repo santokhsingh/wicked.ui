@@ -99,7 +99,8 @@ router.get('/', function (req, res, next) {
                     authUser: req.user,
                     glob: req.app.portalGlobals,
                     route: '/applications',
-                    applications: appInfos,
+                    count: appInfos.length,
+                    applications: JSON.stringify(appInfos),
                     showRegister: showRegister
                 });
             } else {
@@ -162,6 +163,7 @@ router.post('/register', function (req, res, next) {
     debug("post('/register')");
     const appId = req.body.appid;
     const appName = req.body.appname;
+    const appDesc = req.body.appdesc;
     const hasRedirectUri = req.body.hasredirecturi;
     const redirectUri = req.body.redirecturi;
 
@@ -176,6 +178,9 @@ router.post('/register', function (req, res, next) {
         id: appId,
         name: appName
     };
+
+    if(appDesc)
+        newApp.description = appDesc;
     if (hasRedirectUri)
         newApp.redirectUri = redirectUri;
 
@@ -285,6 +290,7 @@ router.post('/:appId/patch', function (req, res, next) {
     debug("post('/:appId/patch')");
     var appId = req.params.appId;
     var appName = req.body.appname;
+    var appDesc = req.body.appdesc;
     var redirectUri = req.body.redirecturi;
 
     if (!appName) {
@@ -296,6 +302,7 @@ router.post('/:appId/patch', function (req, res, next) {
     const appData = {
         id: appId,
         name: appName,
+        description: appDesc,
         redirectUri: redirectUri
     };
 

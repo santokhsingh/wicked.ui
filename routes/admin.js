@@ -20,9 +20,9 @@ router.get('/approvals', function (req, res, next) {
             res.render('admin_approvals',
                 {
                     authUser: req.user,
-                    glob: req.app.portalGlobals,
+                    glob: req.app.portalGlobals, 
                     title: 'Pending Subscription Approvals',
-                    approvals: apiResponse
+                    approvals: JSON.stringify(apiResponse)
                 });
         } else {
             res.json({
@@ -87,113 +87,66 @@ function byName(a, b) {
     return a.name < b.name ? -1 : 1;
 }
 
-router.get('/users', function (req, res, next) {
+function mustBeAdminMiddleware(req, res, next) {
+    const loggedInUserId = utils.getLoggedInUserId(req);
+    if (!loggedInUserId)
+        return utils.fail(403, 'You must be logged in to view this page.', next);
+    if (!req.user.admin)
+        return utils.fail(403, 'Only Admins can view this page. If you need access, contact your site administrator.', next);
+    
+    return next();
+}
+
+router.get('/users', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/users')");
-    // This endpoint now also takes the following parameters:
-    //   offset, limit
-    //   filter: URI encoded JSON, e.g. {"name":"michael"}
-    //   order_by: e.g. name%20DESC, or customId%20ASC
-    //   no_cache: 0 or 1, set to 1 to really count the records, otherwise the result may be read from a cache
-    utils.getFromAsync(req, res, '/registrations/pools/wicked', 200, function (err, apiResponse) {
+    if (!utils.acceptJson(req)) {
+        res.render('admin_users',
+            {
+                authUser: req.user,
+                glob: req.app.portalGlobals,
+                title: 'All Users',
+            });
+        return;    
+    }
+    const filterFields = ['id', 'name', 'email'];
+    const usersUri = utils.makePagingUri(req, '/registrations/pools/wicked', filterFields);
+    utils.getFromAsync(req, res, usersUri, 200, function (err, apiResponse) {
         if (err)
             return next(err);
-        // apiResponse looks like this:
-        // {
-        //   items: [...],
-        //   count: <# records in total>
-        //   count_cached: true/false
-        // }
-        const userList = apiResponse.items;
-        debug(userList);
-
-        // Sort by name
-        userList.sort(byName);
-
-        if (!utils.acceptJson(req)) {
-            res.render('admin_users',
-                {
-                    authUser: req.user,
-                    glob: req.app.portalGlobals,
-                    title: 'All Users',
-                    users: userList
-                });
-        } else {
+        if (utils.acceptJson(req)) {
             res.json({
                 title: 'All Users',
-                users: userList
+                users: apiResponse
             });
         }
     });
 });
 
-router.get('/applications', function (req, res, next) {
+router.get('/applications', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/applications')");
-    // TODO: This has to be changed to support lazy loading and pagin
-    //       We will need an additional end point for Ajax calls; this
-    //       call to /applications now supports ?offset=...&limit=...,
-    //       and will return an "items" and "count" property.
-    //       By passing the parameter &embed=1, the application data
-    //       is automatically embedded in the response, so there is no
-    //       need to loop over the applications and retrieve the data.
-    //       This HAS to be done server side, otherwise filtering and
-    //       sorting cannot be done sensibly.
-    //
-    // Typical request:
-    // 
-    //       GET /applications?embed=1&filter=...&order_by=name%20ASC&offset=0&limit=20
-    utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
+    if (!utils.acceptJson(req)) {
+        res.render('admin_applications', {
+            authUser: req.user,
+            glob: req.app.portalGlobals,
+            title: 'All Applications',
+        });
+        return;
+    }
+    const filterFields = ['id', 'name', 'ownerEmail'];
+    const appsUri = utils.makePagingUri(req, '/applications?embed=1', filterFields);
+    utils.getFromAsync(req, res, appsUri, 200, function (err, appsResponse) {
         if (err)
             return next(err);
-        // appsResponse: {
-        //   items: [...],
-        //   count: _n_
-        //   count_cached: true/false
-        // }
-        const appIds = [];
-        for (let i = 0; i < appsResponse.items.length; ++i)
-            appIds.push(appsResponse.items[i].id);
-
-        // This is the expensive part:
-        async.map(appIds, function (appId, callback) {
-            utils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
-        }, function (err, appsInfos) {
-            if (err)
-                return next(err);
-            for (let i = 0; i < appsInfos.length; ++i) {
-                const thisApp = appsInfos[i];
-                let mainOwner = null;
-                for (let j = 0; j < thisApp.owners.length; ++i) {
-                    if ("owner" == thisApp.owners[j].role) {
-                        mainOwner = thisApp.owners[j];
-                        break;
-                    }
-                }
-                if (mainOwner)
-                    thisApp.mainOwner = mainOwner;
-            }
-
-            // Sort by Application name
-            appsInfos.sort(byName);
-
-            if (!utils.acceptJson(req)) {
-                res.render('admin_applications',
-                    {
-                        authUser: req.user,
-                        glob: req.app.portalGlobals,
-                        title: 'All Applications',
-                        applications: appsInfos
-                    });
-            } else {
-                res.json({
-                    title: 'All Applications',
-                    applications: appsInfos
-                });
-            }
-        });
+        if (utils.acceptJson(req)) {
+            res.json({
+                title: 'All Applications',
+                applications: appsResponse
+            });
+        }
     });
 });
 
-router.get('/subscribe', function (req, res, next) {
+router.get('/subscribe', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/subscribe')");
     async.parallel({
         getApplications: function (callback) {
@@ -219,7 +172,7 @@ router.get('/subscribe', function (req, res, next) {
     });
 });
 
-router.get('/listeners', function (req, res, next) {
+router.get('/listeners', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/listeners')");
     utils.getFromAsync(req, res, '/webhooks/listeners', 200, function (err, appsResponse) {
         if (err)
@@ -240,7 +193,7 @@ router.get('/listeners', function (req, res, next) {
     });
 });
 
-router.get('/listeners/:listenerId', function (req, res, next) {
+router.get('/listeners/:listenerId', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/listeners/:listenerId')");
     const listenerId = req.params.listenerId;
     const regex = /^[a-zA-Z0-9\-_]+$/;
@@ -265,7 +218,7 @@ router.get('/listeners/:listenerId', function (req, res, next) {
     });
 });
 
-router.get('/verifications', function (req, res, next) {
+router.get('/verifications', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/verifications'");
     utils.getFromAsync(req, res, '/verifications', 200, function (err, verifResponse) {
         if (err)
@@ -276,7 +229,7 @@ router.get('/verifications', function (req, res, next) {
                 authUser: req.user,
                 glob: req.app.portalGlobals,
                 title: 'Pending Verifications',
-                verifications: verifResponse
+                verifications: JSON.stringify(verifResponse)
             });
         } else {
             res.json({
@@ -284,6 +237,32 @@ router.get('/verifications', function (req, res, next) {
                 verifications: verifResponse
             });
         }
+    });
+});
+
+router.post('/verifications/:verificationId', mustBeAdminMiddleware, function (req, res, next) {
+    const verificationId = req.params.verificationId;
+    utils.delete(req, `/verifications/${verificationId}`, (err, apiResponse, apiBody) => {
+        if (err) {
+            error(err);
+            return res.json({
+                success: false,
+                message: err.message
+            });
+        }
+        if (apiResponse.statusCode >= 200 && apiResponse.statusCode < 300) {
+            return res.json({
+                success: true,
+                message: 'Successfully deleted verification.'
+            });
+        }
+        warn(`Delete verification: Failed with status code ${apiResponse.statusCode}, API returns:`);
+        warn(apiBody);
+        return res.json({
+            success: false,
+            message: `Unexpected status code ${apiResponse.statusCode}.`,
+            response: apiBody
+        });
     });
 });
 
@@ -314,7 +293,7 @@ function fixUptimes(healths) {
     }
 }
 
-router.get('/health', function (req, res, next) {
+router.get('/health', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/health')");
     utils.getFromAsync(req, res, '/systemhealth', 200, function (err, healthResponse) {
         if (err)
@@ -336,7 +315,7 @@ router.get('/health', function (req, res, next) {
     });
 });
 
-router.get('/apis/:apiId/subscriptions_csv', function (req, res, next) {
+router.get('/apis/:apiId/subscriptions_csv', mustBeAdminMiddleware, function (req, res, next) {
     const apiId = req.params.apiId;
     debug("get('/apis/" + apiId + "/subscriptions_csv')");
     utils.getFromAsync(req, res, '/apis/' + apiId + '/subscriptions', 200, function (err, applicationList) {
@@ -386,7 +365,7 @@ router.get('/apis/:apiId/subscriptions_csv', function (req, res, next) {
     });
 });
 
-router.post('/apis/:apiId/delete_subscriptions', function (req, res, next) {
+router.post('/apis/:apiId/delete_subscriptions', mustBeAdminMiddleware, function (req, res, next) {
     // This thing could use CSRF
     const apiId = req.params.apiId;
     debug("post('/apis/" + apiId + "/delete_subscriptions')");

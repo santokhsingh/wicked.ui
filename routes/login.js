@@ -119,7 +119,12 @@ router.get('/callback', function (req, res, next) {
                     profile: profile,
                     token: tokenResult
                 };
-                res.redirect('/');
+                if (req.session.redirectAfterLogin) {
+                    const redirUri = req.session.redirectAfterLogin;
+                    delete req.session.redirectAfterLogin;
+                    return res.redirect(redirUri);
+                }
+                return res.redirect('/');
             });
         });
     });

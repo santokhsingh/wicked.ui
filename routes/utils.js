@@ -1,6 +1,7 @@
 'use strict';
 
 const request = require('request');
+const qs = require('querystring');
 const async = require('async');
 const { debug, info, warn, error } = require('portal-env').Logger('portal:utils');
 const fs = require('fs');
@@ -55,6 +56,25 @@ utils.ensureNoSlash = function (url) {
     if (url.endsWith('/'))
         return url.substring(0, url.length - 1);
     return url;
+};
+
+utils.makePagingUri = function (req, uri, filterFields) {
+    const startIndex = (req.query.pageIndex && req.query.pageSize) ? (req.query.pageIndex - 1) * req.query.pageSize : 0;
+    uri = (uri && uri.indexOf('?') < 0) ? `${uri}?` : uri;
+    uri = `${uri}&offset=${startIndex}`;
+    uri = (req.query.pageSize) ? `${uri}&limit=${qs.escape(req.query.pageSize)}` : uri;
+    uri = (req.query.sortField) ? `${uri}&order_by=${qs.escape(req.query.sortField)}%20${qs.escape(req.query.sortOrder)}` : uri;
+    uri = (startIndex == 0) ? `${uri}&no_cache=1` : uri;
+    var filterParams = {};
+    var hasFilter = false;
+    for (let i = 0; i < filterFields.length; ++i) {
+        var field = filterFields[i];
+        if (req.query[field]) {
+            filterParams[field] = req.query[field];
+            hasFilter = true;
+        }
+    }
+    return (hasFilter) ? `${uri}&filter=${qs.escape(utils.getText(filterParams))}` : uri;
 };
 
 function makeHeaders(req, userId) {
@@ -423,7 +443,7 @@ utils.getFromAsync = function (req, res, uri, expectedStatus, callback) {
     utils.get(req, uri, function (err, apiResponse, apiBody) {
         if (err)
             return callback(err);
-        if (expectedStatus != apiResponse.statusCode)
+        if (expectedStatus !== apiResponse.statusCode)
             return utils.handleError(res, apiResponse, apiBody, callback);
         const contentType = apiResponse.headers['content-type'];
         let returnValue = null;
