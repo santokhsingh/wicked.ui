@@ -5,7 +5,6 @@ var { debug, info, warn, error } = require('portal-env').Logger('portal:login');
 var router = express.Router();
 var request = require('request');
 var qs = require('querystring');
-// var passport = require('passport');
 var utils = require('./utils');
 var wicked = require('wicked-sdk');
 

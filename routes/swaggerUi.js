@@ -3,9 +3,6 @@
 var express = require('express');
 var { debug, info, warn, error } = require('portal-env').Logger('portal:swagger-ui');
 var router = express.Router();
-//var request = require('request');
-//var utils = require('./utils');
-//var passport = require('passport');
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
