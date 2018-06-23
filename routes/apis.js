@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const qs = require('querystring');
 const router = express.Router();
 const { debug, info, warn, error } = require('portal-env').Logger('portal:apis');
 const utils = require('./utils');
@@ -257,8 +258,9 @@ router.get('/:api', function (req, res, next) {
                     thisApp.subscriptionApproved = subsResults[i].approved;
                     if (subsResults[i]._links.deleteSubscription)
                         thisApp.mayUnsubscribe = true;
-                    thisApp.swaggerLink = wicked.getExternalPortalUrl() +
-                        '/apis/' + apiId + '/swagger?forUser=' + loggedInUserId;
+                    thisApp.swaggerLink = utils.ensureNoSlash(wicked.getExternalPortalUrl()) +
+                        '/apis/' + apiId + '/swagger?forUser=' +loggedInUserId;
+                    thisApp.swaggerLink = qs.escape(thisApp.swaggerLink);
                 }
                 apps.push(thisApp);
                 debug(thisApp);
