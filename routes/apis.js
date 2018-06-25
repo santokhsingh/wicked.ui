@@ -256,6 +256,7 @@ router.get('/:api', function (req, res, next) {
                     thisApp.mayUnsubscribe = false;
                     thisApp.maySubscribe = false;
                     thisApp.subscriptionApproved = subsResults[i].approved;
+                    thisApp.subscriptionTrusted = subsResults[i].trusted;
                     if (subsResults[i]._links.deleteSubscription)
                         thisApp.mayUnsubscribe = true;
                     thisApp.swaggerLink = utils.ensureNoSlash(wicked.getExternalPortalUrl()) +

@@ -1,5 +1,23 @@
 extends layout
 
+block scripts
+    script(type='text/javascript').
+        function checkTrust() {
+            var planData = !{JSON.stringify(apiPlans)};
+            var wantTrusted = $('#trusted').is(':checked');
+
+            for (var i = 0; i < planData.length; ++i) {
+                var needsApproval = wantTrusted || planData[i].needsApproval;
+                var spanId = '#plan_' + planData[i].id;
+                $(spanId).text(needsApproval ? 'Yes' : 'No');
+            }
+        }
+
+        // Called from utils.js
+        function localInit() {
+            $('#trusted').on('change', checkTrust);
+        }
+
 block content
     .jumbotron.wicked-api-title
         .container.wicked-title-container
@@ -30,6 +48,22 @@ block content
         if allowSubscribe
             form(role='form' action='/applications/#{application.id}/subscribe/#{apiInfo.id}' method='post')
                 if apiPlans && apiPlans.length > 0
+
+                    if apiInfo.auth == 'oauth2'
+                        .panel.panel-default
+                            .panel-heading
+                                +panelTitle('Trusted Application/Subscription', '/help/trusted')
+                            .panel-body
+                                p.
+                                    Check this check box if you want the subscription to this API to be a trusted subscription for this application.
+                                    Please note that this will require approval, regardless of the chosen API plan. See the help page for more information.
+
+                                .form-check
+                                    input(type="checkbox" id="trusted" name="trusted").form-check-input
+                                    label(for="trusted").form-check-label &nbsp;Trust this application
+                    else
+                        input(type='hidden' name='trusted' id='trusted' value='')
+
                     table(class='table table-striped')
                         thead
                             tr
@@ -51,10 +85,8 @@ block content
                                     td
                                         p= plan.desc
                                     td
-                                        if plan.needsApproval
-                                            p Yes
-                                        else
-                                            p No
+                                        p
+                                            span(id="plan_#{plan.id}")= plan.needsApproval ? "Yes" : "No"
                 else
                     i There are no subscription plans available for you to this API. Please contact your API Portal administrator in case you feel this is wrong.
 

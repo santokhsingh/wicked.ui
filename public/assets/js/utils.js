@@ -42,4 +42,8 @@ $(document).ready(function(){
       });
     }
    };
+
+   if (window.localInit) {
+     localInit();
+   }
  });

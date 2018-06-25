@@ -342,7 +342,9 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
 
         const application = results.getApplication;
         const apiInfo = results.getApi;
-        const apiPlans = results.getPlans;
+        const apiPlans = utils.clone(results.getPlans);
+        for (let i = 0; i < apiPlans.length; ++i)
+            delete apiPlans[i].config;
 
         let allowSubscribe = true;
         let subscribeError = null;
@@ -391,10 +393,12 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
 });
 
 router.post('/:appId/subscribe/:apiId', function (req, res, next) {
-    debug("post('/:appId/subscribe/:apiId')");
     const appId = req.params.appId;
     const apiId = req.params.apiId;
+    debug(`post('/${appId}/subscribe/${apiId})`);
     const apiPlan = req.body.plan;
+    const trusted = utils.getChecked(req, 'trusted');
+    debug(`apiPlan: ${apiPlan}, trusted: ${trusted}`);
 
     if (!apiPlan) {
         const err = new Error('Bad request. Plan was not specified.');
@@ -402,21 +406,21 @@ router.post('/:appId/subscribe/:apiId', function (req, res, next) {
         return next(err);
     }
 
-    utils.post(req, '/applications/' + appId + '/subscriptions',
-        {
-            application: appId,
-            api: apiId,
-            plan: apiPlan
-        }, function (err, apiResponse, apiBody) {
-            if (err)
-                return next(err);
-            if (201 != apiResponse.statusCode)
-                return utils.handleError(res, apiResponse, apiBody, next);
-            if (!utils.acceptJson(req))
-                res.redirect('/apis/' + apiId);
-            else
-                res.status(201).json(utils.getJson(apiBody));
-        });
+    utils.post(req, `/applications/${appId}/subscriptions`, {
+        application: appId,
+        api: apiId,
+        plan: apiPlan,
+        trusted: trusted
+    }, function (err, apiResponse, apiBody) {
+        if (err)
+            return next(err);
+        if (201 != apiResponse.statusCode)
+            return utils.handleError(res, apiResponse, apiBody, next);
+        if (!utils.acceptJson(req))
+            res.redirect('/apis/' + apiId);
+        else
+            res.status(201).json(utils.getJson(apiBody));
+    });
 });
 
 router.post('/:appId/unsubscribe/:apiId', function (req, res, next) {

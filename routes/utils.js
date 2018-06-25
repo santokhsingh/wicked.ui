@@ -21,6 +21,10 @@ utils.createRandomId = function () {
     return crypto.randomBytes(20).toString('hex');
 };
 
+utils.clone = function(o) {
+    return JSON.parse(JSON.stringify(o));
+};
+
 utils.fail = function (statusCode, message, internalErrorOrCallback, callback) {
     debug(`fail(${statusCode}, ${message})`);
     const err = new Error(message);
@@ -30,6 +34,15 @@ utils.fail = function (statusCode, message, internalErrorOrCallback, callback) {
     else
         err.internalError = internalErrorOrCallback;
     return callback(err);
+};
+
+utils.makeError = function (statusCode, message, internalError) {
+    debug(`makeError(${statusCode}, ${message})`);
+    const err = new Error(message);
+    err.status = statusCode;
+    if (internalError)
+        err.internalError = internalError;
+    return err;
 };
 
 utils.getLoggedInUserId = function (req) {
@@ -44,6 +57,20 @@ utils.getLoggedInUserEmail = function (req) {
     if (!req.user)
         return null;
     return req.user.email;
+};
+
+utils.getChecked = function(req, propName) {
+    if (!req.body || !req.body[propName])
+        return false;
+    const propValue = req.body[propName];
+    switch (propValue.toString().toLowerCase()) {
+        case '1':
+        case 'on':
+        case 'true':
+        case 'yes':
+            return true;
+    }
+    return false;
 };
 
 utils.appendSlash = function (url) {

@@ -11,7 +11,8 @@ const HELP_IDS = {
     'api-access': 'API Access',
     'applications': 'Application Index',
     'application': 'Application Page',
-    'application-ownership': 'Application Ownership'
+    'application-ownership': 'Application Ownership',
+    'trusted': 'Application/Subscription Trust'
 };
 
 router.get('/', function (req, res, next) {

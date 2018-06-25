@@ -47,6 +47,7 @@ block content
                             tr
                                 th API
                                 th Auth Type
+                                th <a href="/help/trusted" target="_blank">Trusted</a>
                                 th(colspan=2) Secrets (API Key or Client ID/Secret)
                         tbody
                             each sub, i in subscriptions
@@ -54,6 +55,7 @@ block content
                                     td(style='vertical-align: middle')
                                         a(href='/apis/#{sub.api}')= sub.api
                                     td(style='vertical-align: middle')= sub.auth
+                                    td(style='vertical-align: middle')= sub.trusted ? 'Yes' : '-'
                                     if (sub.approved)
                                         if ('oauth2' == sub.auth)
                                             td(style='max-width: 250px')

@@ -22,54 +22,59 @@ block bodyScripts
               }
             },
             fields: [
-                 { name: "user.name", type: "text", title: "User Name",
-                   itemTemplate: function(value, item) {
-                     return $("<a>").attr("href", "/users/"+item.user.id).text(value);
+              { name: "user.email", type: "text", title: "User",
+                itemTemplate: function (value, item) {
+                  return $("<a>").attr("href", "/users/" + item.user.id).text(value);
+                }
+              },
+              { name: "application.name", type: "text", title: "Application",
+                itemTemplate: function(value, item) {
+                  return $("<a>").attr("href", "/applications/"+item.application.id).text(value);
+                }
+              },
+              { name: "application.trusted", type: "text", title: "Trusted", width: "4%",
+                itemTemplate: function (value, item) {
+                  return item.application.trusted ? 'Yes' : '-';
+                }
+              },
+              { name: "api.id", type: "text", title: "API",
+                itemTemplate: function(value, item) {
+                  return $("<a>").attr("href", "/apis/"+item.api.id).text(value);
+                }
+              },
+              { name: "plan.name", type: "text", title: "Plan" },
+              { type: "actions",  type: "control", width: "100",
+                      _createFilterSwitchButton: function() {
+                      return this._createOnOffSwitchButton("filtering", this.searchModeButtonClass, false);
+                    },
+                    itemTemplate: function(value,item) {
+                      var $form = $("<form>").attr("role", "form").attr("method","post")
+                                              .append("<input type='hidden' name='id' value='" + item.id + "'>")
+                                              .append("<input type='hidden' name='api' value='" + item.api.id + "'>")
+                                              .append("<input type='hidden' name='app' value='" + item.application.id + "'>");
+                      var $approveBtn = $("<button>").attr("type", "submit")
+                                                      .attr("class", "btn btn-sm btn-success")
+                                                      .attr("style", "float: left; margin: 2px; width: 6em")
+                                                      .text("Approve")
+                                                      .on("click", function () {
+                                                        $form.attr("action", "/admin/approvals/approve");
+                                                        $form.submit();
+                                                      });
+                      var $declineBtn = $("<button>").attr("type", "submit")
+                                                      .attr("class", "btn btn-sm btn-danger")
+                                                      .attr("style", "float: left; margin: 2px; width: 6em")
+                                                      .text("Decline")
+                                                      .on("click", function () {
+                                                        $form.attr("action", "/admin/approvals/decline");
+                                                        $form.submit();
+                                                      });
+                      return $("<td nowrap>").append($approveBtn)
+                                      .append("<span>&nbsp;</span>")
+                                      .append($declineBtn)
+                                      .append($form);
                     }
-                 },
-                 { name: "user.email", type: "text", title: "Email"},
-                 { name: "application.name", type: "text", title: "Application",
-                   itemTemplate: function(value, item) {
-                     return $("<a>").attr("href", "/applications/"+item.application.id).text(value);
-                    }
-                  },
-                 { name: "api.id", type: "text", title: "API",
-                   itemTemplate: function(value, item) {
-                     return $("<a>").attr("href", "/apis/"+item.api.id).text(value);
-                    }
-                 },
-                 { name: "plan.name", type: "text", title: "Plan" },
-                 { type: "actions",  type: "control", width: "90",
-                         _createFilterSwitchButton: function() {
-                          return this._createOnOffSwitchButton("filtering", this.searchModeButtonClass, false);
-                         },
-                        itemTemplate: function(value,item) {
-                          var $form = $("<form>").attr("role", "form").attr("method","post")
-                                                 .append("<input type='hidden' name='api' value='"+item.api.id+"'>")
-                                                 .append("<input type='hidden' name='app' value='"+item.application.id+"'>");
-                          var $approveBtn = $("<button>").attr("type", "submit")
-                                                         .attr("class", "btn btn-sm btn-success")
-                                                         .attr("style", "float: left; margin: 2px; width: 6em")
-                                                         .text("Approve")
-                                                         .on("click", function () {
-                                                            $form.attr("action","/admin/approvals/approve");
-                                                            $form.submit();
-                                                         });
-                          var $declineBtn = $("<button>").attr("type", "submit")
-                                                         .attr("class", "btn btn-sm btn-danger")
-                                                         .attr("style", "float: left; margin: 2px; width: 6em")
-                                                         .text("Decline")
-                                                         .on("click", function () {
-                                                           $form.attr("action","/admin/approvals/decline");
-                                                           $form.submit();
-                                                         });
-                          return $("<td nowrap>").append($approveBtn)
-                                          .append("<span>&nbsp;</span>")
-                                          .append($declineBtn)
-                                          .append($form);
-                       }
-                 }
-             ]
+              }
+            ]
            });
            $("#approvalsGrid").jsGrid("option", "filtering", false);
         });
@@ -84,4 +89,7 @@ block content
         if approvals.length == 0
             h3 No pending approvals
         else
+
+            p Before approving of "trusted" subscriptions, <a href="/help/trusted" target="_blank">please be aware of the impliciations</a>.
+
             div#approvalsGrid

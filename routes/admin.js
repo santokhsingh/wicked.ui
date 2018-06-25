@@ -16,14 +16,12 @@ router.get('/approvals', function (req, res, next) {
         if (err)
             return next(err);
         if (!utils.acceptJson(req)) {
-
-            res.render('admin_approvals',
-                {
-                    authUser: req.user,
-                    glob: req.app.portalGlobals, 
-                    title: 'Pending Subscription Approvals',
-                    approvals: JSON.stringify(apiResponse)
-                });
+            res.render('admin_approvals', {
+                authUser: req.user,
+                glob: req.app.portalGlobals,
+                title: 'Pending Subscription Approvals',
+                approvals: JSON.stringify(apiResponse)
+            });
         } else {
             res.json({
                 title: 'Pending Subscription Approvals',
@@ -37,15 +35,31 @@ router.post('/approvals/approve', function (req, res, next) {
     debug("post('/approvals/approve')");
     const appId = req.body.app;
     const apiId = req.body.api;
-    if (!appId || !apiId) {
-        const err = new Error('Bad request. Both App and API need to be specificed.');
+    const approvalId = req.body.id;
+    if (!approvalId || !appId || !apiId) {
+        const err = new Error('Bad request. Approval ID, App and API all need to be specified.');
         err.status = 400;
         return next(err);
     }
 
-    // Hit the API
-    utils.patch(req, '/applications/' + appId + '/subscriptions/' + apiId, { approved: true },
-        function (err, apiResponse, apiBody) {
+    utils.get(req, `/approvals/${approvalId}`, (err, apiRes, apiBody) => {
+        if (err)
+            return next(err);
+        const approvalInfo = utils.getJson(apiBody);
+        debug(approvalInfo);
+        
+        if (approvalInfo.application.id !== appId)
+            return next(utils.makeError(400, 'Bad request. Application ID does not match approval request.'));
+        if (approvalInfo.api.id !== apiId)
+            return next(utils.makeError(400, 'Bad request. API does not match approval request.'));
+        const isTrusted = approvalInfo.application.trusted;
+        const patchBody = {
+            approved: true,
+            trusted: isTrusted
+        };
+
+        // Hit the API
+        utils.patch(req, `/applications/${appId}/subscriptions/${apiId}`, patchBody, (err, apiResponse, apiBody) => {
             if (err)
                 return next(err);
             if (200 != apiResponse.statusCode)
@@ -56,6 +70,7 @@ router.post('/approvals/approve', function (req, res, next) {
             else
                 res.json(utils.getJson(apiBody));
         });
+    });
 });
 
 router.post('/approvals/decline', function (req, res, next) {
@@ -93,7 +108,7 @@ function mustBeAdminMiddleware(req, res, next) {
         return utils.fail(403, 'You must be logged in to view this page.', next);
     if (!req.user.admin)
         return utils.fail(403, 'Only Admins can view this page. If you need access, contact your site administrator.', next);
-    
+
     return next();
 }
 
@@ -106,7 +121,7 @@ router.get('/users', mustBeAdminMiddleware, function (req, res, next) {
                 glob: req.app.portalGlobals,
                 title: 'All Users',
             });
-        return;    
+        return;
     }
     const filterFields = ['id', 'name', 'email'];
     const usersUri = utils.makePagingUri(req, '/registrations/pools/wicked', filterFields);
