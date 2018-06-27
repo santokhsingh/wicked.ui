@@ -137,6 +137,11 @@ block content
                                         | &nbsp;(other than the Client Credentials flow, i.e. using redirects)
 
                                 div(id='redirecturipanel' class='panel-collapse collapse')
+                                    .checkbox
+                                        label
+                                            input(type='checkbox' name='confidential')
+                                            strong This application is able to store a client secret confidentially (server side).
+                                            
                                     .form-group
                                         label(for='redirecturi') Redirect URI:
                                         input(type='string' id='redirecturi' name='redirecturi' value='https://').form-control

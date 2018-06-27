@@ -91,6 +91,13 @@ block content
                                 label(for='redirecturi') Redirect URI:
                                 input(value=application.redirectUri name='redirecturi').form-control
                                 small Once you have added a redirect URI, it's not possible to remove it, just change it. <b>Has to be a <code>https://</code> URI</b>, or start with <code>http://localhost</code> (for testing purposes).
+                            .checkbox
+                                label
+                                    if application.confidential
+                                        input(type='checkbox' name='confidential' checked)
+                                    else
+                                        input(type='checkbox' name='confidential')
+                                    strong This application is able to store a client secret confidentially (server side).
                             br
                             button(style='display:inline;' class='btn btn-warning' type='submit') Update
                     else
