@@ -6,8 +6,9 @@ block scripts
             const model = !{JSON.stringify(poolInfo)};
 
             let somethingBad = false;
-            for (let name in model.properties) {
-                const propInfo = model.properties[name];
+            for (var i = 0; i < model.properties.length; ++i) {
+                const propInfo = model.properties[i];
+                const name = propInfo.id;
                 const content = $('#' + name).val();
                 if (propInfo.type !== 'string')
                     continue;
@@ -129,13 +130,13 @@ block content
             br
 
             //- Registration information
-            each propInfo, propName in poolInfo.properties
+            each propInfo, i in poolInfo.properties
                 .form-group
                     -var required = propInfo.required ? '<span style="color:red;font-weight:bold">*</span>' : '';
-                    label(for=propName) #{propInfo.description}!{required}:
-                    input(id=propName name=propName value='#{registrationInfo[propName]}').form-control
+                    label(for=propInfo.id) #{propInfo.description}!{required}:
+                    input(id=propInfo.id name=propInfo.id value='#{registrationInfo[propInfo.id]}').form-control
                     small
-                        span(id="error#{propName}" style='color:red')
+                        span(id="error#{propInfo.id}" style='color:red')
 
             br
 

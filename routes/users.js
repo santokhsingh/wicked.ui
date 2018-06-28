@@ -152,8 +152,9 @@ router.post('/:userId', function (req, res, next) {
             namespace: null
         };
 
-        for (let propName in poolInfo.properties) {
-            const propInfo = poolInfo.properties[propName];
+        for (let i = 0; i < poolInfo.properties.length; ++i) {
+            const propInfo = poolInfo.properties[i];
+            const propName = propInfo.id;
             registrationInfo[propName] = b[propName];
         }
 
