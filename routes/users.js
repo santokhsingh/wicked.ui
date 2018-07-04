@@ -38,7 +38,14 @@ function getUser(loggedInUserId, userId, req, res, next) {
             return next(err);
 
         const userInfo = results.getUser;
-        const registrationInfo = results.getRegistration;
+        const regResults = results.getRegistration;
+        if (!regResults.items || !Array.isArray(regResults.items))
+            return next(utils.makeError(500, 'Unexpected result of getting registrations (not an array of registrations'));
+        if (regResults.items.length !== 1) {
+            error(regResults);
+            return next(utils.makeError(500, `Number of registrations not exactly equal 1, received ${regResults.items.length} items.`));
+        }
+        const registrationInfo = regResults.items[0];
         const poolInfo = results.getPool;
         const groups = results.getGroups.groups;
         for (let i = 0; i < userInfo.groups.length; ++i) {

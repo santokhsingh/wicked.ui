@@ -88,7 +88,7 @@ utils.ensureNoSlash = function (url) {
 utils.makePagingUri = function (req, uri, filterFields) {
     const startIndex = (req.query.pageIndex && req.query.pageSize) ? (req.query.pageIndex - 1) * req.query.pageSize : 0;
     uri = (uri && uri.indexOf('?') < 0) ? `${uri}?` : uri;
-    uri = `${uri}&offset=${startIndex}`;
+    uri = `${uri}offset=${startIndex}`;
     uri = (req.query.pageSize) ? `${uri}&limit=${qs.escape(req.query.pageSize)}` : uri;
     uri = (req.query.sortField) ? `${uri}&order_by=${qs.escape(req.query.sortField)}%20${qs.escape(req.query.sortOrder)}` : uri;
     uri = (startIndex == 0) ? `${uri}&no_cache=1` : uri;
