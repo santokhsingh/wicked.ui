@@ -7,6 +7,7 @@ const { debug, info, warn, error } = require('portal-env').Logger('portal:utils'
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const mustache = require('mustache');
 const wicked = require('wicked-sdk');
 
 const utils = function () { };
@@ -103,6 +104,58 @@ utils.makePagingUri = function (req, uri, filterFields) {
     }
     return (hasFilter) ? `${uri}&filter=${qs.escape(utils.getText(filterParams))}` : uri;
 };
+
+utils.loadAuthServersEndpoints = function (apiInfo, authServers) {
+    const apiUrl = utils.ensureNoSlash(wicked.getExternalApiUrl());
+    const configuredAuthMethods = [];
+    if (authServers) {
+        const endpoints = [
+            "authorizeEndpoint",
+            "tokenEndpoint",
+            "profileEndpoint"
+        ];
+        for (let i = 0; i < authServers.length; ++i) {
+            const authServer = authServers[i];
+            if (!(authServer.config && authServer.config.api && authServer.config.api.uris && authServer.config.api.uris.length > 0)) {
+                error("Erroneous configuration of Auth Server '${authServer.id} - config.apis.uris is not an array, or is empty.");
+                continue;
+            }
+            // TODO: This is also Kong specific!
+            const authServerUrl = apiUrl + authServer.config.api.uris[0];
+            if (authServer.authMethods && authServer.authMethods.length > 0) {
+                for (let j = 0; j < authServer.authMethods.length; ++j) {
+                    const authMethod = authServer.authMethods[j];
+                    const authMethodName = authMethod.name;
+                    for (let k = 0; k < endpoints.length; ++k) {
+                        const endpoint = endpoints[k];
+                        if (authMethod.config && authMethod.config[endpoint]) {
+                            authMethod[endpoint] = authServerUrl + mustache.render(authMethod.config[endpoint], { api: apiInfo.id, name: authMethodName });
+                        } else {
+                            warn(`Auth server ${authServer.name} does not have definition for endpoint ${endpoint}`);
+                        }
+                    }
+                    if(authMethod.enabled)
+                        configuredAuthMethods[authServer.name+":"+authMethodName] = authMethod;
+                }
+            } else {
+                warn('Auth server ' + authServer.name + ' does not have any authMethods.');
+            }
+
+        }
+        debug('Augmented auth server list:');
+        debug(authServers);
+    }
+    // Iterate over the Auth Methods which are configured for this API
+    const apiAuthMethods = [];
+    if (apiInfo.authMethods && apiInfo.authMethods.length > 0) {
+        for (let i = 0; i < apiInfo.authMethods.length; ++i) {
+            if(configuredAuthMethods[apiInfo.authMethods[i]])
+                apiAuthMethods.push(configuredAuthMethods[apiInfo.authMethods[i]]);
+        }
+    }
+    return apiAuthMethods;
+};
+
 
 function makeHeaders(req, userId) {
     const headers = {

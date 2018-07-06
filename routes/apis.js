@@ -274,44 +274,7 @@ router.get('/:api', function (req, res, next) {
             //         });
             //     }
             // }
-            const apiUrl = utils.ensureNoSlash(wicked.getExternalApiUrl());
-            if (authServers) {
-                const endpoints = [
-                    "authorizeEndpoint",
-                    "tokenEndpoint",
-                    "profileEndpoint"
-                ];
-                for (let i = 0; i < authServers.length; ++i) {
-                    const authServer = authServers[i];
-                    if (!(authServer.config && authServer.config.api && authServer.config.api.uris && authServer.config.api.uris.length > 0)) {
-                        error("Erroneous configuration of Auth Server '${authServer.id} - config.apis.uris is not an array, or is empty.");
-                        continue;
-                    }
-                    // TODO: This is also Kong specific!
-                    const authServerUrl = apiUrl + authServer.config.api.uris[0];
-                    // Iterate over the Auth Methods which are configured for this API
-                    if (authServer.authMethods && authServer.authMethods.length > 0) {
-                        for (let j = 0; j < authServer.authMethods.length; ++j) {
-                            const authMethod = authServer.authMethods[j];
-                            const authMethodName = authMethod.name;
-                            for (let k = 0; k < endpoints.length; ++k) {
-                                const endpoint = endpoints[k];
-                                if (authMethod.config && authMethod.config[endpoint]) {
-                                    authMethod[endpoint] = authServerUrl + mustache.render(authMethod.config[endpoint], { api: apiId, name: authMethodName });
-                                } else {
-                                    warn(`Auth server ${authServer.name} does not have definition for endpoint ${endpoint}`);
-                                }
-                            }
-                        }
-                    } else {
-                        warn('Auth server ' + authServer.name + ' does not have any authMethods.');
-                    }
-
-                }
-                debug('Augmented auth server list:');
-                debug(authServers);
-            }
-
+            apiInfo.authMethods = utils.loadAuthServersEndpoints(apiInfo, authServers);
             // See also views/models/api.json for how this looks
             if (!utils.acceptJson(req)) {
                 res.render('api',
