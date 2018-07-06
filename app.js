@@ -159,7 +159,7 @@ app.initialize = function (done) {
         const hostHeader = req.get('Host');
         const network = app.portalGlobals.network;
         let correctHost = network.portalHost;
-        if (req.url.indexOf('/swagger-ui') >= 0)
+        if (req.path.startsWith('/swagger-ui'))
             correctHost = network.apiHost;
         if (correctHost !== hostHeader) {
             debug('Host header: ' + hostHeader + ' -- MISMATCH, redirecting to ' + correctHost);
