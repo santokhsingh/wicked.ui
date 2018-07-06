@@ -22,7 +22,7 @@ utils.createRandomId = function () {
     return crypto.randomBytes(20).toString('hex');
 };
 
-utils.clone = function(o) {
+utils.clone = function (o) {
     return JSON.parse(JSON.stringify(o));
 };
 
@@ -60,7 +60,7 @@ utils.getLoggedInUserEmail = function (req) {
     return req.user.email;
 };
 
-utils.getChecked = function(req, propName) {
+utils.getChecked = function (req, propName) {
     if (!req.body || !req.body[propName])
         return false;
     const propValue = req.body[propName];
@@ -105,52 +105,66 @@ utils.makePagingUri = function (req, uri, filterFields) {
     return (hasFilter) ? `${uri}&filter=${qs.escape(utils.getText(filterParams))}` : uri;
 };
 
-utils.loadAuthServersEndpoints = function (apiInfo, authServers) {
-    const apiUrl = utils.ensureNoSlash(wicked.getExternalApiUrl());
-    const configuredAuthMethods = [];
-    if (authServers) {
-        const endpoints = [
-            "authorizeEndpoint",
-            "tokenEndpoint",
-            "profileEndpoint"
-        ];
-        for (let i = 0; i < authServers.length; ++i) {
-            const authServer = authServers[i];
-            if (!(authServer.config && authServer.config.api && authServer.config.api.uris && authServer.config.api.uris.length > 0)) {
-                error("Erroneous configuration of Auth Server '${authServer.id} - config.apis.uris is not an array, or is empty.");
-                continue;
-            }
-            // TODO: This is also Kong specific!
-            const authServerUrl = apiUrl + authServer.config.api.uris[0];
-            if (authServer.authMethods && authServer.authMethods.length > 0) {
-                for (let j = 0; j < authServer.authMethods.length; ++j) {
-                    const authMethod = authServer.authMethods[j];
-                    const authMethodName = authMethod.name;
-                    for (let k = 0; k < endpoints.length; ++k) {
-                        const endpoint = endpoints[k];
-                        if (authMethod.config && authMethod.config[endpoint]) {
-                            authMethod[endpoint] = authServerUrl + mustache.render(authMethod.config[endpoint], { api: apiInfo.id, name: authMethodName });
-                        } else {
-                            warn(`Auth server ${authServer.name} does not have definition for endpoint ${endpoint}`);
-                        }
-                    }
-                    if(authMethod.enabled)
-                        configuredAuthMethods[authServer.name+":"+authMethodName] = authMethod;
-                }
-            } else {
-                warn('Auth server ' + authServer.name + ' does not have any authMethods.');
-            }
-
-        }
-        debug('Augmented auth server list:');
-        debug(authServers);
+function lookupAuthMethod(app, apiId, authMethodRef) {
+    debug(`lookupAuthMethodConfig(${authMethodRef})`);
+    const split = authMethodRef.split(':');
+    if (split.length !== 2) {
+        error(`lookupAuthMethodConfig: Invalid auth method "${authMethodRef}", expected "<auth server id>:<method id>"`);
+        return null;
     }
+    const authServerName = split[0];
+    const authMethodName = split[1];
+
+    const authServers = app.authServers;
+    if (!authServers[authServerName]) {
+        warn(`lookupAuthMethodConfig: Unknown auth server ${authServerName}`);
+        return null;
+    }
+    const authServer = authServers[authServerName];
+
+    const authMethodOrig = authServer.authMethods.find(am => am.name === authMethodName);
+    if (!authMethodOrig) {
+        warn(`lookupAuthMethodConfig: Unknown auth method name ${authMethodName} (${authMethodRef})`);
+        return null;
+    }
+
+    if (!authMethodOrig.enabled) {
+        warn(`lookupAuthMethodConfig: Auth method ${authMethodRef} is not enabled, skipping.`);
+        return null;
+    }
+
+    const authMethod = utils.clone(authMethodOrig);
+    const endpoints = [
+        "authorizeEndpoint",
+        "tokenEndpoint",
+        "profileEndpoint"
+    ];
+
+    const apiUrl = utils.ensureNoSlash(wicked.getExternalApiUrl());
+    // The loading of the authServers in 'www' ensures this is specified
+    const authServerUrl = apiUrl + authServer.config.api.uris[0];
+
+    for (let i = 0; i < endpoints.length; ++i) {
+        const endpoint = endpoints[i];
+        if (authMethod.config && authMethod.config[endpoint]) {
+            authMethod[endpoint] = authServerUrl + mustache.render(authMethod.config[endpoint], { api: apiId, name: authMethodName });
+        } else {
+            warn(`Auth server ${authServer.name} does not have definition for endpoint ${endpoint}`);
+        }
+    }
+
+    return authMethod;
+}
+
+utils.loadAuthServersEndpoints = function (app, apiInfo) {
+    debug(`loadAuthServerEndpoints(${apiInfo.id})`);
     // Iterate over the Auth Methods which are configured for this API
     const apiAuthMethods = [];
     if (apiInfo.authMethods && apiInfo.authMethods.length > 0) {
         for (let i = 0; i < apiInfo.authMethods.length; ++i) {
-            if(configuredAuthMethods[apiInfo.authMethods[i]])
-                apiAuthMethods.push(configuredAuthMethods[apiInfo.authMethods[i]]);
+            const authMethod = lookupAuthMethod(app, apiInfo.id, apiInfo.authMethods[i]);
+            if (authMethod)
+                apiAuthMethods.push(authMethod);
         }
     }
     return apiAuthMethods;

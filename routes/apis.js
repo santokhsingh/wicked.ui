@@ -197,13 +197,6 @@ router.get('/:api', function (req, res, next) {
                         return callback(err);
                     callback(null, results);
                 });
-            },
-            getAuthServers: function (callback) {
-                if (!apiInfo.authServers)
-                    callback(null, null);
-                else {
-                    async.map(apiInfo.authServers, (authServerName, callback) => utils.getFromAsync(req, res, '/auth-servers/' + authServerName, 200, callback), callback);
-                }
             }
         }, function (err, results) {
             if (err)
@@ -216,15 +209,6 @@ router.get('/:api', function (req, res, next) {
             const subsResults = results.getSubs;
             debug('subsResults:');
             debug(subsResults);
-            const authServers = results.getAuthServers;
-            if (authServers && authServers.length > 0) {
-                for (let i = 0; i < authServers.length; ++i) {
-                    if (authServers[i].urlDescription)
-                        authServers[i].urlDescription = marked(authServers[i].urlDescription); // May be markdown.
-                }
-            }
-            debug("authServers:");
-            debug(authServers);
 
             const apps = [];
             for (let i = 0; i < userInfo.applications.length; ++i) {
@@ -267,14 +251,7 @@ router.get('/:api', function (req, res, next) {
                 debug(thisApp);
             }
 
-            // if (authServers) {
-            //     for (let i=0; i<authServers.length; ++i) {
-            //         authServers[i].url = mustache.render(authServers[i].url, {
-            //             apiId: apiInfo.id
-            //         });
-            //     }
-            // }
-            apiInfo.authMethods = utils.loadAuthServersEndpoints(apiInfo, authServers);
+            apiInfo.authMethods = utils.loadAuthServersEndpoints(req.app, apiInfo);
             // See also views/models/api.json for how this looks
             if (!utils.acceptJson(req)) {
                 res.render('api',
@@ -288,7 +265,6 @@ router.get('/:api', function (req, res, next) {
                         applications: apps,
                         apiPlans: plans,
                         apiUri: apiUri,
-                        authServers: authServers,
                         apiSubscriptions: apiSubscriptions
                     });
             } else {

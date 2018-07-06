@@ -244,7 +244,7 @@ function configureAuthServer(callback) {
                 return callback(new Error(`Auth method ${wantedAuthMethod} config does not have a tokenEndpoiunt.`));
             if (!config.profileEndpoint)
                 return callback(new Error(`Auth method ${wantedAuthMethod} config does not have a profileEndpoiunt.`));
-            
+
             // Template the configuration properties, if necessary (mustache)
             for (let key in config) {
                 if (typeof config[key] !== 'string')
@@ -264,11 +264,43 @@ function configureAuthServer(callback) {
     });
 }
 
+function readAuthServers(callback) {
+    debug(`readAuthServers()`);
+    wicked.apiGet('/auth-servers', (err, authServerNames) => {
+        if (err)
+            return callback(new Error('Could not read list of auth servers.'));
+        const authServerMap = {};
+        async.each(authServerNames, (authServerName, callback) => {
+            wicked.apiGet(`/auth-servers/${authServerName}`, (err, authServerInfo) => {
+                if (err)
+                    return callback(err);
+                if (!authServerInfo.config)
+                    return callback(new Error(`Auth server ${authServerName} does not have a config property.`));
+                if (!authServerInfo.config.api)
+                    return callback(new Error(`Auth server ${authServerName} does not have a config.api property.`));
+                if (!authServerInfo.config.api.uris)
+                    return callback(new Error(`Auth server ${authServerName} does not have a config.api.uris property.`));
+                if (!Array.isArray(authServerInfo.config.api.uris))
+                    return callback(new Error(`Auth server ${authServerName} config.api.uris property in not an array.`));
+                if (authServerInfo.config.api.uris.length <= 0)
+                    return callback(new Error(`Auth server ${authServerName} config.api.uris property does not have any entries.`));
+                authServerMap[authServerName] = authServerInfo;
+                return callback(null);
+            });
+        }, (err) => {
+            if (err)
+                return callback(err);
+            return callback(null, authServerMap);
+        });
+    });
+}
+
 async.series({
     init: callback => wicked.initialize(wickedOptions, callback),
     initMachineUser: callback => wicked.initMachineUser('portal', callback),
     registerApp: callback => registerApplicationAndSubscribe(callback),
-    authConfig: callback => configureAuthServer(callback)
+    authServers: callback => readAuthServers(callback),
+    authConfig: callback => configureAuthServer(callback),
 }, function (err, results) {
     if (err) {
         error(err);
@@ -289,6 +321,10 @@ async.series({
 
     app.portalGlobals = wicked.getGlobals();
     app.portalGlobals.buildDate = getBuildDate();
+
+    app.authServers = results.authServers;
+    debug('Auth Server Configurations:');
+    debug(app.authServers);
 
     app.authConfig = results.authConfig;
     debug('Configured Portal Auth Methods:');

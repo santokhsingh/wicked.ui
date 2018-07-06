@@ -60,21 +60,21 @@ block content
                             p Any of the following Authorization Methods can be used to retrieve an access token for the API.
                    
                         for authMethod in apiInfo.authMethods
-                            h5 #{authMethod.friendlyShort} (#{authMethod.name}):
-                            p #{authMethod.friendlyLong}
-                            if authMethod.authorizeEndpoint
-                                input(readonly type='string' value=authMethod.authorizeEndpoint style='font-family: monospace;').form-control
-                                p.small Authorization Endpoint
-                            if authMethod.tokenEndpoint
-                                input(readonly type='string' value=authMethod.tokenEndpoint style='font-family: monospace;').form-control
-                                p.small Token Endpoint
-                            if authMethod.profileEndpoint
-                                input(readonly type='string' value=authMethod.profileEndpoint style='font-family: monospace;').form-control
-                                p.small Profile Endpoint
-                                
-                            //- input(readonly type='string' value=authServer.url style='font-family: monospace;').form-control
-                            //- if authServer.urlDescription
-                            //-     p!= authServer.urlDescription
+                            .panel.panel-success
+                                .panel-heading
+                                    +panelTitle(authMethod.friendlyShort + ' (' + authMethod.name + ')', null, '#auth_' + authMethod.name)
+                                div(id='auth_#{authMethod.name}').collapse.panel-collapse
+                                    .panel-body
+                                        p #{authMethod.friendlyLong}
+                                        if authMethod.authorizeEndpoint
+                                            input(readonly type='string' value=authMethod.authorizeEndpoint style='font-family: monospace;').form-control
+                                            p.small Authorization Endpoint
+                                        if authMethod.tokenEndpoint
+                                            input(readonly type='string' value=authMethod.tokenEndpoint style='font-family: monospace;').form-control
+                                            p.small Token Endpoint
+                                        if authMethod.profileEndpoint
+                                            input(readonly type='string' value=authMethod.profileEndpoint style='font-family: monospace;').form-control
+                                            p.small Profile Endpoint                              
 
         .panel.panel-default
             .panel-heading
