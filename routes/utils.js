@@ -147,7 +147,7 @@ function lookupAuthMethod(app, apiId, authMethodRef) {
     for (let i = 0; i < endpoints.length; ++i) {
         const endpoint = endpoints[i];
         if (authMethod.config && authMethod.config[endpoint]) {
-            authMethod[endpoint] = authServerUrl + mustache.render(authMethod.config[endpoint], { api: apiId, name: authMethodName });
+            authMethod.config[endpoint] = authServerUrl + mustache.render(authMethod.config[endpoint], { api: apiId, name: authMethodName });
         } else {
             warn(`Auth server ${authServer.name} does not have definition for endpoint ${endpoint}`);
         }
@@ -420,10 +420,7 @@ utils.getAsUser = function (req, uri, userId, callback) {
     debug('getAsUser(): ' + uri + ', userId = ' + userId);
     const baseUrl = req.app.get('api_url');
 
-    apiAction(req, 'GET', {
-        url: baseUrl + uri,
-        headers: makeHeaders(req, userId)
-    }, callback);
+    wicked.apiGet(uri, userId, callback);
 };
 
 utils.handleError = function (res, apiResponse, apiBody, next) {

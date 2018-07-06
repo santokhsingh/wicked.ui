@@ -22,51 +22,50 @@ router.get('/', function (req, res, next) {
         getDesc: function (callback) {
             utils.getFromAsync(req, res, '/apis/desc', 200, callback);
         }
-    },
-        function (err, results) {
-            if (err)
-                return next(err);
-            let apiList = results.getApis.apis;
-            // Markdownify short descriptions.
-            const apiTags = [];
-            for (let i = 0; i < apiList.length; ++i) {
-                if (apiList[i].desc)
-                    apiList[i].desc = marked(apiList[i].desc);
-                if (apiList[i].tags && apiList[i].tags.length > 0) {
-                    for (let j = 0; j < apiList[i].tags.length; ++j) {
-                        apiTags.push(apiList[i].tags[j]);
-                    }
+    }, function (err, results) {
+        if (err)
+            return next(err);
+        let apiList = results.getApis.apis;
+        // Markdownify short descriptions.
+        const apiTags = [];
+        for (let i = 0; i < apiList.length; ++i) {
+            if (apiList[i].desc)
+                apiList[i].desc = marked(apiList[i].desc);
+            if (apiList[i].tags && apiList[i].tags.length > 0) {
+                for (let j = 0; j < apiList[i].tags.length; ++j) {
+                    apiTags.push(apiList[i].tags[j]);
                 }
             }
-            if (req.query && req.query.filter) {
-                apiList = apiList.filter(function (api) {
-                    if (!api.tags)
-                        return false;
-                    for (let i = 0; i < api.tags.length; i++) {
-                        if (req.query[api.tags[i]]) {
-                            return true;
-                        }
-                    }
+        }
+        if (req.query && req.query.filter) {
+            apiList = apiList.filter(function (api) {
+                if (!api.tags)
                     return false;
+                for (let i = 0; i < api.tags.length; i++) {
+                    if (req.query[api.tags[i]]) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+        const desc = results.getDesc;
+        if (!utils.acceptJson(req)) {
+            res.render('apis',
+                {
+                    authUser: req.user,
+                    params: req.query,
+                    glob: req.app.portalGlobals,
+                    route: '/apis',
+                    title: 'APIs',
+                    desc: marked(desc),
+                    apilist: apiList,
+                    apiTags: unique(apiTags)
                 });
-            }
-            const desc = results.getDesc;
-            if (!utils.acceptJson(req)) {
-                res.render('apis',
-                    {
-                        authUser: req.user,
-                        params: req.query,
-                        glob: req.app.portalGlobals,
-                        route: '/apis',
-                        title: 'APIs',
-                        desc: marked(desc),
-                        apilist: apiList,
-                        apiTags: unique(apiTags)
-                    });
-            } else {
-                res.json(apiList);
-            }
-        });
+        } else {
+            res.json(apiList);
+        }
+    });
 });
 
 function unique(arr) {
@@ -233,6 +232,7 @@ router.get('/:api', function (req, res, next) {
                 thisApp.hasSubscription = false;
                 if (subsResults[i]) {
                     thisApp.hasSubscription = true;
+                    thisApp.redirectUri = appsResults[i].redirectUri;
                     thisApp.plan = plansMap[subsResults[i].plan];
                     thisApp.apiKey = subsResults[i].apikey;
                     thisApp.clientId = subsResults[i].clientId;
@@ -244,7 +244,7 @@ router.get('/:api', function (req, res, next) {
                     if (subsResults[i]._links.deleteSubscription)
                         thisApp.mayUnsubscribe = true;
                     thisApp.swaggerLink = utils.ensureNoSlash(wicked.getExternalPortalUrl()) +
-                        '/apis/' + apiId + '/swagger?forUser=' +loggedInUserId;
+                        '/apis/' + apiId + '/swagger?forUser=' + loggedInUserId;
                     thisApp.swaggerLink = qs.escape(thisApp.swaggerLink);
                 }
                 apps.push(thisApp);
@@ -288,7 +288,7 @@ const corsOptionsDelegate = function (req, callback) {
     debug('Origin: ' + req.header('Origin'));
     if (!corsOptions) {
         corsOptions = {
-            origin: wicked.getExternalApiUrl(),
+            origin: utils.ensureNoSlash(wicked.getExternalApiUrl()),
             credentials: true
         };
     }
@@ -300,20 +300,11 @@ router.get('/:api/swagger', cors(corsOptionsDelegate), function (req, res, next)
     debug("get('/:api/swagger')");
     const apiId = req.params.api;
 
-    const apiCallback = function (err, response, body) {
+    const apiCallback = function (err, swaggerJson) {
         if (err)
             return next(err);
-        if (200 != response.statusCode)
-            return utils.handleError(res, response, body, next);
-
-        try {
-            const swaggerJson = utils.getJson(body);
-            // Pipe it
-            return res.json(swaggerJson);
-        } catch (err) {
-            // Hmm...
-            return next(err);
-        }
+        // Pipe it
+        return res.json(swaggerJson);
     };
 
     // Let's call the API, it has all the data we need.

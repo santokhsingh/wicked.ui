@@ -158,9 +158,12 @@ app.initialize = function (done) {
     app.use(function (req, res, next) {
         const hostHeader = req.get('Host');
         const network = app.portalGlobals.network;
-        if (network.portalHost !== hostHeader) {
-            debug('Host header: ' + hostHeader + ' -- MISMATCH, redirecting to ' + network.portalHost);
-            return res.redirect(`${network.schema}://${network.portalHost}${req.url}`);
+        let correctHost = network.portalHost;
+        if (req.url.indexOf('/swagger-ui') >= 0)
+            correctHost = network.apiHost;
+        if (correctHost !== hostHeader) {
+            debug('Host header: ' + hostHeader + ' -- MISMATCH, redirecting to ' + correctHost);
+            return res.redirect(`${network.schema}://${correctHost}${req.url}`);
         }
         return next();
     });

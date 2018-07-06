@@ -66,14 +66,14 @@ block content
                                 div(id='auth_#{authMethod.name}').collapse.panel-collapse
                                     .panel-body
                                         p #{authMethod.friendlyLong}
-                                        if authMethod.authorizeEndpoint
-                                            input(readonly type='string' value=authMethod.authorizeEndpoint style='font-family: monospace;').form-control
+                                        if authMethod.config.authorizeEndpoint
+                                            input(readonly type='string' value=authMethod.config.authorizeEndpoint style='font-family: monospace;').form-control
                                             p.small Authorization Endpoint
-                                        if authMethod.tokenEndpoint
-                                            input(readonly type='string' value=authMethod.tokenEndpoint style='font-family: monospace;').form-control
+                                        if authMethod.config.tokenEndpoint
+                                            input(readonly type='string' value=authMethod.config.tokenEndpoint style='font-family: monospace;').form-control
                                             p.small Token Endpoint
-                                        if authMethod.profileEndpoint
-                                            input(readonly type='string' value=authMethod.profileEndpoint style='font-family: monospace;').form-control
+                                        if authMethod.config.profileEndpoint
+                                            input(readonly type='string' value=authMethod.config.profileEndpoint style='font-family: monospace;').form-control
                                             p.small Profile Endpoint                              
 
         .panel.panel-default
@@ -173,10 +173,10 @@ block content
                                             td
                                                 if apiInfo.auth == "key-auth"
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=#{app.apiKey}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
-                                                else if apiInfo.auth == "oauth2" && apiInfo.settings && apiInfo.settings.enable_client_credentials
-                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.name}' target='_blank').btn.btn-default Try it!
                                                 else if apiInfo.auth == "oauth2" && app.redirectUri && app.redirectUri.indexOf("swagger-ui/oauth2-redirect.html") > 0
-                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.name}&redirect_uri=#{app.redirectUri}' target='_blank').btn.btn-default Try it!
+                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.id}&redirect_uri=#{app.redirectUri}' target='_blank').btn.btn-default Try it!
+                                                else if apiInfo.auth == "oauth2" && apiInfo.settings && apiInfo.settings.enable_client_credentials
+                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.id}' target='_blank').btn.btn-default Try it!
                                                 else
                                                     | ---
                                         else
