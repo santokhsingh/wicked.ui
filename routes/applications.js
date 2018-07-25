@@ -93,7 +93,9 @@ router.get('/', function (req, res, next) {
             let showRegister = '';
             if (req.query.register || userInfo.applications.length === 0)
                 showRegister = 'in';
-
+            
+            let showSwagger = (req.query.swagger) ? 'in': '';
+           
             if (!utils.acceptJson(req)) {
                 res.render('applications', {
                     authUser: req.user,
@@ -101,7 +103,8 @@ router.get('/', function (req, res, next) {
                     route: '/applications',
                     count: appInfos.length,
                     applications: JSON.stringify(appInfos),
-                    showRegister: showRegister
+                    showRegister: showRegister,
+                    showSwagger: showSwagger           
                 });
             } else {
                 res.json({
