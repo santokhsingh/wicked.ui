@@ -7,7 +7,7 @@ mixin panelTitle(title, helpUrl, toggleTarget)
                 else
                     - var tt = toggleTarget.startsWith('#') ? toggleTarget : '#' + toggleTarget
                     h4.panel-title
-                        a(data-toggle='collapse' data-target='#{tt}') #{title} <span class='glyphicon glyphicon-chevron-down'></span>
+                        a(data-toggle='collapse' data-target='#{tt}' role="button") #{title} <span class='glyphicon glyphicon-chevron-down'></span>
             if helpUrl
                 td(style='text-align:right;')
                     a(href='#{helpUrl}' target='_blank') Help
