@@ -61,6 +61,7 @@ app.use('/assets/bootstrap', express.static(path.join(__dirname, 'node_modules/b
 app.use('/assets/jquery', express.static(path.join(__dirname, 'node_modules/jquery/dist')));
 app.use('/assets/jsgrid', express.static(path.join(__dirname, 'node_modules/jsgrid/dist')));
 app.use('/assets/highlight', express.static(path.join(__dirname, 'node_modules/highlight.js/lib')));
+app.use('/assets/highlight/css', express.static(path.join(__dirname, 'node_modules/highlight.js/styles')));
 app.use('/assets/marked', express.static(path.join(__dirname, 'node_modules/marked')));
 
 // Initializing state
