@@ -210,6 +210,7 @@ router.get('/:api', function (req, res, next) {
             debug(subsResults);
 
             const apps = [];
+            let hasSwaggerApplication = false;
             for (let i = 0; i < userInfo.applications.length; ++i) {
                 const thisApp = userInfo.applications[i];
                 thisApp.name = appsResults[i].name;
@@ -246,12 +247,15 @@ router.get('/:api', function (req, res, next) {
                     thisApp.swaggerLink = utils.ensureNoSlash(wicked.getExternalPortalUrl()) +
                         '/apis/' + apiId + '/swagger?forUser=' + loggedInUserId;
                     thisApp.swaggerLink = qs.escape(thisApp.swaggerLink);
+                    hasSwaggerApplication = (thisApp.redirectUri && thisApp.redirectUri.indexOf("swagger-ui/oauth2-redirect.html")) > 0 ? true :  hasSwaggerApplication;
+            
                 }
                 apps.push(thisApp);
                 debug(thisApp);
             }
 
             apiInfo.authMethods = utils.loadAuthServersEndpoints(req.app, apiInfo);
+            apiInfo.hasSwaggerApplication = hasSwaggerApplication;
             // See also views/models/api.json for how this looks
             if (!utils.acceptJson(req)) {
                 res.render('api',
