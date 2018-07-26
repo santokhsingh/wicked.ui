@@ -45,6 +45,13 @@ router.get('/callback', function (req, res, next) {
     const state = req.query.state;
     debug(req.session);
 
+    const error = req.query.error;
+    if (error) {
+        const errorDescription = req.query.error_description;
+        return utils.fail(401, `Error: ${error}
+Error description: ${errorDescription}`, next);
+    }
+
     if (!authCode)
         return utils.fail(400, 'Callback missing code query parameter.', next);
     if (!state)
