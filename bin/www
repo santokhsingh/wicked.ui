@@ -195,6 +195,10 @@ function configureAuthServer(callback) {
         if (apiUrl.endsWith('/'))
             apiUrl = apiUrl.substring(0, apiUrl.length - 1);
         const authServerUrl = `${apiUrl}${authServerUri}`;
+        let internalApiUrl = wicked.getInternalKongProxyUrl();
+        if (internalApiUrl.endsWith('/'))
+            internalApiUrl = internalApiUrl.substring(0, internalApiUrl.length - 1);
+        const internalAuthServerUrl = `${internalApiUrl}${authServerUri}`;
 
         // Now match the auth methods of the auth server with the desired auth methods for
         // the portal-api.
@@ -259,7 +263,8 @@ function configureAuthServer(callback) {
             return callback(new Error('no configured or no valid auth methods on globals.json'));
         return callback(null, {
             authMethods: authMethods,
-            authServerUrl: authServerUrl
+            authServerUrl: authServerUrl,
+            internalAuthServerUrl: internalAuthServerUrl
         });
     });
 }
@@ -331,6 +336,8 @@ async.series({
     debug(JSON.stringify(app.authConfig.authMethods));
     debug('Auth Server URL:');
     debug(app.authConfig.authServerUrl);
+    debug('Internal Auth Server URL:');
+    debug(app.authConfig.internalAuthServerUrl);
     app.clientCredentials = results.registerApp;
     debug('Portal Client Credentials:');
     debug(JSON.stringify(results.registerApp));

@@ -71,7 +71,7 @@ Error description: ${errorDescription}`, next);
     const authMethod = req.app.authConfig.authMethods.find(am => am.name === authMethodId);
     if (!authMethod)
         return utils.fail(400, 'Callback received an invalid authentication method in state.', next);
-    const authServerBase = req.app.authConfig.authServerUrl;
+    const authServerBase = req.app.authConfig.internalAuthServerUrl;
     const tokenUrl = authServerBase + authMethod.config.tokenEndpoint;
     debug('Retrieving token at ' + tokenUrl);
     request.post({

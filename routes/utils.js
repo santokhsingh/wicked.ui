@@ -232,7 +232,7 @@ function refreshPersonalToken(req, callback) {
     if (!hasPersonalToken(req))
         return getAccessToken(req, callback); // Falls back to anonymous token
     const authMethod = req.app.authConfig.authMethods.find(am => am.name === req.session.user.authMethodId);
-    const authServerUrl = req.app.authConfig.authServerUrl;
+    const authServerUrl = req.app.authConfig.internalAuthServerUrl;
     // We need the specific token URL for the selected auth method
     const tokenUrl = authServerUrl + authMethod.config.tokenEndpoint;
     debug('refreshPersonalToken() - using token URL: ' + tokenUrl);
@@ -304,10 +304,10 @@ function renewAnonymousToken(req, callback) {
 
 function createAnonymousTokenInternal(req, callback) {
     debug('createAnonymousTokenInternal()');
-    if (!req.app.authConfig || !req.app.authConfig.authServerUrl || !req.app.authConfig.authMethods || req.app.authConfig.authMethods.length <= 0)
+    if (!req.app.authConfig || !req.app.authConfig.internalAuthServerUrl || !req.app.authConfig.authMethods || req.app.authConfig.authMethods.length <= 0)
         callback(new Error('The global auth configuration is not valid, cannot talk to the portal-api.'));
 
-    const authServerUrl = req.app.authConfig.authServerUrl;
+    const authServerUrl = req.app.authConfig.internalAuthServerUrl;
     // Just pick any auth method, it doesn't matter which for the client credentials flow
     const authMethod = req.app.authConfig.authMethods[0];
     const tokenUrl = authServerUrl + authMethod.config.tokenEndpoint;
