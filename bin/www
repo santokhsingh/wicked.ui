@@ -312,7 +312,7 @@ async.series({
         throw new Error('Could not initialize portal. See above error.');
     }
 
-    let apiUrl = wicked.getExternalApiUrl();
+    let apiUrl = wicked.getInternalKongProxyUrl();
     if (!apiUrl.endsWith('/')) // Add trailing slash
         apiUrl = apiUrl + '/';
     apiUrl = apiUrl + 'api/v1';
