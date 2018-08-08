@@ -148,7 +148,7 @@ router.get('/applications', mustBeAdminMiddleware, function (req, res, next) {
         return;
     }
     const filterFields = ['id', 'name', 'ownerEmail'];
-    const appsUri = utils.makePagingUri(req, '/applications?embed=1', filterFields);
+    const appsUri = utils.makePagingUri(req, '/applications?embed=1&', filterFields);
     utils.getFromAsync(req, res, appsUri, 200, function (err, appsResponse) {
         if (err)
             return next(err);
