@@ -134,7 +134,8 @@ block content
                 .form-group
                     -var required = propInfo.required ? '<span style="color:red;font-weight:bold">*</span>' : '';
                     label(for=propInfo.id) #{propInfo.description}!{required}:
-                    input(id=propInfo.id name=propInfo.id value='#{registrationInfo[propInfo.id]}').form-control
+                    -var propValue = registrationInfo.hasOwnProperty(propInfo.id) ? registrationInfo[propInfo.id] : ""
+                    input(id=propInfo.id name=propInfo.id value='#{propValue}').form-control
                     small
                         span(id="error#{propInfo.id}" style='color:red')
 
