@@ -74,7 +74,22 @@ block content
                                             p.small Token Endpoint
                                         if authMethod.config.profileEndpoint
                                             input(readonly type='string' value=authMethod.config.profileEndpoint style='font-family: monospace;').form-control
-                                            p.small Profile Endpoint                              
+                                            p.small Profile Endpoint
+                    
+                    if apiInfo.auth == "oauth2"
+                        label Authorization Flows (OAuth2):
+
+                        p This API supports the following OAuth2 authorization flows:
+
+                        ul
+                            if apiInfo.settings && apiInfo.settings.enable_client_credentials
+                                li <a href="/help/oauth2_client_credentials" target="_blank">Client Credentials</a>
+                            if apiInfo.settings && apiInfo.settings.enable_password_grant
+                                li <a href="/help/oauth2_password_grant" target="_blank">Resource Owner Password Grant</a>
+                            if apiInfo.settings && apiInfo.settings.enable_authorization_code
+                                li <a href="/help/oauth2_authorization_code" target="_blank">Autorization Code Grant</a> (three legged)
+                            if apiInfo.settings && apiInfo.settings.enable_implicit_grant
+                                li <a href="/help/oauth2_implicit_grant" target="_blank">Implicit Grant</a> (three legged)
 
         .panel.panel-default
             .panel-heading
@@ -83,8 +98,7 @@ block content
                 .panel-body
                     != apiDesc
 
-                    a(href="/swagger-ui/?/apis/#{apiInfo.id}/swagger" role="button").btn.btn-default View Swagger definition &raquo;
-
+                    a(href="#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?url=#{encodeURIComponent(genericSwaggerUrl)}" role="button" target="_blank").btn.btn-default View Swagger definition &raquo;
         
         if !authUser
             .panel.panel-danger
@@ -102,6 +116,29 @@ block content
                 .panel-heading
                     +panelTitle('Applications', '/help/api')
                 .panel-body
+
+                    -var redirectAuth = apiInfo.auth == "oauth2" && apiInfo.settings && (apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code)
+                    -var directAuth = apiInfo.auth == "oauth2" && apiInfo.settings && (apiInfo.settings.enable_client_credentials || apiInfo.settings.enable_password_grant)
+
+                    //- p redirectAuth = #{redirectAuth}, #{JSON.stringify(apiInfo.settings)}, directAuth = #{directAuth}
+
+                    if redirectAuth && !apiInfo.hasSwaggerApplication
+                        p.
+                            This API supports three legged authorization (using the <a href="/help/oauth2_authorization_code" target="_blank">Authorization Code Grant</a>
+                            or the <a href="/help/oauth2/implicit_grant" target="_blank">Implicit Grant</a>). In order to
+                            test this API using Swagger UI, you will need to register a special application for Swagger UI (with a specific redirect URI to
+                            be called back correctly).
+                        a(href='/applications?register=true&swagger=true').btn.btn-success Swagger UI setup!
+                        br
+                        br
+                    if redirectAuth && directAuth
+                        p.
+                            <b>Please note</b>: This API supports both three legged and two legged authorization; you will be able to test the API using
+                            the direct authorization methods (<a href="/help/oauth2_client_credentials" target="_blank">Client Credentials</a> or 
+                            <a href="/help/oauth2_password_grant" target="_blank">Resource Owner Password Grant</a>, whichever is available on the API), using
+                            any application. If you want to test the <a href="/help/oauth2_authorization_code" target="_blank">Authorization Code Grant</a>
+                            or the <a href="/help/oauth2/implicit_grant" target="_blank">Implicit Grant</a> using the API Portal, this is only possible using the 
+                            special Swagger UI application.
             
                     if applications.length == 0
                         p You do not have any registered applications yet. Please create an application first.
@@ -175,10 +212,10 @@ block content
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=#{app.apiKey}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
                                                 else if apiInfo.auth == "oauth2" && app.redirectUri && app.redirectUri.indexOf("swagger-ui/oauth2-redirect.html") > 0
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.id}&redirect_uri=#{app.redirectUri}' target='_blank').btn.btn-default Try it!
-                                                else if apiInfo.auth == "oauth2" && apiInfo.settings && apiInfo.settings.enable_client_credentials
+                                                else if apiInfo.auth == "oauth2" && directAuth
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.id}' target='_blank').btn.btn-default Try it!
-                                                else if apiInfo.auth == "oauth2" && !apiInfo.hasSwaggerApplication
-                                                    a(href='/applications?register=true&swagger=true').btn.btn-default Swagger setup!
+                                                else if apiInfo.auth == "oauth2" && redirectAuth && !apiInfo.hasSwaggerApplication
+                                                    a(href='/applications?register=true&swagger=true').btn.btn-default Swagger UI setup!
                                                 else
                                                     | ---
                                         else

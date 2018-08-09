@@ -209,6 +209,10 @@ router.get('/:api', function (req, res, next) {
             debug('subsResults:');
             debug(subsResults);
 
+            let genericSwaggerUrl =`${utils.ensureNoSlash(wicked.getExternalPortalUrl())}/apis/${apiId}/swagger`;
+            if (loggedInUserId)
+                genericSwaggerUrl += `?forUser=${loggedInUserId}`;
+
             const apps = [];
             let hasSwaggerApplication = false;
             for (let i = 0; i < userInfo.applications.length; ++i) {
@@ -229,11 +233,15 @@ router.get('/:api', function (req, res, next) {
                     thisApp.maySubscribe = false;
                     thisApp.subscribeError = 'API deprecated';
                 }
+                // Swagger UI App must be detected even if it doesn't have a subscription to this API
+                const thisRedirectUri = appsResults[i].redirectUri;
+                if ((thisRedirectUri && thisRedirectUri.indexOf("swagger-ui/oauth2-redirect.html")) > 0)
+                    hasSwaggerApplication = true;
 
                 thisApp.hasSubscription = false;
                 if (subsResults[i]) {
                     thisApp.hasSubscription = true;
-                    thisApp.redirectUri = appsResults[i].redirectUri;
+                    thisApp.redirectUri = thisRedirectUri;
                     thisApp.plan = plansMap[subsResults[i].plan];
                     thisApp.apiKey = subsResults[i].apikey;
                     thisApp.clientId = subsResults[i].clientId;
@@ -247,8 +255,6 @@ router.get('/:api', function (req, res, next) {
                     thisApp.swaggerLink = utils.ensureNoSlash(wicked.getExternalPortalUrl()) +
                         '/apis/' + apiId + '/swagger?forUser=' + loggedInUserId;
                     thisApp.swaggerLink = qs.escape(thisApp.swaggerLink);
-                    hasSwaggerApplication = (thisApp.redirectUri && thisApp.redirectUri.indexOf("swagger-ui/oauth2-redirect.html")) > 0 ? true :  hasSwaggerApplication;
-            
                 }
                 apps.push(thisApp);
                 debug(thisApp);
@@ -269,7 +275,8 @@ router.get('/:api', function (req, res, next) {
                         applications: apps,
                         apiPlans: plans,
                         apiUri: apiUri,
-                        apiSubscriptions: apiSubscriptions
+                        apiSubscriptions: apiSubscriptions,
+                        genericSwaggerUrl: genericSwaggerUrl
                     });
             } else {
                 res.json({
