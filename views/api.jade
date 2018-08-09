@@ -51,13 +51,21 @@ block content
                     label API URL:
                     br
                     input(readonly type='string' value='#{apiUri}' style='font-family: monospace;').form-control
-                    if apiInfo.authMethods && apiInfo.authMethods.length > 0 && apiInfo.auth == 'oauth2' && apiInfo.settings && (apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code || apiInfo.settings.enable_password_grant)
+                    if apiInfo.authMethods && apiInfo.authMethods.length > 0 && apiInfo.auth == 'oauth2'
                         br
                         if (apiInfo.authMethods.length == 1)
-                            label Authorization Method:
+                            label Authentication Method:
                         else
-                            label Authorization Methods:
-                            p Any of the following Authorization Methods can be used to retrieve an access token for the API.
+                            label Authentication Methods:
+                            p Any of the following Authentication Methods can be used to retrieve an access token for the API.
+
+                        -var onlyClientCredentials = apiInfo.settings && apiInfo.settings.enable_client_credentials && !(apiInfo.settings.enable_password_grant || apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code)
+                        if onlyClientCredentials
+                            p.
+                                <b>Note:</b> This API only supports the <a href="/help/oauth2_client_credentials" target="_blank">Client Credentials</a> flow.
+                                This means that you will log in only using your application's client ID and client secret, without actually authenticating a
+                                user. In effect, any <code>/token</code> end point of the below Authentication Method(s) can be used for that.
+                            br
                    
                         for authMethod in apiInfo.authMethods
                             .panel.panel-success
@@ -66,13 +74,13 @@ block content
                                 div(id='auth_#{authMethod.name}').collapse.panel-collapse
                                     .panel-body
                                         p #{authMethod.friendlyLong}
-                                        if authMethod.config.authorizeEndpoint
+                                        if authMethod.config.authorizeEndpoint && !onlyClientCredentials
                                             input(readonly type='string' value=authMethod.config.authorizeEndpoint style='font-family: monospace;').form-control
                                             p.small Authorization Endpoint
                                         if authMethod.config.tokenEndpoint
                                             input(readonly type='string' value=authMethod.config.tokenEndpoint style='font-family: monospace;').form-control
                                             p.small Token Endpoint
-                                        if authMethod.config.profileEndpoint
+                                        if authMethod.config.profileEndpoint && !onlyClientCredentials
                                             input(readonly type='string' value=authMethod.config.profileEndpoint style='font-family: monospace;').form-control
                                             p.small Profile Endpoint
                     

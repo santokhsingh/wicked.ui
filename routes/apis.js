@@ -279,6 +279,7 @@ router.get('/:api', function (req, res, next) {
                         genericSwaggerUrl: genericSwaggerUrl
                     });
             } else {
+                delete apiInfo.authMethods;
                 res.json({
                     title: apiInfo.name,
                     apiInfo: apiInfo,
