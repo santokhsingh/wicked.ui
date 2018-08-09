@@ -128,8 +128,6 @@ block content
                     -var redirectAuth = apiInfo.auth == "oauth2" && apiInfo.settings && (apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code)
                     -var directAuth = apiInfo.auth == "oauth2" && apiInfo.settings && (apiInfo.settings.enable_client_credentials || apiInfo.settings.enable_password_grant)
 
-                    //- p redirectAuth = #{redirectAuth}, #{JSON.stringify(apiInfo.settings)}, directAuth = #{directAuth}
-
                     if redirectAuth && !apiInfo.hasSwaggerApplication
                         p.
                             This API supports three legged authorization (using the <a href="/help/oauth2_authorization_code" target="_blank">Authorization Code Grant</a>
