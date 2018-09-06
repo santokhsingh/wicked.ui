@@ -44,7 +44,12 @@ mixin apiDef(anApi)
           if anApi.deprecated
             p(style='color:red;') <b>Deprecated</b>
           p!= anApi.desc
-          a(class="btn btn-default" href="/apis/#{anApi.id}" role="button") Information &raquo;
+          p
+            a(class="btn btn-default" href="/apis/#{anApi.id}" role="button") Information &raquo;
+          if anApi.bundle
+            p
+              a(href='/help/bundles')
+                span.label.label-info= anApi.bundle
 
 block scripts
   script(type='text/javascript').
