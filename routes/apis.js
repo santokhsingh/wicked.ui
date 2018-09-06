@@ -147,9 +147,12 @@ router.get('/:api', function (req, res, next) {
         // Idea: Make this part of the generic configuration, as it would be a
         // necessary configuration option for any API gateway.
         // console.log(JSON.stringify(apiConfig));
-        const apiRequestUri = apiConfig.api.uris[0];
+        const apiUris = [];
         const nw = req.app.portalGlobals.network;
-        const apiUri = nw.schema + '://' + nw.apiHost + apiRequestUri;
+        for (let u = 0; u < apiConfig.api.uris.length; ++u) {
+            const apiRequestUri = apiConfig.api.uris[u];
+            apiUris.push(nw.schema + '://' + nw.apiHost + apiRequestUri);
+        }
 
         const plans = results.getPlans;
         const plansMap = {};
@@ -209,7 +212,7 @@ router.get('/:api', function (req, res, next) {
             debug('subsResults:');
             debug(subsResults);
 
-            let genericSwaggerUrl =`${utils.ensureNoSlash(wicked.getExternalPortalUrl())}/apis/${apiId}/swagger`;
+            let genericSwaggerUrl = `${utils.ensureNoSlash(wicked.getExternalPortalUrl())}/apis/${apiId}/swagger`;
             if (loggedInUserId)
                 genericSwaggerUrl += `?forUser=${loggedInUserId}`;
 
@@ -274,7 +277,7 @@ router.get('/:api', function (req, res, next) {
                         apiDesc: marked(apiDesc),
                         applications: apps,
                         apiPlans: plans,
-                        apiUri: apiUri,
+                        apiUris: apiUris,
                         apiSubscriptions: apiSubscriptions,
                         genericSwaggerUrl: genericSwaggerUrl
                     });
@@ -285,7 +288,7 @@ router.get('/:api', function (req, res, next) {
                     apiInfo: apiInfo,
                     apiPlans: plans,
                     applications: apps,
-                    apiUri: apiUri,
+                    apiUris: apiUris,
                     apiSubscriptions: apiSubscriptions
                 });
             }
