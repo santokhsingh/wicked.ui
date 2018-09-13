@@ -334,7 +334,24 @@ router.get('/:api/swagger', cors(corsOptionsDelegate), function (req, res, next)
     if (forUser) {
         utils.getAsUser(req, swaggerUri, forUser, apiCallback);
     } else {
-        utils.get(req, swaggerUri, apiCallback);
+        utils.get(req, swaggerUri, function (err, apiResponse, apiBody) {
+            if (err)
+                return next(err);
+            if (apiResponse.statusCode !== 200) {
+                const err = new Error(`Could not retrieve Swagger JSON, unexpected status code ${apiResponse.statusCode}`);
+                err.status = apiResponse.statusCode;
+                return next(err);
+            }
+            try {
+                const swaggerJson = utils.getJson(apiBody);
+                return apiCallback(null, swaggerJson);
+            } catch (ex) {
+                error(ex);
+                const err = new Error(`Swagger: Could not parse JSON body, error: ${ex.message}`);
+                err.status = 500;
+                return next(err);
+            }
+        });
     }
 }); // /apis/:apiId/swagger
 
