@@ -355,23 +355,28 @@ function apiAction(req, method, body, callback, iteration) {
         });
     };
 
-    getAccessToken(req, function (err, accessToken) {
-        payload(accessToken, function (err, apiResponse, apiBody) {
-            if (err)
-                return callback(err);
-            if (apiResponse.statusCode === 401) {
-                renewAccessToken(req, function (err, accessToken) {
-                    payload(accessToken, function (err, apiResponse, apiBody) {
-                        if (err)
-                            return callback(err);
-                        return callback(null, apiResponse, apiBody);
+    async.retry({
+        tries: 10,
+        interval: 250
+    }, function (callback) {
+        getAccessToken(req, function (err, accessToken) {
+            payload(accessToken, function (err, apiResponse, apiBody) {
+                if (err)
+                    return callback(err);
+                if (apiResponse.statusCode === 401) {
+                    renewAccessToken(req, function (err, accessToken) {
+                        payload(accessToken, function (err, apiResponse, apiBody) {
+                            if (err)
+                                return callback(err);
+                            return callback(null, apiResponse, apiBody);
+                        });
                     });
-                });
-            } else {
-                return callback(null, apiResponse, apiBody);
-            }
+                } else {
+                    return callback(null, apiResponse, apiBody);
+                }
+            });
         });
-    });
+    }, callback);
 }
 
 utils.get = function (req, uri, callback) {

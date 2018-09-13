@@ -48,9 +48,14 @@ block content
                 .panel-heading
                     +panelTitle('API Settings', '/help/api')
                 .panel-body
-                    label API URL:
+                    if apiUris.length > 1
+                        label API URLs:
+                    else
+                        label API URL:
                     br
-                    input(readonly type='string' value='#{apiUri}' style='font-family: monospace;').form-control
+                    each apiUri, i in apiUris
+                        p
+                            input(readonly type='string' value='#{apiUri}' style='font-family: monospace;').form-control
                     if apiInfo.authMethods && apiInfo.authMethods.length > 0 && apiInfo.auth == 'oauth2'
                         br
                         if (apiInfo.authMethods.length == 1)
@@ -98,6 +103,13 @@ block content
                                 li <a href="/help/oauth2_authorization_code" target="_blank">Autorization Code Grant</a> (three legged)
                             if apiInfo.settings && apiInfo.settings.enable_implicit_grant
                                 li <a href="/help/oauth2_implicit_grant" target="_blank">Implicit Grant</a> (three legged)
+                    
+                    if apiInfo.bundle
+                        label API Bundle
+
+                        p.
+                            This API is part of the API Bundle "#{apiInfo.bundle}". Read more on API Bundles on the <a href="/help/bundles">API Bundle help page</a>.
+                            Tokens created for any of the bundled APIs can be reused with <a href="/apis">any other API</a> of the same API bundle.
 
         .panel.panel-default
             .panel-heading
