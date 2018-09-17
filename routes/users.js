@@ -2,6 +2,8 @@
 
 const express = require('express');
 const { debug, info, warn, error } = require('portal-env').Logger('portal:users');
+const passwordValidator = require('portal-env').PasswordValidator;
+const wicked = require('wicked-sdk');
 const router = express.Router();
 const async = require('async');
 const utils = require('./utils');
@@ -68,6 +70,8 @@ function getUser(loggedInUserId, userId, req, res, next) {
             verifyEmailLink = `${req.app.authConfig.authServerUrl}${authMethod.config.verifyEmailEndpoint}`;
         const grantsLink = `${req.app.authConfig.authServerUrl}${authMethod.config.grantsEndpoint}`;
         debug(`verifyEmailLink: ${verifyEmailLink}`);
+        const passwordStrategyName = wicked.getPasswordStrategy();
+        const passwordStrategy = passwordValidator.getStrategy(passwordStrategyName);
 
         if (!utils.acceptJson(req)) {
             res.render('user', {
@@ -79,7 +83,9 @@ function getUser(loggedInUserId, userId, req, res, next) {
                 userInfo: userInfo,
                 registrationInfo: registrationInfo,
                 poolInfo: poolInfo,
-                groups: groups
+                groups: groups,
+                passwordRegex: passwordStrategy.regex,
+                passwordRules: passwordStrategy.description
             });
         } else {
             res.json({
