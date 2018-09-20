@@ -375,6 +375,11 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
             subscribeWarning = 'You are about to subscribe to an API which is intended only for machine to machine communication with an application with a registered Redirect URI. Please note that API Keys and/or Client Credentials (such as the Client Secret) must NEVER be deployed to a public client, such as a JavaScript SPA or Mobile Application.';
         }
 
+        if (apiPlans.length <= 0) {
+            if (application._links && application._links.addSubscription)
+                delete application._links.addSubscription;
+        }
+
         if (!utils.acceptJson(req)) {
             res.render('subscribe',
                 {
