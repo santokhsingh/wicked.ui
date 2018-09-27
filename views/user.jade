@@ -36,8 +36,9 @@ block scripts
             var passwordError = '';
             var password2Error = '';
             if (password) {
-                if (password.length < 6 || password.length > 24)
-                    passwordError = 'Please enter a password, more than 5, less than 25 characters long.';
+                var regex = new RegExp('#{passwordRegex}');
+                if (!regex.test(password))
+                    passwordError = '#{passwordRules}';
                 if (password != password2)
                     password2Error = 'Passwords do not match.';
             }

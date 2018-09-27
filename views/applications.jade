@@ -7,24 +7,39 @@ block bodyScripts
         function validateNewApplication() {
             var appid = $('#appid').val();
             var appname = $('#appname').val();
+            var hasredirecturi = $('#hasredirecturi').is(':checked');
+            var redirecturi = $('#redirecturi').val();
 
             var appidError = '';
             var appnameError = '';
+            var redirectError = '';
             if (!appid)
                 appidError = 'Please enter a value for the application ID.';
             if (!appname)
                 appnameError = 'Please enter a value for the application name.';
 
+            if (hasredirecturi) {
+                try {
+                    var url = new URL(redirecturi);
+                    if (!url.host)
+                        redirectError = 'Redirect URI is a valid URL, but must contain a host. Please check documentation.';
+                } catch (ex) {
+                    redirectError = 'Redirect URI is not a valid URL. Please check documentation for an explanation.';
+                }
+            }
+
             try {
                 $('#errorAppid').text(appidError);
                 $('#errorAppname').text(appnameError);
+                $('#errorRedirect').text(redirectError);
             } catch (err) {
                 alert('Validation errored! Check your input values.');
                 return;
             }
             
             var somethingBad = !!appidError
-                || !!appnameError;
+                || !!appnameError
+                || !!redirectError;
 
             if (!somethingBad) {
                 $('#submit_new').prop("disabled", true);
@@ -157,9 +172,9 @@ block content
                                         input(type='string' id='redirecturi' name='redirecturi' value='https://').form-control
                                         small.
                                             The callback under which your web application can be called back, passing the access token in the fragment.
-                                            <b>Must be an <code>https://</code> URI</b>, except for testing purposes, for which also <code>http://localhost</code> is accepted.
+                                            Check the documentation for a <a href="https://github.com/Haufe-Lexware/wicked.haufe.io/blob/master/doc/valid-redirect-uris.md" target="_blank">list of valid redirect URIs</a>.
                                         small 
-                                            span(id='errorRedirecturi' style='color:red')
+                                            span(id='errorRedirect' style='color:red')
                             // Note that this button is _outside_ of the form, and calls submit() over jQuery
                             // in Javascript. It validates the data partly over an Ajax call.
                             p

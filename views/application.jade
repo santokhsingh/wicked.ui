@@ -90,7 +90,11 @@ block content
                             .form-group
                                 label(for='redirecturi') Redirect URI:
                                 input(value=application.redirectUri name='redirecturi').form-control
-                                small Once you have added a redirect URI, it's not possible to remove it, just change it. <b>Has to be a <code>https://</code> URI</b>, or start with <code>http://localhost</code> (for testing purposes).
+                                small.
+                                    Once you have added a redirect URI, it's not possible to remove it, just change it.
+                                    The callback under which your web application can be called back, passing the access token in the fragment.
+                                    Check the documentation for a <a href="https://github.com/Haufe-Lexware/wicked.haufe.io/blob/master/doc/valid-redirect-uris.md" target="_blank">list of valid redirect URIs</a>.
+
                             .checkbox
                                 label
                                     if application.confidential

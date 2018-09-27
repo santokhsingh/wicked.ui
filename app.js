@@ -4,11 +4,9 @@
 const express = require('express');
 const { debug, info, warn, error } = require('portal-env').Logger('portal:app');
 const path = require('path');
-const favicon = require('serve-favicon');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-const flash = require('connect-flash');
 
 const index = require('./routes/index');
 const apis = require('./routes/apis');
@@ -178,7 +176,6 @@ app.initialize = function (done) {
     app.use('/users', users);
     app.use('/admin', admin);
     app.use('/swagger-ui', swaggerUi);
-    app.use('/swagger-ui', express.static(path.join(__dirname, 'swagger-ui')));
     app.use('/swagger-ui', express.static(path.join(__dirname, 'node_modules/swagger-ui-dist')));
 
     app.use('/help', help);

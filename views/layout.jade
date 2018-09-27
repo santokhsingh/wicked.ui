@@ -154,7 +154,7 @@ html
                     td(style='text-align:left; color: #999999;')!= glob.footer
                     td(style='text-align:right; color:#999999;')
                         if glob.layouts.footer.showBuiltBy
-                            | Built by <a href='http://www.haufe-lexware.com' target='_blank'>Haufe-Lexware</a>, powered by <a href='http://getkong.org' target='_blank'>Mashape Kong</a>.
+                            | Built by <a href='http://www.haufe-lexware.com' target='_blank'>Haufe-Lexware</a>, powered by <a href='https://www.konghq.com' target='_blank'>Kong</a>.
                 tr
                     if (authUser && authUser.admin)
                         td(colspan=2 style='text-align:right; color: #cccccc; font-size: 10pt;') Portal Build: #{glob.buildDate} -- <a href='/admin/health'>Config Build: #{glob.configDate}</a>
