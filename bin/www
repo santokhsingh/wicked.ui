@@ -315,7 +315,7 @@ async.series({
     let apiUrl = wicked.getInternalKongProxyUrl();
     if (!apiUrl.endsWith('/')) // Add trailing slash
         apiUrl = apiUrl + '/';
-    apiUrl = apiUrl + 'api/v1';
+    apiUrl = apiUrl + 'wicked/v1';
 
     app.set('api_url', apiUrl);
 
