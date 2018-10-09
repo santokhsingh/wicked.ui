@@ -17,8 +17,8 @@ router.get('/subscriptions', function (req, res, next) {
         if (err)
             return next(err);
         var appIds = [];
-        for (var i = 0; i < appsResponse.length; ++i)
-            appIds.push(appsResponse[i].id);
+        for (var i = 0; i < appsResponse.items.length; ++i)
+            appIds.push(appsResponse.items[i].id);
       
         // This is the expensive part:
         async.map(appIds, function (appId, callback) {
