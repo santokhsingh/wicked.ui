@@ -173,7 +173,7 @@ router.post('/customheaders/:pluginId', function (req, res, next) {
     return item.trim();
   });
 
-  patchAdmin(req, res, '/services/'+apiId+'/plugins/'+pluginId, myObject, function (err, pluginsResponse) {
+  patchAdmin(req, res, '/plugins/'+pluginId, myObject, function (err, pluginsResponse) {
     if (err)
        return next(err);
     res.json(pluginsResponse);
