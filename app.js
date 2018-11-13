@@ -188,6 +188,7 @@ app.initialize = function (done) {
     // Late loading as it requires things from portalGlobals!
     const login = require('./routes/login');
     app.use('/login', login);
+    app.use('/signup', function (req, res, next) { res.redirect('/login'); });
 
     // catch 404 and forward to error handler
     app.use(function (req, res, next) {
