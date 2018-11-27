@@ -51,6 +51,58 @@ router.get('/:appId', function (req, res, next) {
     });
 });
 
+router.get('/:appId/subscriptions/:apiId', function (req, res, next) {
+    const appId = req.params.appId;
+    const apiId = req.params.apiId;
+    debug(`GET /${appId}/subscriptions/${apiId}`);
+
+    async.parallel({
+        appInfo: callback => utils.getFromAsync(req, res, `/applications/${appId}`, 200, callback),
+        apiInfo: callback => utils.getFromAsync(req, res, `/apis/${apiId}`, 200, callback),
+        subsInfo: callback => utils.getFromAsync(req, res, `/applications/${appId}/subscriptions/${apiId}`, 200, callback)
+    }, function (err, data) {
+        if (err)
+            return next(err);
+
+        console.log(JSON.stringify(data.appInfo, null, 2));
+        console.log(JSON.stringify(data.apiInfo, null, 2));
+        console.log(JSON.stringify(data.subsInfo, null, 2));
+
+        if (!utils.acceptJson(req)) {
+            res.render('allowed_scopes', {
+                authUser: req.user,
+                application: data.appInfo,
+                api: data.apiInfo,
+                subscription: data.subsInfo,
+                glob: req.app.portalGlobals,
+                readOnly: !req.user.admin
+            });
+        } else {
+            res.json({
+            });
+        }
+    });
+});
+
+router.post('/:appId/subscriptions/:apiId', function (req, res, next) {
+    const appId = req.params.appId;
+    const apiId = req.params.apiId;
+    debug(`POST /${appId}/subscriptions/${apiId}`);
+
+    debug(req.body);
+    const allowedScopesMode = req.body.scope_mode;
+    const allowedScopes = req.body.scope;
+
+    utils.patch(req, `/applications/${appId}/subscriptions/${apiId}`, {
+        allowedScopesMode,
+        allowedScopes
+    }, function (err, apiRes, apiBody) {
+        if (err)
+            return next(err);
+        res.redirect(`/applications/${appId}/subscriptions/${apiId}`);
+    });
+});
+
 router.get('/', function (req, res, next) {
     debug("get('/')");
     const loggedInUserId = utils.getLoggedInUserId(req);
@@ -93,9 +145,9 @@ router.get('/', function (req, res, next) {
             let showRegister = '';
             if (req.query.register || userInfo.applications.length === 0)
                 showRegister = 'in';
-            
-            let showSwagger = (req.query.swagger) ? 'in': '';
-           
+
+            let showSwagger = (req.query.swagger) ? 'in' : '';
+
             if (!utils.acceptJson(req)) {
                 res.render('applications', {
                     authUser: req.user,
@@ -104,7 +156,7 @@ router.get('/', function (req, res, next) {
                     count: appInfos.length,
                     applications: JSON.stringify(appInfos),
                     showRegister: showRegister,
-                    showSwagger: showSwagger           
+                    showSwagger: showSwagger
                 });
             } else {
                 res.json({
