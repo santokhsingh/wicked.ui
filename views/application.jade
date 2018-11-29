@@ -48,6 +48,7 @@ block content
                                 th API
                                 th Auth Type
                                 th <a href="/help/trusted" target="_blank">Trusted</a>
+                                th <a href="/help/allowed_scopes" title="Allowed Scopes Mode">Scopes</a>
                                 th(colspan=2) Secrets (API Key or Client ID/Secret)
                         tbody
                             each sub, i in subscriptions
@@ -56,6 +57,7 @@ block content
                                         a(href='/apis/#{sub.api}')= sub.api
                                     td(style='vertical-align: middle')= sub.auth
                                     td(style='vertical-align: middle')= sub.trusted ? 'Yes' : '-'
+                                    td(style='vertical-align: middle') <a href="/applications/#{sub.application}/subscriptions/#{sub.api}">#{sub.allowedScopesMode}</a>
                                     if (sub.approved)
                                         if ('oauth2' == sub.auth)
                                             td(style='max-width: 250px')

@@ -17,7 +17,8 @@ const HELP_IDS = {
     'oauth2_authorization_code': 'OAuth2: Authorization Code',
     'oauth2_implicit_grant': 'OAuth2: Implicit Grant',
     'oauth2_password_grant': 'OAuth2: Password Grant',
-    'bundles': 'API Bundles'
+    'bundles': 'API Bundles',
+    'allowed_scopes': 'OAuth2: Allowed Scopes'
 };
 
 router.get('/', function (req, res, next) {
