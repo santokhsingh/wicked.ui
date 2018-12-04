@@ -12,7 +12,8 @@ block content
     if displayRedirectMessage
         h4 You will be redirected to the desired page right after successfully logging in.
 
-    p Please select the desired method of authentication.
+    if authConfig.authMethods.length > 1
+        p Please select the desired method of authentication.
 
     each authMethod in authConfig.authMethods
         br
