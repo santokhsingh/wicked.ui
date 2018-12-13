@@ -6,7 +6,7 @@ const async = require('async');
 const mustache = require('mustache');
 const { debug, info, warn, error } = require('portal-env').Logger('portal:admin');
 const tmp = require('tmp');
-const fs = require('fs');``
+const fs = require('fs');
 const util = require('util');
 const utils = require('./utils');
 
