@@ -6,7 +6,7 @@ const async = require('async');
 const mustache = require('mustache');
 const { debug, info, warn, error } = require('portal-env').Logger('portal:admin');
 const tmp = require('tmp');
-const fs = require('fs');
+const fs = require('fs');``
 const util = require('util');
 const utils = require('./utils');
 
@@ -132,6 +132,25 @@ router.get('/users', mustBeAdminMiddleware, function (req, res, next) {
             res.json({
                 title: 'All Users',
                 users: apiResponse
+            });
+        }
+    });
+});
+
+router.get('/subscriptions', mustBeAdminMiddleware, function (req, res, next) {
+    debug("get('/subscriptions')");
+    if (!utils.acceptJson(req)) {
+        return; 
+    }
+    const filterFields = ['applications_id', 'plan_id', 'api_id'];
+    const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
+    utils.getFromAsync(req, res, subsUri, 200, function (err, subsResponse) {
+        if (err)
+            return next(err);
+        if (utils.acceptJson(req)) {
+            res.json({
+                title: 'All Subscriptions',
+                subscriptions: subsResponse
             });
         }
     });
