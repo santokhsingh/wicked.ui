@@ -66,12 +66,15 @@ block content
               +panelTitle('Allowed Scopes', null, '#allowed_scopes')
             #allowed_scopes.collapse.panel-collapse.in
               .panel-body
-                for scope, key in api.settings.scopes
-                  - var isChecked = subscription.allowedScopes.find(s => s == key) ? true : false
-                  .checkbox
-                    label
-                      input(type='checkbox' name='scope' value=key checked=isChecked disabled=readOnly)
-                      | <b>#{scope.description}</b> (#{key})
+                if api.settings && api.settings.scopes
+                  for scope, key in api.settings.scopes
+                    - var isChecked = subscription.allowedScopes.find(s => s == key) ? true : false
+                    .checkbox
+                      label
+                        input(type='checkbox' name='scope' value=key checked=isChecked disabled=readOnly)
+                        | <b>#{scope.description}</b> (#{key})
+                else
+                  i The selected API does not have any defined scopes.
 
         if readOnly
           p
