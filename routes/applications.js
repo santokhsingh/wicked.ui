@@ -91,7 +91,9 @@ router.post('/:appId/subscriptions/:apiId', function (req, res, next) {
 
     debug(req.body);
     const allowedScopesMode = req.body.scope_mode;
-    const allowedScopes = req.body.scope;
+    let allowedScopes = req.body.scope;
+    if (!Array.isArray(allowedScopes))
+        allowedScopes = [allowedScopes];
 
     utils.patch(req, `/applications/${appId}/subscriptions/${apiId}`, {
         allowedScopesMode,

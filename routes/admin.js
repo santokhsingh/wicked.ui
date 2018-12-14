@@ -137,6 +137,25 @@ router.get('/users', mustBeAdminMiddleware, function (req, res, next) {
     });
 });
 
+router.get('/subscriptions', mustBeAdminMiddleware, function (req, res, next) {
+    debug("get('/subscriptions')");
+    if (!utils.acceptJson(req)) {
+        return; 
+    }
+    const filterFields = ['applications_id', 'plan_id', 'api_id'];
+    const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
+    utils.getFromAsync(req, res, subsUri, 200, function (err, subsResponse) {
+        if (err)
+            return next(err);
+        if (utils.acceptJson(req)) {
+            res.json({
+                title: 'All Subscriptions',
+                subscriptions: subsResponse
+            });
+        }
+    });
+});
+
 router.get('/applications', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/applications')");
     if (!utils.acceptJson(req)) {
