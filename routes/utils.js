@@ -644,4 +644,6 @@ utils.parseBool = (str) => {
     return false;
 };
 
+utils.markedOptions = { sanitize: true };
+
 module.exports = utils;

@@ -68,10 +68,10 @@ block bodyScripts
             }
             $('#desc').on('change keyup paste', function() {
                 var text = $('#desc').val();
-                $('#markdown').html(marked(text));
+                $('#markdown').html(marked(text, { sanitize: true }));
             });
             // First time
-            $('#markdown').html(marked($('#desc').val()));      
+            $('#markdown').html(marked($('#desc').val(), { sanitize: true }));      
       
             $('#applicationsGrid').jsGrid({
                 width: "100%", pageSize: 10, sorting: true, paging: true, filtering: true, autoload: true,
