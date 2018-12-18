@@ -248,32 +248,34 @@ router.get('/customheaders/:apiId', function (req, res, next) {
   });
 });
 
-router.post('/:appId/subscribe/:apiId', function (req, res, next) {
-    debug("post('/:appId/subscribe/:apiId')");
-    var appId = req.params.appId;
-    var apiId = req.params.apiId;
-    var apiPlan = req.body.plan;
-    var apiKey = req.body.apikey;
+rrouter.post('/:appId/subscribe/:apiId', function (req, res, next) {
+  debug("post('/:appId/subscribe/:apiId')");
+  var appId = req.params.appId;
+  var apiId = req.params.apiId;
+  var apiPlan = req.body.plan;
+  var apiKey = req.body.apikey;
 
-    if (!apiPlan) {
-        var err = new Error('Bad request. Plan was not specified.');
-        err.status = 400;
-        return next(err);
-    }
+  if (!apiPlan) {
+      var err = new Error('Bad request. Plan was not specified.');
+      err.status = 400;
+      return next(err);
+  }
 
-    utils.delete(req, '/applications/' + appId + '/subscriptions/' + apiId,
-        function (err, apiResponse, apiBody) {
-            if (err)
-                return next(err);
-            if (204 != apiResponse.statusCode)
-                return utils.handleError(res, apiResponse, apiBody, next);
-            utils.post(req, '/applications/' + appId + '/subscriptions',
-              {
-                application: appId,
-                api: apiId,
-                apikey: apiKey,
-                plan: apiPlan
-              }, function (err, apiResponse, apiBody) {
+  utils.delete(req, '/applications/' + appId + '/subscriptions/' + apiId,
+      function (err, apiResponse, apiBody) {
+          if (err)
+              return next(err);
+          if (204 != apiResponse.statusCode)
+              return utils.handleError(res, apiResponse, apiBody, next);
+              
+          setTimeout(function() {
+              utils.post(req, '/applications/' + appId + '/subscriptions',
+                {
+                  application: appId,
+                  api: apiId,
+                  apikey: apiKey,
+                  plan: apiPlan
+                }, function (err, apiResponse, apiBody) {
                   if (err)
                     return next(err);
                   if (201 != apiResponse.statusCode)
@@ -282,8 +284,9 @@ router.post('/:appId/subscribe/:apiId', function (req, res, next) {
                     res.redirect('/apis/' + apiId);
                   else
                     res.status(201).json(utils.getJson(apiBody));
-          });
-    });
+              });
+          }, 2000);
+  });
 });
 
 module.exports = router;
