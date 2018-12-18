@@ -248,7 +248,7 @@ router.get('/customheaders/:apiId', function (req, res, next) {
   });
 });
 
-rrouter.post('/:appId/subscribe/:apiId', function (req, res, next) {
+router.post('/:appId/subscribe/:apiId', function (req, res, next) {
   debug("post('/:appId/subscribe/:apiId')");
   var appId = req.params.appId;
   var apiId = req.params.apiId;
