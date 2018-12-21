@@ -88,53 +88,64 @@ router.get('/status', function (req, res, next) {
 });
 
 router.get('/subscriptions', function (req, res, next) {
-    debug("get('/subscriptions')");
-    getAdmin(req, res, '/consumers?size=20000000', function (err, consumersResponse) {
-      if (err)
-        return next(err);
-      var consumers = {}
-      var body = utils.getJson(consumersResponse.body);
-      if(!body.data) return;
-      var pid;
-      for (var i = 0; i < body.data.length; ++i) {
-        var user_name = body.data[i].username;
-        consumers[user_name] = body.data[i];
-      }
-          // This is not super good; this is expensive. Lots of calls.
-     utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
-        if (err)
-            return next(err);
-        var appIds = [];
-        for (var i = 0; i < appsResponse.items.length; ++i)
-            appIds.push(appsResponse.items[i].id);
-
-        // This is the expensive part:
-        async.map(appIds, function (appId, callback) {
-            utils.getFromAsync(req, res, '/applications/' + appId +'/subscriptions', 200, callback);
-        }, function (err, appsSubscInfos) {
-            if (err)
-                return next(err);
-            var subs=[];
-            for (var i = 0; i < appsSubscInfos.length; ++i) {
-                var sub = appsSubscInfos[i];
-                 for (var j = 0; j < sub.length; ++j){
-                    var application = sub[j].application;
-                    var api = sub[j].api;
-                    var consumer = consumers[application+"$"+api];
-                    sub[j]["consumer"] = consumer;
-                    sub[j]["consumerid"] = (consumer && consumer.id) ? consumer.id: "";
-                  subs.push(sub[j]);
-                }
-            }
-            res.json({
-              title: 'All Subsriptions',
-              subscriptions: subs
-            });
-        });
-      });
-
-    });
-
+	debug("get('/subscriptions')");
+	//Destructuring an object to pass to a function makePagingUri valid req 
+	filterData = req.query.filter;
+	if (filterData && filterData.consumerid) {
+		getAdmin(req, res, '/consumers/'+filterData.consumerid, (err, consumer) => {
+			if (err) {
+				return next(err);
+			}
+			let body = utils.getJson(consumer.body);
+			if (body && body.message === "Not found") {
+				res.json({
+					title: 'All Subsriptions',
+					subscriptions: null
+				});
+			} else {
+				//Desctruct body.username(for example app1$mockbin) and assign to variables
+				let [appId, apiId] = (body.username).split("$");
+				utils.getFromAsync(req, res, `/applications/${appId}/subscriptions/${apiId}`, 200, (err, application) => {
+					if (err) {
+						return next(err);
+					}
+					application.consumerid = filterData.consumerid;
+					let subscriptions = {items: [application],count: 1}
+					res.json({
+						title: 'All Subsriptions',
+						subscriptions
+					});
+				})
+			}
+		});
+	} else {
+		const filterFields = ['application', 'plan', 'api'];
+		const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
+		utils.getFromAsync(req, res, subsUri, 200, function (err, appsResponse) {
+			if (err) {
+				return next(err);
+			} 
+			let appIds = [];
+			for (let i = 0; i < appsResponse.items.length; ++i) {
+				let consimerUsername = `${appsResponse.items[i].application}$${appsResponse.items[i].api}`; 
+				appIds.push(consimerUsername)
+			}
+			async.map(appIds, function (appId, callback) {
+					getAdmin(req, res, '/consumers/' + appId, callback);
+			}, function (err, consumersResponse) {
+				consumersResponse.map((consumer, i) => {
+					let body = utils.getJson(consumer.body);
+					if (appIds[i] === body.username) {
+						appsResponse.items[i].consumerid = body.id;
+					} 
+				})
+				res.json({
+					title: 'All Subsriptions',
+					subscriptions: appsResponse
+				});
+			});
+		});
+	}
 });
 
 router.post('/customheaders/:pluginId', function (req, res, next) {
