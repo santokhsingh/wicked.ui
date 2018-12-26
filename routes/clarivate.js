@@ -89,8 +89,7 @@ router.get('/status', function (req, res, next) {
 
 router.get('/subscriptions', function (req, res, next) {
 	debug("get('/subscriptions')");
-	//Destructuring an object to pass to a function makePagingUri valid req 
-	filterData = req.query.filter;
+	let filterData = req.query.filter;
 	if (filterData && filterData.consumerid) {
 		getAdmin(req, res, '/consumers/'+filterData.consumerid, (err, consumer) => {
 			if (err) {
@@ -110,7 +109,7 @@ router.get('/subscriptions', function (req, res, next) {
 						return next(err);
 					}
 					application.consumerid = filterData.consumerid;
-					let subscriptions = {items: [application],count: 1}
+					let subscriptions = {items: [application],count: 1};
 					res.json({
 						title: 'All Subsriptions',
 						subscriptions
@@ -119,6 +118,8 @@ router.get('/subscriptions', function (req, res, next) {
 			}
 		});
 	} else {
+  	//Destructuring an object to pass to a function makePagingUri valid req 
+    req.query = req.query.filter;
 		const filterFields = ['application', 'plan', 'api'];
 		const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
 		utils.getFromAsync(req, res, subsUri, 200, function (err, appsResponse) {
