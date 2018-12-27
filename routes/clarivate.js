@@ -90,10 +90,62 @@ router.get('/status', function (req, res, next) {
 router.get('/subscriptions', function (req, res, next) {
 	debug("get('/subscriptions')");
 	if (req.query.filter && req.query.filter.consumerid) {
-		getFilteredConsumerId(req, res);
+		getAdmin(req, res, '/consumers/'+req.query.filter.consumerid, (err, consumer) => {
+			if (err) {
+				return next(err);
+			}
+			let body = utils.getJson(consumer.body);
+			if (body && body.message === "Not found") {
+				res.json({
+					title: 'All Subsriptions',
+					subscriptions: null
+				});
+			} else {
+				//Desctruct body.username(for example app1$mockbin) and assign to variables
+				let [appId, apiId] = (body.username).split("$");
+				utils.getFromAsync(req, res, `/applications/${appId}/subscriptions/${apiId}`, 200, (err, application) => {
+					if (err) {
+						return next(err);
+					}
+					application.consumerid = req.query.filter.consumerid;
+					let subscriptions = {items: [application],count: 1}
+					res.json({
+						title: 'All Subsriptions',
+						subscriptions
+					});
+				})
+			}
+		});
 	} else {
-		getPortalUri(req, res,'/admin/subscriptions');
-  }
+		//Destructuring an object to pass to a function makePagingUri valid req 
+		req.query = req.query.filter;
+		const filterFields = ['application', 'plan', 'api'];
+		const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
+		utils.getFromAsync(req, res, subsUri, 200, function (err, subsResponse) {
+			if (err) {
+				return next(err);
+			} 
+			let consumerIds = [];
+			for (let i = 0; i < subsResponse.items.length; ++i) {
+				let consumerUsername = `${subsResponse.items[i].application}$${subsResponse.items[i].api}`; 
+				consumerIds.push(consumerUsername)
+			}
+			async.map(consumerIds, function (consumerid, callback) {
+					getAdmin(req, res, '/consumers/' + consumerid, callback);
+			}, function (err, consumersResponse) {
+				consumersResponse.map((consumer, i) => {
+					let body = utils.getJson(consumer.body);
+					if (consumerIds[i] === body.username) {
+						subsResponse.items[i].consumerid = body.id;
+					} 
+				})
+				res.json({
+					title: 'All Subsriptions',
+					subscriptions: subsResponse
+				});
+			});
+		});
+	}
 });
 
 router.post('/customheaders/:pluginId', function (req, res, next) {
@@ -171,16 +223,6 @@ function patchAdmin(req, res, uri, data, callback) {
         },
         callback);
 }
-
-
-function getPortalUri(req, res, uri, callback) {
-	let baseUrl = req.app.portalGlobals.network.portalUrl;
-	request.get(
-		{
-			url: baseUrl + uri,
-			json: true,
-		});
-};
 
 function getAdmin(req, res, uri, callback) {
     var baseUrl =  getBaseUri(req);
