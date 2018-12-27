@@ -88,53 +88,39 @@ router.get('/status', function (req, res, next) {
 });
 
 router.get('/subscriptions', function (req, res, next) {
-    debug("get('/subscriptions')");
-    getAdmin(req, res, '/consumers?size=20000000', function (err, consumersResponse) {
-      if (err)
-        return next(err);
-      var consumers = {}
-      var body = utils.getJson(consumersResponse.body);
-      if(!body.data) return;
-      var pid;
-      for (var i = 0; i < body.data.length; ++i) {
-        var user_name = body.data[i].username;
-        consumers[user_name] = body.data[i];
-      }
-          // This is not super good; this is expensive. Lots of calls.
-     utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
-        if (err)
-            return next(err);
-        var appIds = [];
-        for (var i = 0; i < appsResponse.items.length; ++i)
-            appIds.push(appsResponse.items[i].id);
-
-        // This is the expensive part:
-        async.map(appIds, function (appId, callback) {
-            utils.getFromAsync(req, res, '/applications/' + appId +'/subscriptions', 200, callback);
-        }, function (err, appsSubscInfos) {
-            if (err)
-                return next(err);
-            var subs=[];
-            for (var i = 0; i < appsSubscInfos.length; ++i) {
-                var sub = appsSubscInfos[i];
-                 for (var j = 0; j < sub.length; ++j){
-                    var application = sub[j].application;
-                    var api = sub[j].api;
-                    var consumer = consumers[application+"$"+api];
-                    sub[j]["consumer"] = consumer;
-                    sub[j]["consumerid"] = (consumer && consumer.id) ? consumer.id: "";
-                  subs.push(sub[j]);
-                }
-            }
-            res.json({
-              title: 'All Subsriptions',
-              subscriptions: subs
-            });
-        });
-      });
-
-    });
-
+  debug("get('/subscriptions')");
+  req.query = req.query.filter;
+	if (req.query && req.query.consumerid) {
+    getFilteredConsumerId(req, res);
+	} else {
+		//Destructuring an object to pass to a function makePagingUri valid req 
+		const filterFields = ['application', 'plan', 'api'];
+		const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
+		utils.getFromAsync(req, res, subsUri, 200, function (err, subsResponse) {
+			if (err) {
+				return next(err);
+			} 
+			let consumerIds = [];
+			for (let i = 0; i < subsResponse.items.length; ++i) {
+				let consumerUsername = `${subsResponse.items[i].application}$${subsResponse.items[i].api}`; 
+				consumerIds.push(consumerUsername)
+			}
+			async.map(consumerIds, function (consumerid, callback) {
+					getAdmin(req, res, '/consumers/' + consumerid, callback);
+			}, function (err, consumersResponse) {
+				consumersResponse.map((consumer, i) => {
+					let body = utils.getJson(consumer.body);
+					if (consumerIds[i] === body.username) {
+						subsResponse.items[i].consumerid = body.id;
+					} 
+				})
+				res.json({
+					title: 'All Subsriptions',
+					subscriptions: subsResponse
+				});
+			});
+		});
+	}
 });
 
 router.post('/customheaders/:pluginId', function (req, res, next) {
@@ -221,6 +207,36 @@ function getAdmin(req, res, uri, callback) {
         },
         callback);
 };
+
+function getFilteredConsumerId(req,res) {
+  getAdmin(req, res, '/consumers/'+req.query.consumerid, (err, consumer) => {
+      if (err) {
+          return next(err);
+      }
+  let body = utils.getJson(consumer.body);
+      if (body && body.message === "Not found") {
+          res.json({
+              title: 'All Subsriptions',
+              subscriptions: null
+          });
+      } else {
+          //Desctruct body.username(for example app1$mockbin) and assign to variables
+          let [appId, apiId] = (body.username).split("$");
+          utils.getFromAsync(req, res, `/applications/${appId}/subscriptions/${apiId}`, 200, (err, application) => {
+              if (err) {
+                  return next(err);
+              }
+              application.consumerid = req.query.consumerid;
+      let subscriptions = {items: [application],count: 1}
+              res.json({
+                  title: 'All Subsriptions',
+                  subscriptions
+              });
+          })
+      }
+  });
+}
+
 
 router.get('/customheaders/:apiId', function (req, res, next) {
   var apiId = req.params.apiId;
