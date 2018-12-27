@@ -88,37 +88,12 @@ router.get('/status', function (req, res, next) {
 });
 
 router.get('/subscriptions', function (req, res, next) {
-	debug("get('/subscriptions')");
-	if (req.query.filter && req.query.filter.consumerid) {
-		getAdmin(req, res, '/consumers/'+req.query.filter.consumerid, (err, consumer) => {
-			if (err) {
-				return next(err);
-			}
-			let body = utils.getJson(consumer.body);
-			if (body && body.message === "Not found") {
-				res.json({
-					title: 'All Subsriptions',
-					subscriptions: null
-				});
-			} else {
-				//Desctruct body.username(for example app1$mockbin) and assign to variables
-				let [appId, apiId] = (body.username).split("$");
-				utils.getFromAsync(req, res, `/applications/${appId}/subscriptions/${apiId}`, 200, (err, application) => {
-					if (err) {
-						return next(err);
-					}
-					application.consumerid = req.query.filter.consumerid;
-					let subscriptions = {items: [application],count: 1}
-					res.json({
-						title: 'All Subsriptions',
-						subscriptions
-					});
-				})
-			}
-		});
+  debug("get('/subscriptions')");
+  req.query = req.query.filter;
+	if (req.query && req.query.consumerid) {
+    getFilteredConsumerId(req, res);
 	} else {
 		//Destructuring an object to pass to a function makePagingUri valid req 
-		req.query = req.query.filter;
 		const filterFields = ['application', 'plan', 'api'];
 		const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
 		utils.getFromAsync(req, res, subsUri, 200, function (err, subsResponse) {
@@ -232,6 +207,36 @@ function getAdmin(req, res, uri, callback) {
         },
         callback);
 };
+
+function getFilteredConsumerId(req,res) {
+  getAdmin(req, res, '/consumers/'+req.query.consumerid, (err, consumer) => {
+      if (err) {
+          return next(err);
+      }
+  let body = utils.getJson(consumer.body);
+      if (body && body.message === "Not found") {
+          res.json({
+              title: 'All Subsriptions',
+              subscriptions: null
+          });
+      } else {
+          //Desctruct body.username(for example app1$mockbin) and assign to variables
+          let [appId, apiId] = (body.username).split("$");
+          utils.getFromAsync(req, res, `/applications/${appId}/subscriptions/${apiId}`, 200, (err, application) => {
+              if (err) {
+                  return next(err);
+              }
+              application.consumerid = req.query.consumerid;
+      let subscriptions = {items: [application],count: 1}
+              res.json({
+                  title: 'All Subsriptions',
+                  subscriptions
+              });
+          })
+      }
+  });
+}
+
 
 router.get('/customheaders/:apiId', function (req, res, next) {
   var apiId = req.params.apiId;
