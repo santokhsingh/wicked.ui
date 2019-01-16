@@ -145,14 +145,9 @@ app.initialize = function (done) {
             if (portalGlobals.glob.network.forceRedirectToHttps === true)
                 return res.redirect(301, 'https://' + req.headers.host + req.url);
             else
-                return next(new Error('You are running in "production" (NODE_ENV) mode, but not on https. This is not supported.'));
+                return next(new Error(`Configuration error: The environment configuration (API NODE_ENV "${portalGlobals.glob.environment}") is configured to run on https, but this is not the case. If you intend to work in development mode, make sure that network.schema equals "http" in globals.json for this environment. Otherwise make sure that this page is served via https. You can also use the network.forceRedirectToHttps option for this (in globals.json).`));
         next();
     });
-
-    if (app.get('env') === 'production' &&
-        portalGlobals.glob.network.schema !== 'https') {
-        throw new Error('You are running in "production" mode (NODE_ENV), but not using https. This is not supported (Cookies cannot be transported).');
-    }
 
     app.use(function (req, res, next) {
         const hostHeader = req.get('Host');
