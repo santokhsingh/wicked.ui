@@ -43,6 +43,8 @@ function getUser(loggedInUserId, userId, req, res, next) {
         const regResults = results.getRegistration;
         if (!regResults.items || !Array.isArray(regResults.items))
             return next(utils.makeError(500, 'Unexpected result of getting registrations (not an array of registrations'));
+        if (userInfo.email == 'portal@wicked.haufe.io')
+            return next(utils.makeError(403, 'This is an internal user of the API portal, it cannot be viewed.'));
         if (regResults.items.length !== 1) {
             error(regResults);
             return next(utils.makeError(500, `Number of registrations not exactly equal 1, received ${regResults.items.length} items.`));
