@@ -24,17 +24,26 @@ router.get('/', function (req, res, next) {
     const nonce = utils.createRandomId();
     req.session.authNonce = nonce;
     debug('authNonce: ' + nonce);
-    res.render('login', {
-        authUser: req.user,
-        glob: req.app.portalGlobals,
-        route: '/login',
-        nonce: nonce,
-        authConfig: req.app.authConfig,
-        callbackUrl: qs.escape(utils.CALLBACK_URL),
-        clientId: req.app.clientCredentials.clientId,
-        displayRedirectMessage: displayRedirectMessage,
-        // error: req.flash().error
-    });
+    const authConfig = req.app.authConfig;
+
+    console.log(JSON.stringify(authConfig, null, 2));
+    for (let authMethod of authConfig.authMethods) {
+        authMethod.authUrl = `${authConfig.authServerUrl}${authMethod.config.authorizeEndpoint}?response_type=code&client_id=${req.app.clientCredentials.clientId}&state=${authMethod.name}-${nonce}&redirect_uri=${qs.escape(utils.CALLBACK_URL)}`;
+    }
+
+    if (authConfig.authMethods.length === 1) {
+        // We only have one auth method, we will do an immediate redirect here
+        res.redirect(authConfig.authMethods[0].authUrl);
+    } else {
+        res.render('login', {
+            authUser: req.user,
+            glob: req.app.portalGlobals,
+            route: '/login',
+            authConfig: authConfig,
+            displayRedirectMessage: displayRedirectMessage,
+        });
+    }
+
 });
 
 // router.use('/', require('../auth'));
