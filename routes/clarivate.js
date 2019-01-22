@@ -220,7 +220,7 @@ function getSubscriptions(req, res, next) {
 }
 
 function getFilteredConsumerId(req,res, next, callback) {
-    req.query.consumerid = (req.query.consumerid).trim();
+    req.query.consumerid = req.query.consumerid.trim();
     getAdmin(req, res, '/consumers/'+req.query.consumerid, (err, consumer) => {
 			if (err) {
 					return next(err);
