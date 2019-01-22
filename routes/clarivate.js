@@ -93,15 +93,15 @@ router.get('/subscriptions', function (req, res, next) {
 	//Destructuring an object to pass to a function makePagingUri valid req 
 	req.query = req.query.filter;
 	if (req.query && req.query.consumerid) {
-		getFilteredConsumerId(req, res, (err, response) => {
+		getFilteredConsumerId(req, res, next, (err, response) => {
       //Instead of returning ConsumerId directly, getFilteredConsumserId returns applicationId,apiId and filters by these fields.
 			req.query.consumerid = '';
 			req.query.application = response.application;
 			req.query.api = response.api;
-			getSubscriptions(req, res);
+			getSubscriptions(req, res, next);
 		});
 	} else {
-		getSubscriptions(req, res)
+		getSubscriptions(req, res, next)
 	}
 });
 
@@ -190,7 +190,7 @@ function getAdmin(req, res, uri, callback) {
         callback);
 };
 
-function getSubscriptions(req, res) {
+function getSubscriptions(req, res, next) {
 	const filterFields = ['application', 'plan', 'api'];
 	const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
 	utils.getFromAsync(req, res, subsUri, 200, function (err, subsResponse) {
@@ -219,7 +219,8 @@ function getSubscriptions(req, res) {
 	});
 }
 
-function getFilteredConsumerId(req,res, callback) {
+function getFilteredConsumerId(req,res, next, callback) {
+    req.query.consumerid = (req.query.consumerid).trim();
     getAdmin(req, res, '/consumers/'+req.query.consumerid, (err, consumer) => {
 			if (err) {
 					return next(err);
