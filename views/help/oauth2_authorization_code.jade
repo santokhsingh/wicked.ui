@@ -117,7 +117,7 @@ block help_content
   +helpItem('pkce', 'What is PKCE? - Proof Key for Code Exchange')
 
   p.
-    The Authorization Code Grant can also be used for public clients, i.e. clients which are not able to keep a secret. Examples for
+    The Authorization Code Grant can also be used for <a href="client_types">public clients</a>, i.e. clients which are not able to keep a secret. Examples for
     such applications are Single Page Applications, or very typically, Mobile Apps (native or web based).
 
   p.
@@ -127,6 +127,11 @@ block help_content
 
   p.
     More information on this specification can be found here: <a href="https://tools.ietf.org/html/rfc7636" target="_blank">https://tools.ietf.org/html/rfc7636</a>.
+
+  +hint()
+    p.
+      <b>IMPORTANT</b>: The PKCE extension is highly recommended also for <a href="client_types">Confidential Clients</a>. It is not only
+      applicable for public clients.
 
   +helpItem('pkce_get_auth_code', 'Getting an Authorization Code (public clients/using PKCE)')
 
@@ -180,7 +185,7 @@ block help_content
     }
 
   p.
-    Only when using confidential clients, a refresh token is also returned, even if the PKCE extension is used.
+    Only when using <a href="client_types">confidential or native clients</a>, a refresh token is also returned, even if the PKCE extension is used.
 
   +helpItem('pkce_refresh_token', 'Refreshing the Access Token (public clients)')
 

@@ -155,6 +155,13 @@ block content
                                     textarea(name='appdesc' id='desc' style='height:100px').form-control= appdesc
                                     small The Application Description field can be used to provide additional details about your application use case, including any relevant URLs. If you are subscribing to an API that requires approvals, completing this field will aid in processing time
                                     div(id='markdown')
+                                .form-group
+                                    label(for='clienttype') Client Type:
+                                    select(name='clienttype' id='clienttype').form-control
+                                        option(value='public_spa') Public: Single Page Application (browser based app)
+                                        option(value='public_native') Public: Native/Mobile Application (Android/iOS app)
+                                        option(value='confidential') Confidential: Server side application, can keep secrets confidential
+                                    small See the <a href="/help/client_types" target="_blank">help page on client types</a> for more information.
                                 .checkbox
                                     label
                                         input(type='checkbox' id='hasredirecturi' name='hasredirecturi' data-toggle='collapse' data-target='#redirecturipanel')
@@ -162,10 +169,6 @@ block content
                                         | &nbsp;(other than the Client Credentials flow, i.e. using redirects)
 
                                 div(id='redirecturipanel' class='panel-collapse collapse #{showSwagger}')
-                                    .checkbox
-                                        label
-                                            input(type='checkbox' id='confidential' name='confidential')
-                                            strong This application is able to store a client secret confidentially (server side).
                                             
                                     .form-group
                                         label(for='redirecturi') Redirect URI:

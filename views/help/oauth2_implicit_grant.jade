@@ -9,14 +9,16 @@ block help_content
   p.
     The OAuth2 Implicit Grant flow is a simplified version of the Authorization Code Grant.
     The flow also implies the use of a user agent, and usually the implicit grant is used for
-    public applications, i.e. applications which cannot be trusted with a client secret.
+    <a href="client_types#public_spa">public applications/clients</a>, i.e. applications which 
+    cannot be trusted with a client secret.
 
-  p.
-    <span style="color:#a00"><b>Important:</b> The Implicit Grant is considered deprecated by the IETF; it is recommended
-    against implementing new applications using this flow, even though there are no new threats
-    known against it. The <a href="oauth2_authorization_code">Authorization Code Grant</a> with the
-    <a href="https://tools.ietf.org/html/rfc7636" target="_blank">PKCE Extension</a> is the recommended
-    way. Wicked also supports this, but will keep the Implicit Grant for backwards compatibility.</span>
+  +important()
+    p.
+      <b>Important:</b> The Implicit Grant is considered deprecated by the IETF; it is recommended
+      against implementing new applications using this flow, even though there are no new threats
+      known against it. The <a href="oauth2_authorization_code">Authorization Code Grant</a> with the
+      <a href="https://tools.ietf.org/html/rfc7636" target="_blank">PKCE Extension</a> is the recommended
+      way. Wicked also supports this, but will keep the Implicit Grant for backwards compatibility.
 
   p.
     Typical examples of such applications can be single page applications which do not have a

@@ -223,7 +223,7 @@ router.post('/register', function (req, res, next) {
     const appDesc = req.body.appdesc;
     const hasRedirectUri = req.body.hasredirecturi;
     const redirectUri = req.body.redirecturi;
-    const confidential = utils.getChecked(req, 'confidential');
+    const clientType = req.body.clienttype;
 
     if (!appId ||
         !appName) {
@@ -235,7 +235,7 @@ router.post('/register', function (req, res, next) {
     const newApp = {
         id: appId,
         name: appName,
-        confidential: confidential
+        clientType: clientType
     };
 
     if (appDesc)
@@ -351,7 +351,7 @@ router.post('/:appId/patch', function (req, res, next) {
     const appName = req.body.appname;
     const appDesc = req.body.appdesc;
     const redirectUri = req.body.redirecturi;
-    const confidential = utils.getChecked(req, 'confidential');
+    const clientType = req.body.clienttype;
 
     if (!appName) {
         const err = new Error('Application name cannot be empty.');
@@ -364,7 +364,7 @@ router.post('/:appId/patch', function (req, res, next) {
         name: appName,
         description: appDesc,
         redirectUri: redirectUri,
-        confidential: confidential
+        clientType: clientType
     };
 
     utils.patch(req, '/applications/' + appId, appData, function (err, apiResponse, apiBody) {

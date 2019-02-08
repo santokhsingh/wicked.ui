@@ -97,14 +97,13 @@ block content
                                     Once you have added a redirect URI, it's not possible to remove it, just change it.
                                     The callback under which your web application can be called back, passing the access token in the fragment.
                                     Check the documentation for a <a href="https://github.com/Haufe-Lexware/wicked.haufe.io/blob/master/doc/valid-redirect-uris.md" target="_blank">list of valid redirect URIs</a>.
-
-                            .checkbox
-                                label
-                                    if application.confidential
-                                        input(type='checkbox' name='confidential' checked)
-                                    else
-                                        input(type='checkbox' name='confidential')
-                                    strong This application is able to store a client secret confidentially (server side).
+                            .form-group
+                                label(for='clienttype') Client Type:
+                                select(name='clienttype' id='clienttype').form-control
+                                    option(value='public_spa' selected=(application.clientType == 'public_spa')) Public: Single Page Application (browser based app)
+                                    option(value='public_native' selected=(application.clientType == 'public_native')) Public: Native/Mobile Application (Android/iOS app)
+                                    option(value='confidential' selected=(application.clientType == 'confidential')) Confidential: Server side application, can keep secrets confidential
+                                small See the <a href="/help/client_types" target="_blank">help page on client types</a> for more information.
                             br
                             button(style='display:inline;' class='btn btn-warning' type='submit') Update
                     else

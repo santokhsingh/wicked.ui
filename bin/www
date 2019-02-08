@@ -93,7 +93,7 @@ function registerApplicationAndSubscribe(callback) {
                 id: '__portal',
                 name: 'wicked.haufe.io Portal UI',
                 redirectUri: callbackUrl,
-                confidential: true
+                clientType: 'confidential'
             };
             debug('Body: ' + JSON.stringify(appData));
             if (appInfo) {
