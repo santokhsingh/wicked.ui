@@ -417,4 +417,18 @@ router.post('/apis/:apiId/delete_subscriptions', mustBeAdminMiddleware, function
     });
 });
 
+router.post('/restart', mustBeAdminMiddleware, function (req, res, next) {
+    debug('/admin/restart');
+    utils.post(req, '/kill', null, function (err, apiRes, apiBody) {
+        if (err)
+            return next(err);
+        if (204 !== apiRes.statusCode)
+            return utils.fail(apiRes.statusCode, `The restart request returned an unexpected status code ${apiRes.statusCode}.`, next);
+        res.render('admin_restart');
+        setTimeout(() => {
+            process.exit(0);
+        }, 1000);
+    });
+});
+
 module.exports = router;

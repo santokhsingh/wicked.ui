@@ -470,15 +470,18 @@ utils.getFromAsync = function (req, res, uri, expectedStatus, callback) {
 
 utils.post = function (req, uri, body, callback) {
     debug('post(): ' + uri);
-    debug(body);
     const baseUrl = req.app.get('api_url');
-
-    apiAction(req, 'POST', {
+    const options = {
         url: baseUrl + uri,
-        headers: makeHeaders(req),
-        json: true,
-        body: body
-    }, callback);
+        headers: makeHeaders(req)
+    }
+    if (body) {
+        debug(body);
+        options.body = body;
+        options.json = true;
+    }
+
+    apiAction(req, 'POST', options, callback);
 };
 
 utils.patch = function (req, uri, body, callback) {
