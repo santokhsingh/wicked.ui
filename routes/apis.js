@@ -6,6 +6,7 @@ const router = express.Router();
 const { debug, info, warn, error } = require('portal-env').Logger('portal:apis');
 const utils = require('./utils');
 const marked = require('marked');
+const markedOptions = utils.markedOptions;
 const async = require('async');
 const cors = require('cors');
 const mustache = require('mustache');
@@ -30,7 +31,7 @@ router.get('/', function (req, res, next) {
         const apiTags = [];
         for (let i = 0; i < apiList.length; ++i) {
             if (apiList[i].desc)
-                apiList[i].desc = marked(apiList[i].desc);
+                apiList[i].desc = marked(apiList[i].desc, markedOptions);
             if (apiList[i].tags && apiList[i].tags.length > 0) {
                 for (let j = 0; j < apiList[i].tags.length; ++j) {
                     apiTags.push(apiList[i].tags[j]);
@@ -58,7 +59,7 @@ router.get('/', function (req, res, next) {
                     glob: req.app.portalGlobals,
                     route: '/apis',
                     title: 'APIs',
-                    desc: marked(desc),
+                    desc: marked(desc, markedOptions),
                     apilist: apiList,
                     apiTags: unique(apiTags)
                 });
@@ -131,7 +132,7 @@ router.get('/:api', function (req, res, next) {
             return next(err);
         const apiInfo = results.getApi;
         if (apiInfo.desc)
-            apiInfo.desc = marked(apiInfo.desc);
+            apiInfo.desc = marked(apiInfo.desc, markedOptions);
         let apiDesc = results.getApiDesc;
         if (!apiDesc)
             apiDesc = '';
@@ -274,7 +275,7 @@ router.get('/:api', function (req, res, next) {
                         route: '/apis/' + apiId,
                         title: apiInfo.name,
                         apiInfo: apiInfo,
-                        apiDesc: marked(apiDesc),
+                        apiDesc: marked(apiDesc, markedOptions),
                         applications: apps,
                         apiPlans: plans,
                         apiUris: apiUris,

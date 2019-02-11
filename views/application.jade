@@ -9,12 +9,13 @@ block scripts
             return confirm("Last chance: THIS CANNOT BE UNDONE!");
         }
         document.addEventListener('DOMContentLoaded', function() {
+            var markedOptions = { sanitize: true };
             $('#desc').on('change keyup paste', function() {
                 var text = $('#desc').val();
-                $('#markdown').html(marked(text));
+                $('#markdown').html(marked(text, markedOptions));
             });
             // First time
-             $('#markdown').html(marked($('#desc').val()));      
+             $('#markdown').html(marked($('#desc').val(), markedOptions));      
         });
 
 block content
