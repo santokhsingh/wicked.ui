@@ -36,7 +36,7 @@ normalImageName="${DOCKER_PREFIX}ui:${DOCKER_TAG}"
 if [[ "dev" = "${DOCKER_TAG}" ]]; then
     docker build -t ${normalImageName} .
 else
-    docker build --pull -t ${normalImageName} .
+    docker build --pull -t ${normalImageName} . --no-cache
 fi
 
 echo "============================================"
@@ -49,7 +49,7 @@ alpineImageName="${DOCKER_PREFIX}ui:${DOCKER_TAG}-alpine"
 if [[ "dev" = "${DOCKER_TAG}" ]]; then
     docker build -f Dockerfile-alpine -t ${alpineImageName} .
 else
-    docker build --pull -f Dockerfile-alpine -t ${alpineImageName} .
+    docker build --pull -f Dockerfile-alpine -t ${alpineImageName} . --no-cache
 fi
 
 if [ "$1" = "--push" ]; then
