@@ -190,8 +190,7 @@ block help_content
   +helpItem('pkce_refresh_token', 'Refreshing the Access Token (public clients)')
 
   p.
-    <b>Note:</b> It may change in the future that wicked will also return a refresh token for public clients,
-    but currently this is not the case (until the IETF has found a recommendation in these matters).
+    <b>Note:</b> Public Clients in the sense of <a href="client-types">Native/Mobile Applications</a> will be handed a refresh token, just as confidential clients. The below parts only apply for Single Page/Browser Based Applications.
 
   p.
     To refresh a token using the Authorization Code Grant using a public client, the same method as with the
