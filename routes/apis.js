@@ -264,24 +264,37 @@ router.get('/:api', function (req, res, next) {
                 debug(thisApp);
             }
 
-            apiInfo.authMethods = utils.loadAuthServersEndpoints(req.app, apiInfo);
+            let authMethods = utils.loadAuthServersEndpoints(req.app, apiInfo);
+            // Check for protected Auth Methods
+            let hasProtectedMethods = false;
+            if (!userInfo.admin) {
+                const strippedMethods = [];
+                for (let am of authMethods) {
+                    if (!am.protected)
+                        strippedMethods.push(am);
+                    else
+                        hasProtectedMethods = true;
+                }
+                authMethods = strippedMethods;
+            }
+            apiInfo.authMethods = authMethods;
+            apiInfo.hasProtectedAuthMethods = hasProtectedMethods;
             apiInfo.hasSwaggerApplication = hasSwaggerApplication;
             // See also views/models/api.json for how this looks
             if (!utils.acceptJson(req)) {
-                res.render('api',
-                    {
-                        authUser: req.user,
-                        glob: req.app.portalGlobals,
-                        route: '/apis/' + apiId,
-                        title: apiInfo.name,
-                        apiInfo: apiInfo,
-                        apiDesc: marked(apiDesc, markedOptions),
-                        applications: apps,
-                        apiPlans: plans,
-                        apiUris: apiUris,
-                        apiSubscriptions: apiSubscriptions,
-                        genericSwaggerUrl: genericSwaggerUrl
-                    });
+                res.render('api', {
+                    authUser: req.user,
+                    glob: req.app.portalGlobals,
+                    route: '/apis/' + apiId,
+                    title: apiInfo.name,
+                    apiInfo: apiInfo,
+                    apiDesc: marked(apiDesc, markedOptions),
+                    applications: apps,
+                    apiPlans: plans,
+                    apiUris: apiUris,
+                    apiSubscriptions: apiSubscriptions,
+                    genericSwaggerUrl: genericSwaggerUrl
+                });
             } else {
                 delete apiInfo.authMethods;
                 res.json({

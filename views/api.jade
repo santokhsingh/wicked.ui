@@ -88,6 +88,16 @@ block content
                                         if authMethod.config.profileEndpoint && !onlyClientCredentials
                                             input(readonly type='string' value=authMethod.config.profileEndpoint style='font-family: monospace;').form-control
                                             p.small Profile Endpoint
+
+                    if apiInfo.hasProtectedAuthMethods
+                        .panel.panel-success
+                            .panel-heading
+                                +panelTitle('Other Auth Methods', null, '#auth_other')
+                            div(id='auth_other').collapse.panel-collapse
+                                .panel-body
+                                    p.
+                                        This API also has other authentication methods. Please contact the API Portal administrator to get additional information
+                                        on the endpoint URLs, in case you need them.
                     
                     if apiInfo.auth == "oauth2"
                         label Authorization Flows (OAuth2):
