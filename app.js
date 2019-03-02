@@ -1,6 +1,7 @@
 'use strict';
 
-/* global app */
+/* global app, __dirname */
+
 const express = require('express');
 const { debug, info, warn, error } = require('portal-env').Logger('portal:app');
 const path = require('path');

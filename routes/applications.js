@@ -64,9 +64,12 @@ router.get('/:appId/subscriptions/:apiId', function (req, res, next) {
         if (err)
             return next(err);
 
-        console.log(JSON.stringify(data.appInfo, null, 2));
-        console.log(JSON.stringify(data.apiInfo, null, 2));
-        console.log(JSON.stringify(data.subsInfo, null, 2));
+        debug('data.appInfo:');
+        debug(JSON.stringify(data.appInfo));
+        debug('data.apiInfo:');
+        debug(JSON.stringify(data.apiInfo));
+        debug('data.subsInfo:');
+        debug(JSON.stringify(data.subsInfo));
 
         if (!utils.acceptJson(req)) {
             res.render('allowed_scopes', {
@@ -222,7 +225,11 @@ router.post('/register', function (req, res, next) {
     const appName = req.body.appname;
     const appDesc = req.body.appdesc;
     const hasRedirectUri = req.body.hasredirecturi;
-    const redirectUri = req.body.redirecturi;
+    let redirectUris = req.body.redirecturi;
+    if (!Array.isArray(redirectUris)) {
+        redirectUris = [redirectUris];
+    }
+
     const clientType = req.body.clienttype;
 
     if (!appId ||
@@ -241,7 +248,7 @@ router.post('/register', function (req, res, next) {
     if (appDesc)
         newApp.description = appDesc;
     if (hasRedirectUri)
-        newApp.redirectUri = redirectUri;
+        newApp.redirectUris = redirectUris;
 
     utils.post(req, '/applications', newApp,
         function (err, apiResponse, apiBody) {
@@ -350,7 +357,10 @@ router.post('/:appId/patch', function (req, res, next) {
     const appId = req.params.appId;
     const appName = req.body.appname;
     const appDesc = req.body.appdesc;
-    const redirectUri = req.body.redirecturi;
+    let redirectUris = req.body.redirecturi;
+    if (!Array.isArray(redirectUris)) {
+        redirectUris = [redirectUris];
+    }
     const clientType = req.body.clienttype;
 
     if (!appName) {
@@ -363,14 +373,14 @@ router.post('/:appId/patch', function (req, res, next) {
         id: appId,
         name: appName,
         description: appDesc,
-        redirectUri: redirectUri,
+        redirectUris: redirectUris,
         clientType: clientType
     };
 
     utils.patch(req, '/applications/' + appId, appData, function (err, apiResponse, apiBody) {
         if (err)
             return next(err);
-        if (200 != apiResponse.statusCode)
+        if (200 !== apiResponse.statusCode)
             return utils.handleError(res, apiResponse, apiBody, next);
         // Yay!
         if (!utils.acceptJson(req))

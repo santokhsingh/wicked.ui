@@ -1,5 +1,7 @@
 'use strict';
 
+/* global __dirname */
+
 const request = require('request');
 const qs = require('querystring');
 const async = require('async');
@@ -360,10 +362,14 @@ function apiAction(req, method, body, callback, iteration) {
         interval: 250
     }, function (callback) {
         getAccessToken(req, function (err, accessToken) {
+            if (err)
+                return callback(err);
+            debug(`resolved access token: ${accessToken}`);
             payload(accessToken, function (err, apiResponse, apiBody) {
                 if (err)
                     return callback(err);
                 if (apiResponse.statusCode === 401) {
+                    debug(apiBody);
                     renewAccessToken(req, function (err, accessToken) {
                         payload(accessToken, function (err, apiResponse, apiBody) {
                             if (err)
@@ -474,7 +480,7 @@ utils.post = function (req, uri, body, callback) {
     const options = {
         url: baseUrl + uri,
         headers: makeHeaders(req)
-    }
+    };
     if (body) {
         debug(body);
         options.body = body;

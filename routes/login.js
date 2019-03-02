@@ -26,7 +26,7 @@ router.get('/', function (req, res, next) {
     debug('authNonce: ' + nonce);
     const authConfig = req.app.authConfig;
 
-    console.log(JSON.stringify(authConfig, null, 2));
+    debug(JSON.stringify(authConfig, null, 2));
     for (let authMethod of authConfig.authMethods) {
         authMethod.authUrl = `${authConfig.authServerUrl}${authMethod.config.authorizeEndpoint}?response_type=code&client_id=${req.app.clientCredentials.clientId}&state=${authMethod.name}-${nonce}&redirect_uri=${qs.escape(utils.CALLBACK_URL)}`;
     }
