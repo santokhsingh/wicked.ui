@@ -55,13 +55,14 @@ block bodyScripts
                 });
             }
         }
+
          $(document).ready(function(){
-            var showSwagger =  '#{showSwagger}';
-            if(showSwagger){
-                $('#appid').val('swagger-ui-'+Math.random().toString(36).substr(2, 9));
+            var showSwagger = '#{showSwagger}';
+            if (showSwagger) {
+                $('#appid').val('swagger-ui-' + Math.random().toString(36).substr(2, 9));
                 $('#appname').val('Swagger UI app');
-                $('#hasredirecturi').prop('checked',true);
-                $('#confidential').prop('checked',true);
+                $('#hasredirecturi').prop('checked', true);
+                $('#clienttype').val('confidential');
                 $('#redirecturi').val('#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/oauth2-redirect.html')
                                  .prop('readonly', true);
                 $('#desc').val('The Swagger UI app enables you to test out Oauth2 authenticated APIs that require the use of redirects, via Swagger. With the exception of the Redirect URI field, you may edit all application fields, including this description.');
