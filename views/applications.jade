@@ -175,8 +175,10 @@ block content
                                         label(for='redirecturi') Redirect URI:
                                         input(type='string' id='redirecturi' name='redirecturi' value='https://').form-control
                                         small.
-                                            The callback under which your web application can be called back, passing the access token in the fragment.
+                                            The callback under which your web application can be called back, either with a token (<a href="/help/oauth2_implicit_grant" target="_blank">Implicit Grant</a>),
+                                            or with an authorization code (<a href="/help/oauth2_authorization_code" target="_blank">Authorization Code Grant</a>).
                                             Check the documentation for a <a href="https://github.com/Haufe-Lexware/wicked.haufe.io/blob/master/doc/valid-redirect-uris.md" target="_blank">list of valid redirect URIs</a>.
+                                            In case you need multiple redirect URIs, first create the application, then add more redirect URIs on the application's page.
                                         small 
                                             span(id='errorRedirect' style='color:red')
                             // Note that this button is _outside_ of the form, and calls submit() over jQuery

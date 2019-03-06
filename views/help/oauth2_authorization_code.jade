@@ -187,7 +187,7 @@ block help_content
   p.
     Only when using <a href="client_types">confidential or native clients</a>, a refresh token is also returned, even if the PKCE extension is used.
 
-  +helpItem('pkce_refresh_token', 'Refreshing the Access Token (public clients)')
+  +helpItem('pkce_refresh_token', 'Refreshing the Access Token (public browser based clients)')
 
   p.
     <b>Note:</b> Public Clients in the sense of <a href="client-types">Native/Mobile Applications</a> will be handed a refresh token, just as confidential clients. The below parts only apply for Single Page/Browser Based Applications.
@@ -205,3 +205,22 @@ block help_content
   p.
     By letting this run in a hidden <code>iframe</code>, the renewal of the access token can be done without the end
     user actually noticing.
+
+  
+  +helpItem('pkce_refresh_token_native', 'Refreshing the Access Token (native/mobile)')
+
+  p.
+    Public Clients in the sense of <a href="client-types">Native/Mobile Applications</a> will be handed a refresh token, just as confidential clients.
+
+  p.
+    These clients can use the <code>/token</code> endpoint directly, just as confidential clients can. The only difference is that native/mobile clients must <b>not present their <code>client_secret</code></b> in the call to the <code>/token</code> endpoint.
+
+  pre.
+    curl -X POST -d 'grant_type=refresh_token&amp;client_id=<b style="color:#0a0">(your client id)</b>&amp;refresh_token=<b style="color:#0a0">(refresh token)</b>' #{authUrl}<b style="color:#0a0">(auth method id)</b>/api/<b style="color:#0a0">(api id)</b>/token
+
+  p.
+    If successful, the Authorization Server will return a new access token and a new refresh token.
+
+  p.
+    <b>Important:</b> After refreshing the access token using the refresh token, the refresh token which was
+    used for this, is <b>no longer valid</b>. You must then use the new refresh token.
