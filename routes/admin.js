@@ -47,7 +47,7 @@ router.post('/approvals/approve', function (req, res, next) {
             return next(err);
         const approvalInfo = utils.getJson(apiBody);
         debug(approvalInfo);
-        
+
         if (approvalInfo.application.id !== appId)
             return next(utils.makeError(400, 'Bad request. Application ID does not match approval request.'));
         if (approvalInfo.api.id !== apiId)
@@ -149,7 +149,7 @@ router.get('/users', mustBeAdminMiddleware, function (req, res, next) {
 
 router.get('/subscriptions', mustBeAdminOrApproverMiddleware, function (req, res, next) {
     debug("get('/subscriptions')");
-    const filterFields = ['application', 'application_name','plan', 'api', 'owner' , 'user'];
+    const filterFields = ['application', 'application_name', 'plan', 'api', 'owner', 'user'];
     const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
     utils.getFromAsync(req, res, subsUri, 200, function (err, subsResponse) {
         if (err)
@@ -161,7 +161,7 @@ router.get('/subscriptions', mustBeAdminOrApproverMiddleware, function (req, res
                 title: 'All Subscriptions',
             });
             return;
-        }    
+        }
         if (utils.acceptJson(req)) {
             res.json({
                 title: 'All Subscriptions',
@@ -183,9 +183,9 @@ router.get('/subscriptions_csv', mustBeAdminOrApproverMiddleware, function (req,
             outStream.write('Status;Application;Owners;Users;Api;Plan\n');
             for (let i = 0; i < subsResponse.items.length; ++i) {
                 const item = subsResponse.items[i];
-                let status = (item.approved) ? `Approved`: `Pending`;
+                let status = (item.approved) ? `Approved` : `Pending`;
                 status = (item.trusted) ? `${status}, (Trusted)` : status;
-                const subscLine =`${status}; ${item.application_name}; ${item.owner}; ${item.user}; ${item.api}; ${item.plan}\n`
+                const subscLine = `${status}; ${item.application_name}; ${item.owner}; ${item.user}; ${item.api}; ${item.plan}\n`;
                 debug(subscLine);
                 outStream.write(subscLine);
             }
@@ -201,7 +201,7 @@ router.get('/subscriptions_csv', mustBeAdminOrApproverMiddleware, function (req,
                     }
                 });
             });
-        });    
+        });
     });
 });
 
