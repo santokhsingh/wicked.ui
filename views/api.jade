@@ -127,10 +127,12 @@ block content
             #apidescription.collapse.panel-collapse.in
                 .panel-body
                     != apiDesc
-
-                    a(href="#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?url=#{encodeURIComponent(genericSwaggerUrl)}" role="button" target="_blank").btn.btn-default View Swagger definition &raquo;
+                    if apiInfo.auth == "none"
+                        a(href="#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=none&url=#{encodeURIComponent(genericSwaggerUrl)}" role="button" target="_blank").btn.btn-default View Swagger definition &raquo;
+                    else
+                        a(href="#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?url=#{encodeURIComponent(genericSwaggerUrl)}" role="button" target="_blank").btn.btn-default View Swagger definition &raquo;
         
-        if !authUser
+        if !authUser && apiInfo.auth != "none"
             .panel.panel-danger
                 .panel-heading
                     h4.panel-title Not logged in
@@ -141,7 +143,7 @@ block content
                     p                    
                         a(href="/login?redirect=/apis/#{apiInfo.id}").btn.btn-default Log in &raquo;
 
-        else
+        else if apiInfo.auth != "none"
             .panel.panel-default
                 .panel-heading
                     +panelTitle('Applications', '/help/api')
