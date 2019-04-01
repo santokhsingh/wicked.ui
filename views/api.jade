@@ -113,6 +113,9 @@ block content
                                 li <a href="/help/oauth2_authorization_code" target="_blank">Autorization Code Grant</a> (three legged)
                             if apiInfo.settings && apiInfo.settings.enable_implicit_grant
                                 li <a href="/help/oauth2_implicit_grant" target="_blank">Implicit Grant</a> (three legged)
+
+                    if apiInfo.auth == "none"
+                        p This API does not require authorization. Review the documentation below for more information.
                     
                     if apiInfo.bundle
                         label API Bundle
