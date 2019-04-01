@@ -31,3 +31,4 @@ rules:
 globals:
   process: true
   Buffer: true
+  __dirname: true
