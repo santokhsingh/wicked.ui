@@ -70,102 +70,95 @@ function registerApplicationAndSubscribe(callback) {
     callbackUrl = callbackUrl + 'login/callback';
     debug('callbackUrl: ' + callbackUrl);
 
-    // Wicked SDK will automatically use the machine user (with admin access)
-    async.waterfall([
-        callback => {
-            debug('GET applications/__portal');
-            wicked.apiGet('applications/__portal', function (err, appInfo) {
-                if (err && err.statusCode !== 404) {
-                    return callback(err); // Hard error
-                }
-                debug('GET applications/__portal succeeded.');
-                if (err && err.statusCode === 404) {
-                    debug('GET applications/__portal returned 404.');
-                    return callback(null, null); // App not present
-                }
-                debug('GET applications/__portal returned application');
-                return callback(null, appInfo);
-            });
-        },
-        (appInfo, callback) => {
-            debug('POST/PATCH applications/__portal');
-            const appData = {
-                id: '__portal',
-                name: 'wicked.haufe.io Portal UI',
-                redirectUri: callbackUrl,
-                clientType: 'confidential'
-            };
-            debug('Body: ' + JSON.stringify(appData));
-            if (appInfo) {
-                // App is already present
-                wicked.apiPatch('applications/__portal', appData, callback);
-            } else {
-                wicked.apiPost('applications', appData, callback);
-            }
-        },
-        (appInfo, callback) => {
-            debug('GET subscription');
-            wicked.apiGet('applications/__portal/subscriptions/portal-api', function (err, subsInfo) {
-                debug('GET subscription returned...');
-                if (err && err.statusCode !== 404) {
-                    debug('... but failed.');
-                    return callback(err);
-                }
+    const appId = '__portal';
+    const appName = 'wicked.haufe.io Portal UI';
+    const desiredAppInfo = {
+        id: appId,
+        name: appName,
+        redirectUri: callbackUrl,
+        clientType: 'confidential'
+    };
+    const desiredSubsInfo = {
+        application: '__portal',
+        api: 'portal-api',
+        plan: '__internal_api_unlimited',
+        trusted: true
+    };
 
-                if (err && err.statusCode === 404) {
-                    debug('... but subscription returned 404');
-                    return callback(null, null);
+    (async () => {
+        try {
+            info('Checking application for portal...');
+            let appInfo = await getApplication(appId);
+            if (!appInfo) {
+                info(`Application for portal not found, creating.`);
+                appInfo = await wicked.createApplication(desiredAppInfo);
+            } else {
+                info(`Application for portal found, checking...`);
+                // Check if the application matches
+                if (appInfo.name !== appName ||
+                    appInfo.redirectUri !== callbackUrl ||
+                    appInfo.clientType !== 'confidential') {
+                    info(`Configuration mismatch found, patching...`);
+                    appInfo = await wicked.patchApplication(appId, desiredAppInfo);
+                } else {
+                    info('Configuration is fine.');
                 }
-                debug('... and succeeded:');
-                debug(subsInfo);
-                return callback(null, subsInfo);
-            });
-        },
-        (subsInfo, callback) => {
+            }
+
+            info('Checking subscription to portal-api for portal...');
+            let subsInfo = await getSubscription(appId, 'portal-api');
             if (!subsInfo) {
-                debug('Creating subscription.');
-                const portalSubs = {
-                    application: '__portal',
-                    api: 'portal-api',
-                    plan: '__internal_api_unlimited',
-                    trusted: true
-                };
-                debug('POST applications/__portal/subscriptions...');
-                wicked.apiPost('applications/__portal/subscriptions', portalSubs, function (err, subsInfo) {
-                    if (err) {
-                        debug('... but failed!');
-                        return callback(err);
-                    }
-                    debug('... and succeeded!');
-                    return callback(null, subsInfo);
-                });
-            } else {
-                return callback(null, subsInfo);
+                info('Portal does not have a subscription, creating...');
+                subsInfo = await wicked.createSubscription(appId, desiredSubsInfo);
             }
-        }
-    ], function (err, subscriptionInfo) {
-        if (err) {
-            error('ERROR: Could not register portal application and/or subscribe to the portal API');
+
+            debug('Subscription Info: ' + JSON.stringify(subsInfo));
+
+            const clientId = subsInfo.clientId;
+            const clientSecret = subsInfo.clientSecret;
+    
+            if (!clientId || !clientSecret) {
+                return callback(new Error('subscriptionInfo did not contain either clientId or clientSecret!'));
+            }
+    
+            // Now we know our application and set the id and secret for later use.
+            utils.setOAuth2Credentials(clientId, clientSecret, callbackUrl);
+    
+            return callback(null, {
+                clientId: clientId,
+                clientSecret: clientSecret
+            });
+        } catch (err) {
             error(err);
-            return callback(err);
+            error(err.stack);
+            const err2 = new Error('*** Could not register application and subscribe!');
+            return callback(err2);
         }
-        debug('Subscription Info: ' + JSON.stringify(subscriptionInfo));
+    })();
+}
 
-        const clientId = subscriptionInfo.clientId;
-        const clientSecret = subscriptionInfo.clientSecret;
-
-        if (!clientId || !clientSecret) {
-            return callback(new Error('subscriptionInfo did not contain either clientId or clientSecret!'));
+async function getApplication(appId) {
+    try {
+        const appInfo = await wicked.getApplication(appId);
+        return appInfo;
+    } catch (err) {
+        if (err.status && err.status === 404) {
+            return null;
         }
+        throw err;
+    }
+}
 
-        // Now we know our application and set the id and secret for later use.
-        utils.setOAuth2Credentials(clientId, clientSecret, callbackUrl);
-
-        return callback(null, {
-            clientId: clientId,
-            clientSecret: clientSecret
-        });
-    });
+async function getSubscription(appId, apiId) {
+    try {
+        const subsInfo = await wicked.getSubscription(appId, apiId);
+        return subsInfo;
+    } catch (err) {
+        if (err.status && err.status === 404) {
+            return null;
+        }
+        throw err;
+    }
 }
 
 /**
@@ -309,7 +302,9 @@ async.series({
 }, function (err, results) {
     if (err) {
         error(err);
-        throw new Error('Could not initialize portal. See above error.');
+        error(err.stack);
+        error('**** Could not initialize portal. See above error.');
+        process.exit(1);
     }
 
     let apiUrl = wicked.getInternalKongProxyUrl();
