@@ -430,19 +430,7 @@ paths:
       responses:
         200:
           description: Successful response
-  
-  /signup:
-    post:
-      description: Principially, local user signup. Do not use this. 
-      tags:
-        - misc
-      responses:
-        403:
-          description: >-
-            It is not possible to sign up programmatically if there's a reCAPTCHA active.
-            If you need users for use with the portal API, consider adding them either in
-            the globals.json as upfront users, or create them manually.
-  
+    
   /users/{userId}:
     get:
       description: Retrieve information on a user

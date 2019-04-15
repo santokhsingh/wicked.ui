@@ -2,44 +2,67 @@ extends layout
 
 block scripts
     script(type='text/javascript').
-        function verifyContent() {
-            var firstName = $('#firstname').val();
-            var lastName = $('#lastname').val();
+        function validateRegister() {
+            const model = !{JSON.stringify(poolInfo)};
+
+            let somethingBad = false;
+            for (var i = 0; i < model.properties.length; ++i) {
+                const propInfo = model.properties[i];
+                const name = propInfo.id;
+                const content = $('#' + name).val();
+                if (propInfo.type !== 'string')
+                    continue;
+                let errMessage = '';
+                if (propInfo.required && !content) {
+                    errMessage = 'Field is required, it cannot be empty.';
+                } else if (content) {
+                    if (propInfo.minLength && content.length < propInfo.minLength)
+                        errMessage = 'Entry has to be at least ' + propInfo.minLength + ' characters.';
+                    else if (propInfo.maxLength && content.length > propInfo.maxLength)
+                        errMessage = 'Too many characters, maximum ' + propInfo.maxLength + ' allowed.';
+                }
+                if (errMessage)
+                    somethingBad = true;
+                $('#error' + name).text(errMessage);
+            }
+
+            return !somethingBad;
+        }
+
+        function validatePassword() {
             var password = $('#password').val();
             var password2 = $('#password2').val();
 
-            var firstnameError = '';
-            var lastnameError = '';
             var passwordError = '';
             var password2Error = '';
-            if (!firstName)
-                firstnameError = 'Please enter a value for the first name.';
-            if (!lastName)
-                lastnameError = 'Please enter a value for the last name.';
             if (password) {
-                if (password.length < 6 || password.length > 24)
-                    passwordError = 'Please enter a password, more than 5, less than 25 characters long.';
+                var regex = new RegExp('#{passwordRegex}');
+                if (!regex.test(password))
+                    passwordError = '#{passwordRules}';
                 if (password != password2)
                     password2Error = 'Passwords do not match.';
             }
 
             try {
-                $('#errorFirstname').text(firstnameError);
-                $('#errorLastname').text(lastnameError);
                 $('#errorPassword').text(passwordError);
                 $('#errorPassword2').text(password2Error);
             } catch (err) {
-                alert('Validation errored! Check your input values.');
+                //- alert('Validation problem! Check your input values.');
                 return false;
             }
 
             var somethingBad =
-                !!firstnameError
-                || !!lastnameError
-                || !!passwordError
+                !!passwordError
                 || !!password2Error;
 
             return !somethingBad;
+        }
+
+        function validateForm() {
+            var success = validatePassword();
+            if (success)
+                success = validateRegister();
+            return success;
         }
 
         function setAction(thisAction) {
@@ -55,7 +78,7 @@ block scripts
 block content
     .jumbotron.wicked-admin-title
         .container.wicked-title-container
-            h1= userInfo.name
+            h1= registrationInfo.name
 
             p Review and edit user information.
 
@@ -63,25 +86,15 @@ block content
 
         br
         br
-        form(role='form' action='/users/#{userInfo.id}' method='post' onsubmit='return verifyContent()')
+        form(role='form' action='/users/#{userInfo.id}' method='post' onsubmit='return validateForm()')
 
             input(type='hidden' name='__action' id='__action' value='none')
 
             .form-group
-                label(for='firstname') First name:
-                input(id='firstname' name='firstname' value='#{userInfo.firstName}').form-control
-                small
-                    span(id='errorFirstname' style='color:red')
-            .form-group
-                label(for='lastname') Last name:
-                input(id='lastname' name='lastname' value='#{userInfo.lastName}').form-control
-                small
-                    span(id='errorLastname' style='color:red')
-            .form-group
                 label(for='email') Email:
                 input(id='email' name='email' value='#{userInfo.email}' readonly).form-control
                 if (!userInfo.validated)
-                    small Email address has not yet been validated. <a href="/validateemail">Validate email address.</a>
+                    small Email address has not yet been validated. <a href="#{verifyEmailLink}" target="_blank">Validate email address.</a>
                 else
                     small Email address is valid.
             if userInfo.customId
@@ -116,6 +129,19 @@ block content
                                 small
                                     span(id='errorPassword2' style='color:red')
             br
+
+            //- Registration information
+            each propInfo, i in poolInfo.properties
+                .form-group
+                    -var required = propInfo.required ? '<span style="color:red;font-weight:bold">*</span>' : '';
+                    label(for=propInfo.id) #{propInfo.description}!{required}:
+                    -var propValue = registrationInfo.hasOwnProperty(propInfo.id) ? registrationInfo[propInfo.id] : ""
+                    input(id=propInfo.id name=propInfo.id value='#{propValue}').form-control
+                    small
+                        span(id="error#{propInfo.id}" style='color:red')
+
+            br
+
             .panel.panel-default
                 .panel-heading
                     +panelTitle('Applications', null, 'collapse2')
@@ -129,6 +155,9 @@ block content
                                     li
                                         a(href='/applications/#{app.id}')= app.id
 
+            a(href='#{grantsLink}' target='_blank') Review Application Grants <i class="glyphicon glyphicon-new-window"></i>
+
+            br
             br
             if authUser.admin
                 input(type='hidden' name='__updategroups' value='true')

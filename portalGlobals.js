@@ -1,3 +1,3 @@
-var portalGlobals = {};
+const portalGlobals = {};
 
 module.exports = portalGlobals;

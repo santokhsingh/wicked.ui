@@ -1,11 +1,8 @@
 'use strict';
 
-var express = require('express');
-var debug = require('debug')('portal:swagger-ui');
-var router = express.Router();
-//var request = require('request');
-//var utils = require('./utils');
-//var passport = require('passport');
+const express = require('express');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:swagger-ui');
+const router = express.Router();
 
 /* GET home page. */
 router.get('/', function (req, res, next) {

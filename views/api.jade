@@ -43,37 +43,99 @@ block content
                         This API has been deprecated by the API Portal maintainers. This means it can no longer be subscribed to.
                         Existing subscriptions are still valid.
 
-        .panel.panel-default
-            .panel-heading
-                +panelTitle('API Settings', '/help/api')
-            .panel-body
-                label API URL:
-                br
-                input(readonly type='string' value='#{apiUri}' style='font-family: monospace;').form-control
-                if authServers && authServers.length > 0 && apiInfo.auth == 'oauth2' && apiInfo.settings && (apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code || apiInfo.settings.enable_password_grant)
-                    br
-                    if (authServers.length == 1)
-                        label Authorization Server:
+        if authUser || !apiInfo.requiredGroup                  
+            .panel.panel-default
+                .panel-heading
+                    +panelTitle('API Settings', '/help/api')
+                .panel-body
+                    if apiUris.length > 1
+                        label API URLs:
                     else
-                        label Authorization Servers:
-                        p Any of the following Authorization Servers can be used to retrieve an access token for the API.
-                    for authServer in authServers
-                        h5 #{authServer.desc}:
-                        input(readonly type='string' value=authServer.url style='font-family: monospace;').form-control
-                        if authServer.urlDescription
-                            p!= authServer.urlDescription
+                        label API URL:
+                    br
+                    each apiUri, i in apiUris
+                        p
+                            input(readonly type='string' value='#{apiUri}' style='font-family: monospace;').form-control
+                    if apiInfo.authMethods && apiInfo.authMethods.length > 0 && apiInfo.auth == 'oauth2'
+                        br
+                        if (apiInfo.authMethods.length == 1)
+                            label Authentication Method:
+                        else
+                            label Authentication Methods:
+                            p Any of the following Authentication Methods can be used to retrieve an access token for the API.
+
+                        -var onlyClientCredentials = apiInfo.settings && apiInfo.settings.enable_client_credentials && !(apiInfo.settings.enable_password_grant || apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code)
+                        if onlyClientCredentials
+                            p.
+                                <b>Note:</b> This API only supports the <a href="/help/oauth2_client_credentials" target="_blank">Client Credentials</a> flow.
+                                This means that you will log in only using your application's client ID and client secret, without actually authenticating a
+                                user. In effect, any <code>/token</code> end point of the below Authentication Method(s) can be used for that.
+                            br
+                   
+                        for authMethod in apiInfo.authMethods
+                            .panel.panel-success
+                                .panel-heading
+                                    +panelTitle(authMethod.friendlyShort + ' (' + authMethod.name + ')', null, '#auth_' + authMethod.name)
+                                div(id='auth_#{authMethod.name}').collapse.panel-collapse
+                                    .panel-body
+                                        p #{authMethod.friendlyLong}
+                                        if authMethod.config.authorizeEndpoint && !onlyClientCredentials
+                                            input(readonly type='string' value=authMethod.config.authorizeEndpoint style='font-family: monospace;').form-control
+                                            p.small Authorization Endpoint
+                                        if authMethod.config.tokenEndpoint
+                                            input(readonly type='string' value=authMethod.config.tokenEndpoint style='font-family: monospace;').form-control
+                                            p.small Token Endpoint
+                                        if authMethod.config.profileEndpoint && !onlyClientCredentials
+                                            input(readonly type='string' value=authMethod.config.profileEndpoint style='font-family: monospace;').form-control
+                                            p.small Profile Endpoint
+
+                    if apiInfo.hasProtectedAuthMethods
+                        .panel.panel-success
+                            .panel-heading
+                                +panelTitle('Other Auth Methods', null, '#auth_other')
+                            div(id='auth_other').collapse.panel-collapse
+                                .panel-body
+                                    p.
+                                        This API also has other authentication methods. Please contact the API Portal administrator to get additional information
+                                        on the endpoint URLs, in case you need them.
+                    
+                    if apiInfo.auth == "oauth2"
+                        label Authorization Flows (OAuth2):
+
+                        p This API supports the following OAuth2 authorization flows:
+
+                        ul
+                            if apiInfo.settings && apiInfo.settings.enable_client_credentials
+                                li <a href="/help/oauth2_client_credentials" target="_blank">Client Credentials</a>
+                            if apiInfo.settings && apiInfo.settings.enable_password_grant
+                                li <a href="/help/oauth2_password_grant" target="_blank">Resource Owner Password Grant</a>
+                            if apiInfo.settings && apiInfo.settings.enable_authorization_code
+                                li <a href="/help/oauth2_authorization_code" target="_blank">Autorization Code Grant</a> (three legged)
+                            if apiInfo.settings && apiInfo.settings.enable_implicit_grant
+                                li <a href="/help/oauth2_implicit_grant" target="_blank">Implicit Grant</a> (three legged)
+
+                    if apiInfo.auth == "none"
+                        p This API does not require authorization. Review the documentation below for more information.
+                    
+                    if apiInfo.bundle
+                        label API Bundle
+
+                        p.
+                            This API is part of the API Bundle "#{apiInfo.bundle}". Read more on API Bundles on the <a href="/help/bundles">API Bundle help page</a>.
+                            Tokens created for any of the bundled APIs can be reused with <a href="/apis">any other API</a> of the same API bundle.
 
         .panel.panel-default
             .panel-heading
                 +panelTitle('Description', '/help/api', '#apidescription')
-            #apidescription.collapse.panel-collapse
+            #apidescription.collapse.panel-collapse.in
                 .panel-body
                     != apiDesc
-
-                    a(href="/swagger-ui/?url=/apis/#{apiInfo.id}/swagger" role="button").btn.btn-default View Swagger definition &raquo;
-
+                    if apiInfo.auth == "none"
+                        a(href="#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=none&url=#{encodeURIComponent(genericSwaggerUrl)}" role="button" target="_blank").btn.btn-default View Swagger definition &raquo;
+                    else
+                        a(href="#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?url=#{encodeURIComponent(genericSwaggerUrl)}" role="button" target="_blank").btn.btn-default View Swagger definition &raquo;
         
-        if !authUser
+        if !authUser && apiInfo.auth != "none"
             .panel.panel-danger
                 .panel-heading
                     h4.panel-title Not logged in
@@ -84,11 +146,32 @@ block content
                     p                    
                         a(href="/login?redirect=/apis/#{apiInfo.id}").btn.btn-default Log in &raquo;
 
-        else
+        else if apiInfo.auth != "none"
             .panel.panel-default
                 .panel-heading
                     +panelTitle('Applications', '/help/api')
                 .panel-body
+
+                    -var redirectAuth = apiInfo.auth == "oauth2" && apiInfo.settings && (apiInfo.settings.enable_implicit_grant || apiInfo.settings.enable_authorization_code)
+                    -var directAuth = apiInfo.auth == "oauth2" && apiInfo.settings && (apiInfo.settings.enable_client_credentials || apiInfo.settings.enable_password_grant)
+
+                    if redirectAuth && !apiInfo.hasSwaggerApplication
+                        p.
+                            This API supports three legged authorization (using the <a href="/help/oauth2_authorization_code" target="_blank">Authorization Code Grant</a>
+                            or the <a href="/help/oauth2/implicit_grant" target="_blank">Implicit Grant</a>). In order to
+                            test this API using Swagger UI, you will need to register a special application for Swagger UI (with a specific redirect URI to
+                            be called back correctly).
+                        a(href='/applications?register=true&swagger=true').btn.btn-success Swagger UI setup!
+                        br
+                        br
+                    if redirectAuth && directAuth
+                        p.
+                            <b>Please note</b>: This API supports both three legged and two legged authorization; you will be able to test the API using
+                            the direct authorization methods (<a href="/help/oauth2_client_credentials" target="_blank">Client Credentials</a> or 
+                            <a href="/help/oauth2_password_grant" target="_blank">Resource Owner Password Grant</a>, whichever is available on the API), using
+                            any application. If you want to test the <a href="/help/oauth2_authorization_code" target="_blank">Authorization Code Grant</a>
+                            or the <a href="/help/oauth2/implicit_grant" target="_blank">Implicit Grant</a> using the API Portal, this is only possible using the 
+                            special Swagger UI application.
             
                     if applications.length == 0
                         p You do not have any registered applications yet. Please create an application first.
@@ -98,6 +181,7 @@ block content
                                 tr
                                     th Application
                                     th Plan
+                                    th <a href="/help/trusted" target="_blank">Trusted</a>
                                     if apiInfo.auth == "key-auth"
                                         th(colspan=2) API Key (Header <code>#{glob.api.headerName}</code>)
                                     else if apiInfo.auth == "oauth2"
@@ -122,17 +206,22 @@ block content
                                                     i Inaccessible plan
                                             if app.subscriptionApproved
                                                 if apiInfo.auth == "key-auth"
+                                                    td(style='max-width:50px') ---
                                                     td(colspan=2 style='max-width:400px')
                                                         input(readonly type='password' data-toggle='password' value='#{app.apiKey}').form-control
                                                 else if apiInfo.auth == "oauth2"
+                                                    td(style='max-width:50px')= app.subscriptionTrusted ? 'Yes' : '---'
                                                     td(style='max-width:250px')
                                                         input(readonly type='password' data-toggle='password' value='#{app.clientId}').form-control
                                                     td(style='max-width:250px')
                                                         input(readonly type='password' data-toggle='password' value='#{app.clientSecret}').form-control
                                             else
+                                                
+                                                td ---
                                                 td(colspan=2 style='vertical-align:middle;')
                                                     i Subscription approval is pending
                                         else
+                                            td ---
                                             td ---
                                             td(colspan=2 style='vertical-align:middle;')
                                                 i Application currently not subscribed
@@ -154,8 +243,12 @@ block content
                                             td
                                                 if apiInfo.auth == "key-auth"
                                                     a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=#{app.apiKey}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
-                                                else if apiInfo.auth == "oauth2" && apiInfo.settings && apiInfo.settings.enable_client_credentials
-                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}' target='_blank').btn.btn-default Try it!
+                                                else if apiInfo.auth == "oauth2" && app.redirectUri && app.redirectUri.indexOf("swagger-ui/oauth2-redirect.html") > 0
+                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.id}&redirect_uri=#{app.redirectUri}' target='_blank').btn.btn-default Try it!
+                                                else if apiInfo.auth == "oauth2" && directAuth
+                                                    a(href='#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?client_id=#{app.clientId}&client_secret=#{app.clientSecret}&url=#{app.swaggerLink}&application=#{app.id}' target='_blank').btn.btn-default Try it!
+                                                else if apiInfo.auth == "oauth2" && redirectAuth && !apiInfo.hasSwaggerApplication
+                                                    a(href='/applications?register=true&swagger=true').btn.btn-default Swagger UI setup!
                                                 else
                                                     | ---
                                         else

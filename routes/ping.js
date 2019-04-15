@@ -1,11 +1,12 @@
 'use strict';
 
-var express = require('express');
-var debug = require('debug')('portal:ping');
-var router = express.Router();
-var utils = require('./utils');
+const express = require('express');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:ping');
+const wicked = require('wicked-sdk');
+const router = express.Router();
+const utils = require('./utils');
 
-var _startupSeconds = utils.getUtc();
+const _startupSeconds = utils.getUtc();
 router.get('/', function (req, res, next) {
     debug("get('/')");
     if (!req.app.initialized) {
@@ -22,7 +23,7 @@ router.get('/', function (req, res, next) {
     }
 
     // We're initialized, we can access the globals
-    var portalUrl = req.app.portalGlobals.network.schema + '://' + req.app.portalGlobals.network.portalHost;
+    const portalUrl = wicked.getExternalPortalUrl();
     res.json({
         name: 'portal',
         message: 'Up and running',

@@ -1,13 +1,14 @@
 'use strict';
 
-var express = require('express');
-var router = express.Router();
-var async = require('async');
-var debug = require('debug')('portal:admin');
-var tmp = require('tmp');
-var fs = require('fs');
-var util = require('util');
-var utils = require('./utils');
+const express = require('express');
+const router = express.Router();
+const async = require('async');
+const mustache = require('mustache');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:admin');
+const tmp = require('tmp');
+const fs = require('fs');
+const util = require('util');
+const utils = require('./utils');
 
 router.get('/approvals', function (req, res, next) {
     debug('get("/approvals")');
@@ -15,14 +16,12 @@ router.get('/approvals', function (req, res, next) {
         if (err)
             return next(err);
         if (!utils.acceptJson(req)) {
-
-            res.render('admin_approvals',
-                {
-                    authUser: req.user,
-                    glob: req.app.portalGlobals,
-                    title: 'Pending Subscription Approvals',
-                    approvals: apiResponse
-                });
+            res.render('admin_approvals', {
+                authUser: req.user,
+                glob: req.app.portalGlobals,
+                title: 'Pending Subscription Approvals',
+                approvals: JSON.stringify(apiResponse)
+            });
         } else {
             res.json({
                 title: 'Pending Subscription Approvals',
@@ -34,17 +33,33 @@ router.get('/approvals', function (req, res, next) {
 
 router.post('/approvals/approve', function (req, res, next) {
     debug("post('/approvals/approve')");
-    var appId = req.body.app;
-    var apiId = req.body.api;
-    if (!appId || !apiId) {
-        var err = new Error('Bad request. Both App and API need to be specificed.');
+    const appId = req.body.app;
+    const apiId = req.body.api;
+    const approvalId = req.body.id;
+    if (!approvalId || !appId || !apiId) {
+        const err = new Error('Bad request. Approval ID, App and API all need to be specified.');
         err.status = 400;
         return next(err);
     }
 
-    // Hit the API
-    utils.patch(req, '/applications/' + appId + '/subscriptions/' + apiId, { approved: true },
-        function (err, apiResponse, apiBody) {
+    utils.get(req, `/approvals/${approvalId}`, (err, apiRes, apiBody) => {
+        if (err)
+            return next(err);
+        const approvalInfo = utils.getJson(apiBody);
+        debug(approvalInfo);
+
+        if (approvalInfo.application.id !== appId)
+            return next(utils.makeError(400, 'Bad request. Application ID does not match approval request.'));
+        if (approvalInfo.api.id !== apiId)
+            return next(utils.makeError(400, 'Bad request. API does not match approval request.'));
+        const isTrusted = approvalInfo.application.trusted;
+        const patchBody = {
+            approved: true,
+            trusted: isTrusted
+        };
+
+        // Hit the API
+        utils.patch(req, `/applications/${appId}/subscriptions/${apiId}`, patchBody, (err, apiResponse, apiBody) => {
             if (err)
                 return next(err);
             if (200 != apiResponse.statusCode)
@@ -55,14 +70,15 @@ router.post('/approvals/approve', function (req, res, next) {
             else
                 res.json(utils.getJson(apiBody));
         });
+    });
 });
 
 router.post('/approvals/decline', function (req, res, next) {
     debug("post('/approvals/decline')");
-    var appId = req.body.app;
-    var apiId = req.body.api;
+    const appId = req.body.app;
+    const apiId = req.body.api;
     if (!appId || !apiId) {
-        var err = new Error('Bad request. Both App and API need to be specificed.');
+        const err = new Error('Bad request. Both App and API need to be specificed.');
         err.status = 400;
         return next(err);
     }
@@ -86,24 +102,43 @@ function byName(a, b) {
     return a.name < b.name ? -1 : 1;
 }
 
-router.get('/users', function (req, res, next) {
+function mustBeAdminMiddleware(req, res, next) {
+    const loggedInUserId = utils.getLoggedInUserId(req);
+    if (!loggedInUserId)
+        return utils.fail(403, 'You must be logged in to view this page.', next);
+    if (!req.user.admin)
+        return utils.fail(403, 'Only Admins can view this page. If you need access, contact your site administrator.', next);
+
+    return next();
+}
+
+function mustBeAdminOrApproverMiddleware(req, res, next) {
+    const loggedInUserId = utils.getLoggedInUserId(req);
+    if (!loggedInUserId)
+        return utils.fail(403, 'You must be logged in to view this page.', next);
+    if (!req.user.admin && !req.user.approver)
+        return utils.fail(403, 'Only Admins Or Approvers can view this page. If you need access, contact your site administrator.', next);
+
+    return next();
+}
+
+router.get('/users', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/users')");
-    utils.getFromAsync(req, res, '/users', 200, function (err, apiResponse) {
+    if (!utils.acceptJson(req)) {
+        res.render('admin_users',
+            {
+                authUser: req.user,
+                glob: req.app.portalGlobals,
+                title: 'All Users',
+            });
+        return;
+    }
+    const filterFields = ['id', 'name', 'email'];
+    const usersUri = utils.makePagingUri(req, '/registrations/pools/wicked', filterFields);
+    utils.getFromAsync(req, res, usersUri, 200, function (err, apiResponse) {
         if (err)
             return next(err);
-
-        // Sort by name
-        apiResponse.sort(byName);
-
-        if (!utils.acceptJson(req)) {
-            res.render('admin_users',
-                {
-                    authUser: req.user,
-                    glob: req.app.portalGlobals,
-                    title: 'All Users',
-                    users: apiResponse
-                });
-        } else {
+        if (utils.acceptJson(req)) {
             res.json({
                 title: 'All Users',
                 users: apiResponse
@@ -112,57 +147,89 @@ router.get('/users', function (req, res, next) {
     });
 });
 
-router.get('/applications', function (req, res, next) {
-    debug("get('/applications')");
-    // This is not super good; this is expensive. Lots of calls.
-    utils.getFromAsync(req, res, '/applications', 200, function (err, appsResponse) {
+router.get('/subscriptions', mustBeAdminOrApproverMiddleware, function (req, res, next) {
+    debug("get('/subscriptions')");
+    const filterFields = ['application', 'application_name', 'plan', 'api', 'owner', 'user'];
+    const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
+    utils.getFromAsync(req, res, subsUri, 200, function (err, subsResponse) {
         if (err)
             return next(err);
-        var appIds = [];
-        for (var i = 0; i < appsResponse.length; ++i)
-            appIds.push(appsResponse[i].id);
+        if (!utils.acceptJson(req)) {
+            res.render('admin_subscriptions', {
+                authUser: req.user,
+                glob: req.app.portalGlobals,
+                title: 'All Subscriptions',
+            });
+            return;
+        }
+        if (utils.acceptJson(req)) {
+            res.json({
+                title: 'All Subscriptions',
+                subscriptions: subsResponse
+            });
+        }
+    });
+});
 
-        // This is the expensive part:
-        async.map(appIds, function (appId, callback) {
-            utils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
-        }, function (err, appsInfos) {
+router.get('/subscriptions_csv', mustBeAdminOrApproverMiddleware, function (req, res, next) {
+    debug("get('/subscriptions')");
+    utils.getFromAsync(req, res, '/subscriptions?embed=1', 200, function (err, subsResponse) {
+        if (err)
+            return next(err);
+        tmp.file(function (err, path, fd, cleanup) {
             if (err)
                 return next(err);
-            for (var i = 0; i < appsInfos.length; ++i) {
-                var thisApp = appsInfos[i];
-                var mainOwner = null;
-                for (var j = 0; j < thisApp.owners.length; ++i) {
-                    if ("owner" == thisApp.owners[j].role) {
-                        mainOwner = thisApp.owners[j];
-                        break;
-                    }
+            const outStream = fs.createWriteStream(path);
+            outStream.write('Status;Application;Owners;Users;Api;Plan\n');
+            for (let i = 0; i < subsResponse.items.length; ++i) {
+                const item = subsResponse.items[i];
+                let status = (item.approved) ? `Approved` : `Pending`;
+                status = (item.trusted) ? `${status}, (Trusted)` : status;
+                const subscLine = `${status}; ${item.application_name}; ${item.owner}; ${item.user}; ${item.api}; ${item.plan}\n`;
+                debug(subscLine);
+                outStream.write(subscLine);
+            }
+            outStream.end(function (err) {
+                if (err) {
+                    cleanup();
+                    return next(err);
                 }
-                if (mainOwner)
-                    thisApp.mainOwner = mainOwner;
-            }
-
-            // Sort by Application name
-            appsInfos.sort(byName);
-
-            if (!utils.acceptJson(req)) {
-                res.render('admin_applications',
-                    {
-                        authUser: req.user,
-                        glob: req.app.portalGlobals,
-                        title: 'All Applications',
-                        applications: appsInfos
-                    });
-            } else {
-                res.json({
-                    title: 'All Applications',
-                    applications: appsInfos
+                res.download(path, 'subscriptions.csv', function (err) {
+                    cleanup();
+                    if (err) {
+                        return next(err);
+                    }
                 });
-            }
+            });
         });
     });
 });
 
-router.get('/subscribe', function (req, res, next) {
+router.get('/applications', mustBeAdminMiddleware, function (req, res, next) {
+    debug("get('/applications')");
+    if (!utils.acceptJson(req)) {
+        res.render('admin_applications', {
+            authUser: req.user,
+            glob: req.app.portalGlobals,
+            title: 'All Applications',
+        });
+        return;
+    }
+    const filterFields = ['id', 'name', 'ownerEmail'];
+    const appsUri = utils.makePagingUri(req, '/applications?embed=1&', filterFields);
+    utils.getFromAsync(req, res, appsUri, 200, function (err, appsResponse) {
+        if (err)
+            return next(err);
+        if (utils.acceptJson(req)) {
+            res.json({
+                title: 'All Applications',
+                applications: appsResponse
+            });
+        }
+    });
+});
+
+router.get('/subscribe', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/subscribe')");
     async.parallel({
         getApplications: function (callback) {
@@ -175,8 +242,8 @@ router.get('/subscribe', function (req, res, next) {
         if (err)
             return next(err);
 
-        var apps = results.getApplications;
-        var apis = results.getApis;
+        const apps = results.getApplications;
+        const apis = results.getApis;
 
         res.render('admin_subscribe', {
             authUser: req.user,
@@ -188,7 +255,7 @@ router.get('/subscribe', function (req, res, next) {
     });
 });
 
-router.get('/listeners', function (req, res, next) {
+router.get('/listeners', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/listeners')");
     utils.getFromAsync(req, res, '/webhooks/listeners', 200, function (err, appsResponse) {
         if (err)
@@ -209,10 +276,10 @@ router.get('/listeners', function (req, res, next) {
     });
 });
 
-router.get('/listeners/:listenerId', function (req, res, next) {
+router.get('/listeners/:listenerId', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/listeners/:listenerId')");
-    var listenerId = req.params.listenerId;
-    var regex = /^[a-zA-Z0-9\-_]+$/;
+    const listenerId = req.params.listenerId;
+    const regex = /^[a-zA-Z0-9\-_]+$/;
     if (!regex.test(listenerId))
         return req.status(400).jsonp({ message: 'Bad Request.' });
     utils.getFromAsync(req, res, '/webhooks/events/' + listenerId, 200, function (err, appsResponse) {
@@ -234,17 +301,18 @@ router.get('/listeners/:listenerId', function (req, res, next) {
     });
 });
 
-router.get('/verifications', function (req, res, next) {
+router.get('/verifications', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/verifications'");
     utils.getFromAsync(req, res, '/verifications', 200, function (err, verifResponse) {
         if (err)
             return next(err);
+        verifResponse.forEach(v => v.link = mustache.render(v.link, { id: v.id }));
         if (!utils.acceptJson(req)) {
             res.render('admin_verifications', {
                 authUser: req.user,
                 glob: req.app.portalGlobals,
                 title: 'Pending Verifications',
-                verifications: verifResponse
+                verifications: JSON.stringify(verifResponse)
             });
         } else {
             res.json({
@@ -252,6 +320,32 @@ router.get('/verifications', function (req, res, next) {
                 verifications: verifResponse
             });
         }
+    });
+});
+
+router.post('/verifications/:verificationId', mustBeAdminMiddleware, function (req, res, next) {
+    const verificationId = req.params.verificationId;
+    utils.delete(req, `/verifications/${verificationId}`, (err, apiResponse, apiBody) => {
+        if (err) {
+            error(err);
+            return res.json({
+                success: false,
+                message: err.message
+            });
+        }
+        if (apiResponse.statusCode >= 200 && apiResponse.statusCode < 300) {
+            return res.json({
+                success: true,
+                message: 'Successfully deleted verification.'
+            });
+        }
+        warn(`Delete verification: Failed with status code ${apiResponse.statusCode}, API returns:`);
+        warn(apiBody);
+        return res.json({
+            success: false,
+            message: `Unexpected status code ${apiResponse.statusCode}.`,
+            response: apiBody
+        });
     });
 });
 
@@ -263,15 +357,15 @@ function padLeft(n) {
 
 function fixUptimes(healths) {
     debug('fixUptimes()');
-    for (var i = 0; i < healths.length; ++i) {
-        var uptimeSeconds = Number(healths[i].uptime);
+    for (let i = 0; i < healths.length; ++i) {
+        const uptimeSeconds = Number(healths[i].uptime);
         if (uptimeSeconds >= 0) {
-            var days = Math.floor(uptimeSeconds / 86400);
-            var remain = uptimeSeconds - (days * 86400);
-            var hours = Math.floor(remain / 3600);
+            const days = Math.floor(uptimeSeconds / 86400);
+            let remain = uptimeSeconds - (days * 86400);
+            const hours = Math.floor(remain / 3600);
             remain = remain - (hours * 3600);
-            var minutes = Math.floor(remain / 60);
-            var seconds = remain - (minutes * 60);
+            const minutes = Math.floor(remain / 60);
+            const seconds = remain - (minutes * 60);
             if (days > 0)
                 healths[i].uptimeText = util.format('%d days, %d:%s:%s', days, hours, padLeft(minutes), padLeft(seconds));
             else
@@ -282,7 +376,7 @@ function fixUptimes(healths) {
     }
 }
 
-router.get('/health', function (req, res, next) {
+router.get('/health', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/health')");
     utils.getFromAsync(req, res, '/systemhealth', 200, function (err, healthResponse) {
         if (err)
@@ -304,7 +398,7 @@ router.get('/health', function (req, res, next) {
     });
 });
 
-router.get('/apis/:apiId/subscriptions_csv', function (req, res, next) {
+router.get('/apis/:apiId/subscriptions_csv', mustBeAdminMiddleware, function (req, res, next) {
     const apiId = req.params.apiId;
     debug("get('/apis/" + apiId + "/subscriptions_csv')");
     utils.getFromAsync(req, res, '/apis/' + apiId + '/subscriptions', 200, function (err, applicationList) {
@@ -313,7 +407,7 @@ router.get('/apis/:apiId/subscriptions_csv', function (req, res, next) {
         tmp.file(function (err, path, fd, cleanup) {
             if (err)
                 return next(err);
-            async.mapLimit(applicationList, 10, function (appEntry, callback) {
+            async.mapLimit(applicationList.items, 10, function (appEntry, callback) {
                 utils.getFromAsync(req, res, '/applications/' + appEntry.application, 200, callback);
             }, function (err, results) {
                 if (err) {
@@ -329,7 +423,7 @@ router.get('/apis/:apiId/subscriptions_csv', function (req, res, next) {
                         const ownerLine = apiId + ';' +
                             thisApp.id + ';' +
                             thisApp.name + ';' +
-                            applicationList[i].plan + ';' +
+                            applicationList.items[i].plan + ';' +
                             thisOwner.userId + ';' +
                             thisOwner.email + ';' +
                             thisOwner.role + '\n';
@@ -354,7 +448,7 @@ router.get('/apis/:apiId/subscriptions_csv', function (req, res, next) {
     });
 });
 
-router.post('/apis/:apiId/delete_subscriptions', function (req, res, next) {
+router.post('/apis/:apiId/delete_subscriptions', mustBeAdminMiddleware, function (req, res, next) {
     // This thing could use CSRF
     const apiId = req.params.apiId;
     debug("post('/apis/" + apiId + "/delete_subscriptions')");
@@ -362,13 +456,27 @@ router.post('/apis/:apiId/delete_subscriptions', function (req, res, next) {
         if (err) {
             return next(err);
         }
-        async.eachSeries(applicationList, function (appEntry, callback) {
+        async.eachSeries(applicationList.items, function (appEntry, callback) {
             utils.delete(req, '/applications/' + appEntry.application + '/subscriptions/' + apiId, callback);
         }, function (err, results) {
             if (err)
                 return next(err);
             res.redirect('/apis/' + apiId);
         });
+    });
+});
+
+router.post('/restart', mustBeAdminMiddleware, function (req, res, next) {
+    debug('/admin/restart');
+    utils.post(req, '/kill', null, function (err, apiRes, apiBody) {
+        if (err)
+            return next(err);
+        if (204 !== apiRes.statusCode)
+            return utils.fail(apiRes.statusCode, `The restart request returned an unexpected status code ${apiRes.statusCode}.`, next);
+        res.render('admin_restart');
+        setTimeout(() => {
+            process.exit(0);
+        }, 1000);
     });
 });
 

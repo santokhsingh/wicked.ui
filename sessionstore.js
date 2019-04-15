@@ -1,17 +1,19 @@
-var debug = require('debug')('portal:sessionstore');
+'use strict';
+
+const { debug, info, warn, error } = require('portal-env').Logger('portal:sessionstore');
 
 function initSessionStore(globals, session){
     let sessionStoreType = 'file';
     if (globals.sessionStore && globals.sessionStore.type) {
         sessionStoreType = globals.sessionStore.type;
     }  else {
-        console.error('WARNING: Missing sessionStore global property, defaulting to file session store - THIS WILL NOT SCALE.');
+        warn('WARNING: Missing sessionStore global property, defaulting to file session store - THIS WILL NOT SCALE.');
         globals.sessionStore = { type: 'file' };
     }
     debug('SESSION_STORE_TYPE: ' + sessionStoreType);
 
-    var sessionStoreOptions = {};
-    var SessionStore;
+    const sessionStoreOptions = {};
+    let SessionStore;
     switch (sessionStoreType){
         case 'file':
             SessionStore = require('session-file-store')(session);

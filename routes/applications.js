@@ -1,15 +1,16 @@
 'use strict';
 
-var express = require('express');
-var router = express.Router();
-var async = require('async');
-var debug = require('debug')('portal:applications');
-var utils = require('./utils');
+const express = require('express');
+const router = express.Router();
+const async = require('async');
+const { debug, info, warn, error } = require('portal-env').Logger('portal:applications');
+const utils = require('./utils');
+const wicked = require('wicked-sdk');
 
 router.get('/:appId', function (req, res, next) {
     debug("get('/:appId')");
-    var appId = req.params.appId;
-    //var registerOpen = req.query.register;
+    const appId = req.params.appId;
+    //const registerOpen = req.query.register;
     async.parallel({
         getApplication: function (callback) {
             utils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
@@ -23,9 +24,9 @@ router.get('/:appId', function (req, res, next) {
     }, function (err, results) {
         if (err)
             return next(err);
-        var application = results.getApplication;
-        var roles = results.getRoles;
-        var appSubs = results.getSubscriptions;
+        const application = results.getApplication;
+        const roles = results.getRoles;
+        const appSubs = results.getSubscriptions;
 
         debug(appSubs);
 
@@ -50,9 +51,66 @@ router.get('/:appId', function (req, res, next) {
     });
 });
 
+router.get('/:appId/subscriptions/:apiId', function (req, res, next) {
+    const appId = req.params.appId;
+    const apiId = req.params.apiId;
+    debug(`GET /${appId}/subscriptions/${apiId}`);
+
+    async.parallel({
+        appInfo: callback => utils.getFromAsync(req, res, `/applications/${appId}`, 200, callback),
+        apiInfo: callback => utils.getFromAsync(req, res, `/apis/${apiId}`, 200, callback),
+        subsInfo: callback => utils.getFromAsync(req, res, `/applications/${appId}/subscriptions/${apiId}`, 200, callback)
+    }, function (err, data) {
+        if (err)
+            return next(err);
+
+        debug('data.appInfo:');
+        debug(JSON.stringify(data.appInfo));
+        debug('data.apiInfo:');
+        debug(JSON.stringify(data.apiInfo));
+        debug('data.subsInfo:');
+        debug(JSON.stringify(data.subsInfo));
+
+        if (!utils.acceptJson(req)) {
+            res.render('allowed_scopes', {
+                authUser: req.user,
+                application: data.appInfo,
+                api: data.apiInfo,
+                subscription: data.subsInfo,
+                glob: req.app.portalGlobals,
+                readOnly: !req.user.admin
+            });
+        } else {
+            res.json({
+            });
+        }
+    });
+});
+
+router.post('/:appId/subscriptions/:apiId', function (req, res, next) {
+    const appId = req.params.appId;
+    const apiId = req.params.apiId;
+    debug(`POST /${appId}/subscriptions/${apiId}`);
+
+    debug(req.body);
+    const allowedScopesMode = req.body.scope_mode;
+    let allowedScopes = req.body.scope;
+    if (!Array.isArray(allowedScopes))
+        allowedScopes = [allowedScopes];
+
+    utils.patch(req, `/applications/${appId}/subscriptions/${apiId}`, {
+        allowedScopesMode,
+        allowedScopes
+    }, function (err, apiRes, apiBody) {
+        if (err)
+            return next(err);
+        res.redirect(`/applications/${appId}/subscriptions/${apiId}`);
+    });
+});
+
 router.get('/', function (req, res, next) {
     debug("get('/')");
-    var loggedInUserId = utils.getLoggedInUserId(req);
+    const loggedInUserId = utils.getLoggedInUserId(req);
     if (!loggedInUserId) {
         // Not logged in
         if (!utils.acceptJson(req)) {
@@ -76,8 +134,8 @@ router.get('/', function (req, res, next) {
     utils.getFromAsync(req, res, '/users/' + utils.getLoggedInUserId(req), 200, function (err, userInfo) {
         if (err)
             return next(err);
-        var appIds = [];
-        for (var i = 0; i < userInfo.applications.length; ++i)
+        const appIds = [];
+        for (let i = 0; i < userInfo.applications.length; ++i)
             appIds.push(userInfo.applications[i].id);
         async.map(appIds, function (appId, callback) {
             utils.getFromAsync(req, res, '/applications/' + appId, 200, callback);
@@ -86,20 +144,24 @@ router.get('/', function (req, res, next) {
                 return next(err);
 
             debug(req.user);
-            for (var i = 0; i < appInfos.length; ++i)
+            for (let i = 0; i < appInfos.length; ++i)
                 appInfos[i].userRole = findUserRole(appInfos[i], userInfo);
 
-            var showRegister = '';
+            let showRegister = '';
             if (req.query.register || userInfo.applications.length === 0)
                 showRegister = 'in';
+
+            let showSwagger = (req.query.swagger) ? 'in' : '';
 
             if (!utils.acceptJson(req)) {
                 res.render('applications', {
                     authUser: req.user,
                     glob: req.app.portalGlobals,
                     route: '/applications',
-                    applications: appInfos,
-                    showRegister: showRegister
+                    count: appInfos.length,
+                    applications: JSON.stringify(appInfos),
+                    showRegister: showRegister,
+                    showSwagger: showSwagger
                 });
             } else {
                 res.json({
@@ -112,12 +174,12 @@ router.get('/', function (req, res, next) {
 });
 
 function findUserRole(appInfo, userInfo) {
-    var userEmail = userInfo.email;
-    for (var i = 0; i < appInfo.owners.length; ++i) {
+    const userEmail = userInfo.email;
+    for (let i = 0; i < appInfo.owners.length; ++i) {
         if (userEmail == appInfo.owners[i].email)
             return appInfo.owners[i].role;
     }
-    console.error('findUserRole() - Could not find user role, data inconsistent: ' + userEmail + ', appId: ' + appInfo.id);
+    warn('findUserRole() - Could not find user role, data inconsistent: ' + userEmail + ', appId: ' + appInfo.id);
     return '(undefined)';
 }
 
@@ -127,12 +189,48 @@ function findUserRole(appInfo, userInfo) {
 
 // Registering new applications
 
+const applicationRegex = /^[a-z0-9\-_]+$/;
+const isValidApplicationId = (appId) => {
+    if (!applicationRegex.test(appId))
+        return false;
+    if (appId.length < 4 || appId.length > 50)
+        return false;
+    return true;
+};
+
+router.post('/check-app', function (req, res, next) {
+    const loggedInUserId = utils.getLoggedInUserId(req);
+    if (!loggedInUserId)
+        return res.status(403).json({ message: 'You must be logged in to check for applications IDs.' });
+    const appId = req.body.app_id;
+    // Don't answer this too fast, so that we don't open up for calling 
+    // this too often to find valid/already registered application IDs.
+    setTimeout(() => {
+        if (!isValidApplicationId(appId))
+            return res.json({ valid: false, app_id: appId, message: 'Application ID is not valid; it must only contain lower case characters, 0-9, - and _, and be between 4 and 50 characters long.' });
+        // Note the usage of the Wicked API here; it will use the "backdoor" to the portal API,
+        // using the portal's machine user ID. Usually, the logged in user cannot get other user's
+        // applications.
+        wicked.apiGet(`/applications/${appId}`, (err, appInfo) => {
+            if (err && (err.status === 404 || err.statusCode === 404))
+                return res.json({ valid: true, app_id: appId, message: 'Valid application ID' });
+            return res.json({ valid: false, app_id: appId, message: 'Application ID is already present. Please choose a different ID.' });
+        });
+    }, 200);
+});
+
 router.post('/register', function (req, res, next) {
     debug("post('/register')");
     const appId = req.body.appid;
     const appName = req.body.appname;
+    const appDesc = req.body.appdesc;
     const hasRedirectUri = req.body.hasredirecturi;
-    const redirectUri = req.body.redirecturi;
+    let redirectUris = req.body.redirecturi;
+    if (!Array.isArray(redirectUris)) {
+        redirectUris = [redirectUris];
+    }
+
+    const clientType = req.body.clienttype;
 
     if (!appId ||
         !appName) {
@@ -141,12 +239,16 @@ router.post('/register', function (req, res, next) {
         return next(err);
     }
 
-    var newApp = {
+    const newApp = {
         id: appId,
-        name: appName
+        name: appName,
+        clientType: clientType
     };
+
+    if (appDesc)
+        newApp.description = appDesc;
     if (hasRedirectUri)
-        newApp.redirectUri = redirectUri;
+        newApp.redirectUris = redirectUris;
 
     utils.post(req, '/applications', newApp,
         function (err, apiResponse, apiBody) {
@@ -166,7 +268,7 @@ router.post('/register', function (req, res, next) {
 
 router.post('/:appId/unregister', function (req, res, next) {
     debug("post('/:appId/unregister')");
-    var appId = req.params.appId;
+    const appId = req.params.appId;
 
     utils.delete(req, '/applications/' + appId,
         function (err, apiResponse, apiBody) {
@@ -186,9 +288,9 @@ router.post('/:appId/unregister', function (req, res, next) {
 
 router.post('/:appId/owners/add', function (req, res, next) {
     debug("post('/:appId/owners/add')");
-    var appId = req.params.appId;
-    var ownerEmail = req.body.owneremail;
-    var ownerRole = req.body.ownerrole;
+    const appId = req.params.appId;
+    const ownerEmail = req.body.owneremail;
+    const ownerRole = req.body.ownerrole;
     // Pre-sanitize input
     if (!ownerEmail || !ownerRole) {
         let err = new Error('Both email and role must be provided.');
@@ -221,8 +323,8 @@ router.post('/:appId/owners/add', function (req, res, next) {
 
 router.post('/:appId/owners/delete', function (req, res, next) {
     debug("post('/:appId/owners/delete')");
-    var appId = req.params.appId;
-    var userEmail = req.body.owneremail;
+    const appId = req.params.appId;
+    const userEmail = req.body.owneremail;
     if (!userEmail) {
         let err = new Error('Bad request. To delete an owner, the email address must be provided.');
         err.status = 400;
@@ -252,12 +354,17 @@ router.post('/:appId/owners/delete', function (req, res, next) {
 
 router.post('/:appId/patch', function (req, res, next) {
     debug("post('/:appId/patch')");
-    var appId = req.params.appId;
-    var appName = req.body.appname;
-    var redirectUri = req.body.redirecturi;
+    const appId = req.params.appId;
+    const appName = req.body.appname;
+    const appDesc = req.body.appdesc;
+    let redirectUris = req.body.redirecturi;
+    if (!Array.isArray(redirectUris)) {
+        redirectUris = [redirectUris];
+    }
+    const clientType = req.body.clienttype;
 
     if (!appName) {
-        var err = new Error('Application name cannot be empty.');
+        const err = new Error('Application name cannot be empty.');
         err.status = 400;
         return next(err);
     }
@@ -265,13 +372,15 @@ router.post('/:appId/patch', function (req, res, next) {
     const appData = {
         id: appId,
         name: appName,
-        redirectUri: redirectUri
+        description: appDesc,
+        redirectUris: redirectUris,
+        clientType: clientType
     };
 
     utils.patch(req, '/applications/' + appId, appData, function (err, apiResponse, apiBody) {
         if (err)
             return next(err);
-        if (200 != apiResponse.statusCode)
+        if (200 !== apiResponse.statusCode)
             return utils.handleError(res, apiResponse, apiBody, next);
         // Yay!
         if (!utils.acceptJson(req))
@@ -285,8 +394,8 @@ router.post('/:appId/patch', function (req, res, next) {
 
 router.get('/:appId/subscribe/:apiId', function (req, res, next) {
     debug("get('/:appId/subscribe/:apiId')");
-    var appId = req.params.appId;
-    var apiId = req.params.apiId;
+    const appId = req.params.appId;
+    const apiId = req.params.apiId;
 
     async.parallel({
         getApplication: function (callback) {
@@ -302,13 +411,15 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
         if (err)
             return next(err);
 
-        var application = results.getApplication;
-        var apiInfo = results.getApi;
-        var apiPlans = results.getPlans;
+        const application = results.getApplication;
+        const apiInfo = results.getApi;
+        const apiPlans = utils.clone(results.getPlans);
+        for (let i = 0; i < apiPlans.length; ++i)
+            delete apiPlans[i].config;
 
-        var allowSubscribe = true;
-        var subscribeError = null;
-        var subscribeWarning = null;
+        let allowSubscribe = true;
+        let subscribeError = null;
+        let subscribeWarning = null;
         if (apiInfo.auth === 'oauth2' &&
             !application.redirectUri &&
             apiInfo.settings &&
@@ -318,14 +429,19 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
             subscribeError = 'You cannot subscribe to an OAuth 2.0 Implicit Grant/Authorization Code Grant API with an application which does not have a valid Redirect URI. Please specify a Redirect URI on the Application page';
         }
 
-        if (((apiInfo.auth === 'oauth2' && 
-              apiInfo.settings && 
-              apiInfo.settings.enable_client_credentials && 
-              !apiInfo.settings.enable_authorization_code && 
-              !apiInfo.settings.enable_implicit_grant) ||
-             apiInfo.auth === 'key-auth') &&
+        if (((apiInfo.auth === 'oauth2' &&
+            apiInfo.settings &&
+            apiInfo.settings.enable_client_credentials &&
+            !apiInfo.settings.enable_authorization_code &&
+            !apiInfo.settings.enable_implicit_grant) ||
+            apiInfo.auth === 'key-auth') &&
             application.redirectUri) {
             subscribeWarning = 'You are about to subscribe to an API which is intended only for machine to machine communication with an application with a registered Redirect URI. Please note that API Keys and/or Client Credentials (such as the Client Secret) must NEVER be deployed to a public client, such as a JavaScript SPA or Mobile Application.';
+        }
+
+        if (apiPlans.length <= 0) {
+            if (application._links && application._links.addSubscription)
+                delete application._links.addSubscription;
         }
 
         if (!utils.acceptJson(req)) {
@@ -353,38 +469,40 @@ router.get('/:appId/subscribe/:apiId', function (req, res, next) {
 });
 
 router.post('/:appId/subscribe/:apiId', function (req, res, next) {
-    debug("post('/:appId/subscribe/:apiId')");
-    var appId = req.params.appId;
-    var apiId = req.params.apiId;
-    var apiPlan = req.body.plan;
+    const appId = req.params.appId;
+    const apiId = req.params.apiId;
+    debug(`post('/${appId}/subscribe/${apiId})`);
+    const apiPlan = req.body.plan;
+    const trusted = utils.getChecked(req, 'trusted');
+    debug(`apiPlan: ${apiPlan}, trusted: ${trusted}`);
 
     if (!apiPlan) {
-        var err = new Error('Bad request. Plan was not specified.');
+        const err = new Error('Bad request. Plan was not specified.');
         err.status = 400;
         return next(err);
     }
 
-    utils.post(req, '/applications/' + appId + '/subscriptions',
-        {
-            application: appId,
-            api: apiId,
-            plan: apiPlan
-        }, function (err, apiResponse, apiBody) {
-            if (err)
-                return next(err);
-            if (201 != apiResponse.statusCode)
-                return utils.handleError(res, apiResponse, apiBody, next);
-            if (!utils.acceptJson(req))
-                res.redirect('/apis/' + apiId);
-            else
-                res.status(201).json(utils.getJson(apiBody));
-        });
+    utils.post(req, `/applications/${appId}/subscriptions`, {
+        application: appId,
+        api: apiId,
+        plan: apiPlan,
+        trusted: trusted
+    }, function (err, apiResponse, apiBody) {
+        if (err)
+            return next(err);
+        if (201 != apiResponse.statusCode)
+            return utils.handleError(res, apiResponse, apiBody, next);
+        if (!utils.acceptJson(req))
+            res.redirect('/apis/' + apiId);
+        else
+            res.status(201).json(utils.getJson(apiBody));
+    });
 });
 
 router.post('/:appId/unsubscribe/:apiId', function (req, res, next) {
     debug("post('/:appId/unsubscribe/:apiId')");
-    var appId = req.params.appId;
-    var apiId = req.params.apiId;
+    const appId = req.params.appId;
+    const apiId = req.params.apiId;
 
     utils.delete(req, '/applications/' + appId + '/subscriptions/' + apiId,
         function (err, apiResponse, apiBody) {

@@ -4,4 +4,4 @@ node_modules
 Dockerfile*
 sessions
 git_*
-
+*.tgz
