@@ -1,6 +1,7 @@
 'use strict';
 
-/* global app */
+/* global app, __dirname */
+
 const express = require('express');
 const { debug, info, warn, error } = require('portal-env').Logger('portal:app');
 const path = require('path');
@@ -22,8 +23,6 @@ const utils = require('./routes/utils');
 const portalGlobals = require('./portalGlobals');
 const wicked = require('wicked-sdk');
 const correlationIdHandler = wicked.correlationIdHandler();
-
-const clarivate = require('./routes/clarivate');
 
 const fs = require('fs');
 const session = require('express-session');
@@ -147,14 +146,9 @@ app.initialize = function (done) {
             if (portalGlobals.glob.network.forceRedirectToHttps === true)
                 return res.redirect(301, 'https://' + req.headers.host + req.url);
             else
-                return next(new Error('You are running in "production" (NODE_ENV) mode, but not on https. This is not supported.'));
+                return next(new Error(`Configuration error: The environment configuration (API NODE_ENV "${portalGlobals.glob.environment}") is configured to run on https, but this is not the case. If you intend to work in development mode, make sure that network.schema equals "http" in globals.json for this environment. Otherwise make sure that this page is served via https. You can also use the network.forceRedirectToHttps option for this (in globals.json).`));
         next();
     });
-
-    if (app.get('env') === 'production' &&
-        portalGlobals.glob.network.schema !== 'https') {
-        throw new Error('You are running in "production" mode (NODE_ENV), but not using https. This is not supported (Cookies cannot be transported).');
-    }
 
     app.use(function (req, res, next) {
         const hostHeader = req.get('Host');
@@ -180,14 +174,13 @@ app.initialize = function (done) {
     app.use('/swagger-ui', swaggerUi);
     app.use('/swagger-ui', express.static(path.join(__dirname, 'node_modules/swagger-ui-dist')));
 
-    app.use('/clarivate', clarivate);
-
     app.use('/help', help);
     app.use('/kill', kill);
 
     // Late loading as it requires things from portalGlobals!
     const login = require('./routes/login');
     app.use('/login', login);
+    app.use('/signup', function (req, res, next) { res.redirect('/login'); });
 
     // catch 404 and forward to error handler
     app.use(function (req, res, next) {

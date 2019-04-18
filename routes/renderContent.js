@@ -12,7 +12,8 @@ const renderer = function () { };
 marked.setOptions({
     highlight: function (code) {
         return highlightJs.highlightAuto(code).value;
-    }
+    },
+    sanitize: true
 });
 
 renderer.renderContent = function (req, res, subRoute, layout, apiResponse, body) {

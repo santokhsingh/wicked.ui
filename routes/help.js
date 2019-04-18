@@ -13,11 +13,13 @@ const HELP_IDS = {
     'application': 'Application Page',
     'application-ownership': 'Application Ownership',
     'trusted': 'Application/Subscription Trust',
+    'client_types': 'Application/Client Types',
     'oauth2_client_credentials': 'OAuth2: Client Credentials',
     'oauth2_authorization_code': 'OAuth2: Authorization Code',
     'oauth2_implicit_grant': 'OAuth2: Implicit Grant',
     'oauth2_password_grant': 'OAuth2: Password Grant',
-    'bundles': 'API Bundles'
+    'bundles': 'API Bundles',
+    'allowed_scopes': 'OAuth2: Allowed Scopes'
 };
 
 router.get('/', function (req, res, next) {

@@ -51,6 +51,63 @@ router.get('/:appId', function (req, res, next) {
     });
 });
 
+router.get('/:appId/subscriptions/:apiId', function (req, res, next) {
+    const appId = req.params.appId;
+    const apiId = req.params.apiId;
+    debug(`GET /${appId}/subscriptions/${apiId}`);
+
+    async.parallel({
+        appInfo: callback => utils.getFromAsync(req, res, `/applications/${appId}`, 200, callback),
+        apiInfo: callback => utils.getFromAsync(req, res, `/apis/${apiId}`, 200, callback),
+        subsInfo: callback => utils.getFromAsync(req, res, `/applications/${appId}/subscriptions/${apiId}`, 200, callback)
+    }, function (err, data) {
+        if (err)
+            return next(err);
+
+        debug('data.appInfo:');
+        debug(JSON.stringify(data.appInfo));
+        debug('data.apiInfo:');
+        debug(JSON.stringify(data.apiInfo));
+        debug('data.subsInfo:');
+        debug(JSON.stringify(data.subsInfo));
+
+        if (!utils.acceptJson(req)) {
+            res.render('allowed_scopes', {
+                authUser: req.user,
+                application: data.appInfo,
+                api: data.apiInfo,
+                subscription: data.subsInfo,
+                glob: req.app.portalGlobals,
+                readOnly: !req.user.admin
+            });
+        } else {
+            res.json({
+            });
+        }
+    });
+});
+
+router.post('/:appId/subscriptions/:apiId', function (req, res, next) {
+    const appId = req.params.appId;
+    const apiId = req.params.apiId;
+    debug(`POST /${appId}/subscriptions/${apiId}`);
+
+    debug(req.body);
+    const allowedScopesMode = req.body.scope_mode;
+    let allowedScopes = req.body.scope;
+    if (!Array.isArray(allowedScopes))
+        allowedScopes = [allowedScopes];
+
+    utils.patch(req, `/applications/${appId}/subscriptions/${apiId}`, {
+        allowedScopesMode,
+        allowedScopes
+    }, function (err, apiRes, apiBody) {
+        if (err)
+            return next(err);
+        res.redirect(`/applications/${appId}/subscriptions/${apiId}`);
+    });
+});
+
 router.get('/', function (req, res, next) {
     debug("get('/')");
     const loggedInUserId = utils.getLoggedInUserId(req);
@@ -93,9 +150,9 @@ router.get('/', function (req, res, next) {
             let showRegister = '';
             if (req.query.register || userInfo.applications.length === 0)
                 showRegister = 'in';
-            
-            let showSwagger = (req.query.swagger) ? 'in': '';
-           
+
+            let showSwagger = (req.query.swagger) ? 'in' : '';
+
             if (!utils.acceptJson(req)) {
                 res.render('applications', {
                     authUser: req.user,
@@ -104,7 +161,7 @@ router.get('/', function (req, res, next) {
                     count: appInfos.length,
                     applications: JSON.stringify(appInfos),
                     showRegister: showRegister,
-                    showSwagger: showSwagger           
+                    showSwagger: showSwagger
                 });
             } else {
                 res.json({
@@ -168,8 +225,12 @@ router.post('/register', function (req, res, next) {
     const appName = req.body.appname;
     const appDesc = req.body.appdesc;
     const hasRedirectUri = req.body.hasredirecturi;
-    const redirectUri = req.body.redirecturi;
-    const confidential = utils.getChecked(req, 'confidential');
+    let redirectUris = req.body.redirecturi;
+    if (!Array.isArray(redirectUris)) {
+        redirectUris = [redirectUris];
+    }
+
+    const clientType = req.body.clienttype;
 
     if (!appId ||
         !appName) {
@@ -181,13 +242,13 @@ router.post('/register', function (req, res, next) {
     const newApp = {
         id: appId,
         name: appName,
-        confidential: confidential
+        clientType: clientType
     };
 
     if (appDesc)
         newApp.description = appDesc;
     if (hasRedirectUri)
-        newApp.redirectUri = redirectUri;
+        newApp.redirectUris = redirectUris;
 
     utils.post(req, '/applications', newApp,
         function (err, apiResponse, apiBody) {
@@ -296,8 +357,11 @@ router.post('/:appId/patch', function (req, res, next) {
     const appId = req.params.appId;
     const appName = req.body.appname;
     const appDesc = req.body.appdesc;
-    const redirectUri = req.body.redirecturi;
-    const confidential = utils.getChecked(req, 'confidential');
+    let redirectUris = req.body.redirecturi;
+    if (!Array.isArray(redirectUris)) {
+        redirectUris = [redirectUris];
+    }
+    const clientType = req.body.clienttype;
 
     if (!appName) {
         const err = new Error('Application name cannot be empty.');
@@ -309,14 +373,14 @@ router.post('/:appId/patch', function (req, res, next) {
         id: appId,
         name: appName,
         description: appDesc,
-        redirectUri: redirectUri,
-        confidential: confidential
+        redirectUris: redirectUris,
+        clientType: clientType
     };
 
     utils.patch(req, '/applications/' + appId, appData, function (err, apiResponse, apiBody) {
         if (err)
             return next(err);
-        if (200 != apiResponse.statusCode)
+        if (200 !== apiResponse.statusCode)
             return utils.handleError(res, apiResponse, apiBody, next);
         // Yay!
         if (!utils.acceptJson(req))

@@ -55,23 +55,24 @@ block bodyScripts
                 });
             }
         }
+
          $(document).ready(function(){
-            var showSwagger =  '#{showSwagger}';
-            if(showSwagger){
-                $('#appid').val('swagger-ui-'+Math.random().toString(36).substr(2, 9));
+            var showSwagger = '#{showSwagger}';
+            if (showSwagger) {
+                $('#appid').val('swagger-ui-' + Math.random().toString(36).substr(2, 9));
                 $('#appname').val('Swagger UI app');
-                $('#hasredirecturi').prop('checked',true);
-                $('#confidential').prop('checked',true);
+                $('#hasredirecturi').prop('checked', true);
+                $('#clienttype').val('confidential');
                 $('#redirecturi').val('#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/oauth2-redirect.html')
                                  .prop('readonly', true);
                 $('#desc').val('The Swagger UI app enables you to test out Oauth2 authenticated APIs that require the use of redirects, via Swagger. With the exception of the Redirect URI field, you may edit all application fields, including this description.');
             }
             $('#desc').on('change keyup paste', function() {
                 var text = $('#desc').val();
-                $('#markdown').html(marked(text));
+                $('#markdown').html(marked(text, { sanitize: true }));
             });
             // First time
-            $('#markdown').html(marked($('#desc').val()));      
+            $('#markdown').html(marked($('#desc').val(), { sanitize: true }));      
       
             $('#applicationsGrid').jsGrid({
                 width: "100%", pageSize: 10, sorting: true, paging: true, filtering: true, autoload: true,
@@ -155,6 +156,13 @@ block content
                                     textarea(name='appdesc' id='desc' style='height:100px').form-control= appdesc
                                     small The Application Description field can be used to provide additional details about your application use case, including any relevant URLs. If you are subscribing to an API that requires approvals, completing this field will aid in processing time
                                     div(id='markdown')
+                                .form-group
+                                    label(for='clienttype') Client Type:
+                                    select(name='clienttype' id='clienttype').form-control
+                                        option(value='public_spa') Public: Single Page Application (browser based app)
+                                        option(value='public_native') Public: Native/Mobile Application (Android/iOS app)
+                                        option(value='confidential') Confidential: Server side application, can keep secrets confidential
+                                    small See the <a href="/help/client_types" target="_blank">help page on client types</a> for more information.
                                 .checkbox
                                     label
                                         input(type='checkbox' id='hasredirecturi' name='hasredirecturi' data-toggle='collapse' data-target='#redirecturipanel')
@@ -162,17 +170,15 @@ block content
                                         | &nbsp;(other than the Client Credentials flow, i.e. using redirects)
 
                                 div(id='redirecturipanel' class='panel-collapse collapse #{showSwagger}')
-                                    .checkbox
-                                        label
-                                            input(type='checkbox' id='confidential' name='confidential')
-                                            strong This application is able to store a client secret confidentially (server side).
                                             
                                     .form-group
                                         label(for='redirecturi') Redirect URI:
                                         input(type='string' id='redirecturi' name='redirecturi' value='https://').form-control
                                         small.
-                                            The callback under which your web application can be called back, passing the access token in the fragment.
+                                            The callback under which your web application can be called back, either with a token (<a href="/help/oauth2_implicit_grant" target="_blank">Implicit Grant</a>),
+                                            or with an authorization code (<a href="/help/oauth2_authorization_code" target="_blank">Authorization Code Grant</a>).
                                             Check the documentation for a <a href="https://github.com/Haufe-Lexware/wicked.haufe.io/blob/master/doc/valid-redirect-uris.md" target="_blank">list of valid redirect URIs</a>.
+                                            In case you need multiple redirect URIs, first create the application, then add more redirect URIs on the application's page.
                                         small 
                                             span(id='errorRedirect' style='color:red')
                             // Note that this button is _outside_ of the form, and calls submit() over jQuery

@@ -6,9 +6,9 @@ const router = express.Router();
 const { debug, info, warn, error } = require('portal-env').Logger('portal:apis');
 const utils = require('./utils');
 const marked = require('marked');
+const markedOptions = utils.markedOptions;
 const async = require('async');
 const cors = require('cors');
-const mustache = require('mustache');
 const wicked = require('wicked-sdk');
 
 router.get('/', function (req, res, next) {
@@ -30,7 +30,7 @@ router.get('/', function (req, res, next) {
         const apiTags = [];
         for (let i = 0; i < apiList.length; ++i) {
             if (apiList[i].desc)
-                apiList[i].desc = marked(apiList[i].desc);
+                apiList[i].desc = marked(apiList[i].desc, markedOptions);
             if (apiList[i].tags && apiList[i].tags.length > 0) {
                 for (let j = 0; j < apiList[i].tags.length; ++j) {
                     apiTags.push(apiList[i].tags[j]);
@@ -58,7 +58,7 @@ router.get('/', function (req, res, next) {
                     glob: req.app.portalGlobals,
                     route: '/apis',
                     title: 'APIs',
-                    desc: marked(desc),
+                    desc: marked(desc, markedOptions),
                     apilist: apiList,
                     apiTags: unique(apiTags)
                 });
@@ -79,6 +79,18 @@ function unique(arr) {
     return a;
 }
 
+function deduceHostAndSchema(req, apiConfig) {
+    const nw = req.app.portalGlobals.network;
+    const host = (apiConfig.api.host) ?  apiConfig.api.host : nw.apiHost;
+    const ssl = (nw.schema == 'https') ? true : false;
+    let schema = nw.schema;
+    switch (apiConfig.api.protocol) {
+        case 'ws:':
+        case 'wss:':
+            schema = (ssl) ? 'wss' : 'ws';
+    }
+    return `${schema}://${host}`;
+}
 
 router.get('/:api', function (req, res, next) {
     debug("get('/:api')");
@@ -131,7 +143,7 @@ router.get('/:api', function (req, res, next) {
             return next(err);
         const apiInfo = results.getApi;
         if (apiInfo.desc)
-            apiInfo.desc = marked(apiInfo.desc);
+            apiInfo.desc = marked(apiInfo.desc, markedOptions);
         let apiDesc = results.getApiDesc;
         if (!apiDesc)
             apiDesc = '';
@@ -148,10 +160,10 @@ router.get('/:api', function (req, res, next) {
         // necessary configuration option for any API gateway.
         // console.log(JSON.stringify(apiConfig));
         const apiUris = [];
-        const nw = req.app.portalGlobals.network;
+        const host = deduceHostAndSchema(req, apiConfig);
         for (let u = 0; u < apiConfig.api.uris.length; ++u) {
             const apiRequestUri = apiConfig.api.uris[u];
-            apiUris.push(nw.schema + '://' + nw.apiHost + apiRequestUri);
+            apiUris.push(`${host}${apiRequestUri}`);
         }
 
         const plans = results.getPlans;
@@ -263,24 +275,37 @@ router.get('/:api', function (req, res, next) {
                 debug(thisApp);
             }
 
-            apiInfo.authMethods = utils.loadAuthServersEndpoints(req.app, apiInfo);
+            let authMethods = utils.loadAuthServersEndpoints(req.app, apiInfo);
+            // Check for protected Auth Methods
+            let hasProtectedMethods = false;
+            if (!userInfo.admin) {
+                const strippedMethods = [];
+                for (let am of authMethods) {
+                    if (!am.protected)
+                        strippedMethods.push(am);
+                    else
+                        hasProtectedMethods = true;
+                }
+                authMethods = strippedMethods;
+            }
+            apiInfo.authMethods = authMethods;
+            apiInfo.hasProtectedAuthMethods = hasProtectedMethods;
             apiInfo.hasSwaggerApplication = hasSwaggerApplication;
             // See also views/models/api.json for how this looks
             if (!utils.acceptJson(req)) {
-                res.render('api',
-                    {
-                        authUser: req.user,
-                        glob: req.app.portalGlobals,
-                        route: '/apis/' + apiId,
-                        title: apiInfo.name,
-                        apiInfo: apiInfo,
-                        apiDesc: marked(apiDesc),
-                        applications: apps,
-                        apiPlans: plans,
-                        apiUris: apiUris,
-                        apiSubscriptions: apiSubscriptions,
-                        genericSwaggerUrl: genericSwaggerUrl
-                    });
+                res.render('api', {
+                    authUser: req.user,
+                    glob: req.app.portalGlobals,
+                    route: '/apis/' + apiId,
+                    title: apiInfo.name,
+                    apiInfo: apiInfo,
+                    apiDesc: marked(apiDesc, markedOptions),
+                    applications: apps,
+                    apiPlans: plans,
+                    apiUris: apiUris,
+                    apiSubscriptions: apiSubscriptions,
+                    genericSwaggerUrl: genericSwaggerUrl
+                });
             } else {
                 delete apiInfo.authMethods;
                 res.json({

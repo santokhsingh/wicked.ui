@@ -13,11 +13,11 @@ if [ -z "$DOCKER_TAG" ]; then
 fi
 
 if [[ "haufelexware/wicked." == "$DOCKER_PREFIX" ]] && [[ "$1" == "--push" ]]; then
-    echo "INFO: Resolving portal-env base tag for target tag ${DOCKER_TAG}..."
-    docker pull haufelexware/wicked.portal-env:next-onbuild-alpine
-    export PORTAL_ENV_TAG=$(docker run --rm haufelexware/wicked.portal-env:next-onbuild-alpine node node_modules/portal-env/getMatchingTag.js haufelexware wicked.portal-env ${DOCKER_TAG})
+    echo "INFO: Resolving env base tag for target tag ${DOCKER_TAG}..."
+    docker pull haufelexware/wicked.env:next-onbuild-alpine
+    export PORTAL_ENV_TAG=$(docker run --rm haufelexware/wicked.env:next-onbuild-alpine node node_modules/portal-env/getMatchingTag.js haufelexware wicked.env ${DOCKER_TAG})
     if [ -z "$PORTAL_ENV_TAG" ]; then
-        echo "ERROR: Could not resolve portal-env base tag!"
+        echo "ERROR: Could not resolve env base tag!"
         exit 1
     fi 
 else
@@ -32,8 +32,12 @@ echo "============================================"
 
 export BUILD_ALPINE=""
 perl -pe 's;(\\*)(\$([a-zA-Z_][a-zA-Z_0-9]*)|\$\{([a-zA-Z_][a-zA-Z_0-9]*)\})?;substr($1,0,int(length($1)/2)).($2&&length($1)%2?$2:$ENV{$3||$4});eg' Dockerfile.template > Dockerfile
-normalImageName="${DOCKER_PREFIX}portal:${DOCKER_TAG}"
-docker build --pull -t ${normalImageName} .
+normalImageName="${DOCKER_PREFIX}ui:${DOCKER_TAG}"
+if [[ "dev" = "${DOCKER_TAG}" ]]; then
+    docker build -t ${normalImageName} .
+else
+    docker build --pull -t ${normalImageName} . --no-cache
+fi
 
 echo "============================================"
 echo "Building alpine image..."
@@ -41,8 +45,12 @@ echo "============================================"
 
 export BUILD_ALPINE="-alpine"
 perl -pe 's;(\\*)(\$([a-zA-Z_][a-zA-Z_0-9]*)|\$\{([a-zA-Z_][a-zA-Z_0-9]*)\})?;substr($1,0,int(length($1)/2)).($2&&length($1)%2?$2:$ENV{$3||$4});eg' Dockerfile.template > Dockerfile-alpine
-alpineImageName="${DOCKER_PREFIX}portal:${DOCKER_TAG}-alpine"
-docker build --pull -f Dockerfile-alpine -t ${alpineImageName} .
+alpineImageName="${DOCKER_PREFIX}ui:${DOCKER_TAG}-alpine"
+if [[ "dev" = "${DOCKER_TAG}" ]]; then
+    docker build -f Dockerfile-alpine -t ${alpineImageName} .
+else
+    docker build --pull -f Dockerfile-alpine -t ${alpineImageName} . --no-cache
+fi
 
 if [ "$1" = "--push" ]; then
     echo "============================================"

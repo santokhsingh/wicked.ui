@@ -1,5 +1,7 @@
 'use strict';
 
+/* global __dirname */
+
 const request = require('request');
 const qs = require('querystring');
 const async = require('async');
@@ -360,10 +362,14 @@ function apiAction(req, method, body, callback, iteration) {
         interval: 250
     }, function (callback) {
         getAccessToken(req, function (err, accessToken) {
+            if (err)
+                return callback(err);
+            debug(`resolved access token: ${accessToken}`);
             payload(accessToken, function (err, apiResponse, apiBody) {
                 if (err)
                     return callback(err);
                 if (apiResponse.statusCode === 401) {
+                    debug(apiBody);
                     renewAccessToken(req, function (err, accessToken) {
                         payload(accessToken, function (err, apiResponse, apiBody) {
                             if (err)
@@ -470,15 +476,18 @@ utils.getFromAsync = function (req, res, uri, expectedStatus, callback) {
 
 utils.post = function (req, uri, body, callback) {
     debug('post(): ' + uri);
-    debug(body);
     const baseUrl = req.app.get('api_url');
-
-    apiAction(req, 'POST', {
+    const options = {
         url: baseUrl + uri,
-        headers: makeHeaders(req),
-        json: true,
-        body: body
-    }, callback);
+        headers: makeHeaders(req)
+    };
+    if (body) {
+        debug(body);
+        options.body = body;
+        options.json = true;
+    }
+
+    apiAction(req, 'POST', options, callback);
 };
 
 utils.patch = function (req, uri, body, callback) {
@@ -643,5 +652,7 @@ utils.parseBool = (str) => {
 
     return false;
 };
+
+utils.markedOptions = { sanitize: true };
 
 module.exports = utils;

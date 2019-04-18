@@ -7,6 +7,10 @@ block bodyScripts
             $('[data-toggle="popover"]').popover(); 
         });
 
+        function confirmRestart() {
+            return confirm('Please confirm that you want to restart the API Portal. This will lead to a small amount of downtime.');
+        }
+
 block content
     .jumbotron.wicked-admin-title
         .container.wicked-title-container
@@ -68,3 +72,17 @@ block content
         h5 Latest Commit:
 
         pre= glob.lastCommit
+
+        .panel.panel-danger
+            .panel-heading
+                +panelTitle('Reload Configuration', null, 'dangerzone')
+            div(id='dangerzone').collapse.panel-collapse
+                .panel-body
+                    p.
+                        By clicking this button, you may reload the configuration of this API portal. Technically speaking,
+                        this will restart the API container/process, which in turn will lead to all other components restarting,
+                        one after the other. Please note that this will lead to <b>a certain amount of downtime</b> of the API
+                        Portal and the Authorization Server, but <b>not</b> of the actual Gateway.
+
+                    form(role='form' action='/admin/restart' method='POST' onsubmit='return confirmRestart();')
+                        button(class='btn btn-danger' type='submit') Restart Components/Reload Configuration

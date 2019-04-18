@@ -47,7 +47,7 @@ router.post('/approvals/approve', function (req, res, next) {
             return next(err);
         const approvalInfo = utils.getJson(apiBody);
         debug(approvalInfo);
-        
+
         if (approvalInfo.application.id !== appId)
             return next(utils.makeError(400, 'Bad request. Application ID does not match approval request.'));
         if (approvalInfo.api.id !== apiId)
@@ -112,6 +112,16 @@ function mustBeAdminMiddleware(req, res, next) {
     return next();
 }
 
+function mustBeAdminOrApproverMiddleware(req, res, next) {
+    const loggedInUserId = utils.getLoggedInUserId(req);
+    if (!loggedInUserId)
+        return utils.fail(403, 'You must be logged in to view this page.', next);
+    if (!req.user.admin && !req.user.approver)
+        return utils.fail(403, 'Only Admins Or Approvers can view this page. If you need access, contact your site administrator.', next);
+
+    return next();
+}
+
 router.get('/users', mustBeAdminMiddleware, function (req, res, next) {
     debug("get('/users')");
     if (!utils.acceptJson(req)) {
@@ -134,6 +144,64 @@ router.get('/users', mustBeAdminMiddleware, function (req, res, next) {
                 users: apiResponse
             });
         }
+    });
+});
+
+router.get('/subscriptions', mustBeAdminOrApproverMiddleware, function (req, res, next) {
+    debug("get('/subscriptions')");
+    const filterFields = ['application', 'application_name', 'plan', 'api', 'owner', 'user'];
+    const subsUri = utils.makePagingUri(req, '/subscriptions?embed=1&', filterFields);
+    utils.getFromAsync(req, res, subsUri, 200, function (err, subsResponse) {
+        if (err)
+            return next(err);
+        if (!utils.acceptJson(req)) {
+            res.render('admin_subscriptions', {
+                authUser: req.user,
+                glob: req.app.portalGlobals,
+                title: 'All Subscriptions',
+            });
+            return;
+        }
+        if (utils.acceptJson(req)) {
+            res.json({
+                title: 'All Subscriptions',
+                subscriptions: subsResponse
+            });
+        }
+    });
+});
+
+router.get('/subscriptions_csv', mustBeAdminOrApproverMiddleware, function (req, res, next) {
+    debug("get('/subscriptions')");
+    utils.getFromAsync(req, res, '/subscriptions?embed=1', 200, function (err, subsResponse) {
+        if (err)
+            return next(err);
+        tmp.file(function (err, path, fd, cleanup) {
+            if (err)
+                return next(err);
+            const outStream = fs.createWriteStream(path);
+            outStream.write('Status;Application;Owners;Users;Api;Plan\n');
+            for (let i = 0; i < subsResponse.items.length; ++i) {
+                const item = subsResponse.items[i];
+                let status = (item.approved) ? `Approved` : `Pending`;
+                status = (item.trusted) ? `${status}, (Trusted)` : status;
+                const subscLine = `${status}; ${item.application_name}; ${item.owner}; ${item.user}; ${item.api}; ${item.plan}\n`;
+                debug(subscLine);
+                outStream.write(subscLine);
+            }
+            outStream.end(function (err) {
+                if (err) {
+                    cleanup();
+                    return next(err);
+                }
+                res.download(path, 'subscriptions.csv', function (err) {
+                    cleanup();
+                    if (err) {
+                        return next(err);
+                    }
+                });
+            });
+        });
     });
 });
 
@@ -395,6 +463,20 @@ router.post('/apis/:apiId/delete_subscriptions', mustBeAdminMiddleware, function
                 return next(err);
             res.redirect('/apis/' + apiId);
         });
+    });
+});
+
+router.post('/restart', mustBeAdminMiddleware, function (req, res, next) {
+    debug('/admin/restart');
+    utils.post(req, '/kill', null, function (err, apiRes, apiBody) {
+        if (err)
+            return next(err);
+        if (204 !== apiRes.statusCode)
+            return utils.fail(apiRes.statusCode, `The restart request returned an unexpected status code ${apiRes.statusCode}.`, next);
+        res.render('admin_restart');
+        setTimeout(() => {
+            process.exit(0);
+        }, 1000);
     });
 });
 

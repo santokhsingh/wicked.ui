@@ -88,6 +88,16 @@ block content
                                         if authMethod.config.profileEndpoint && !onlyClientCredentials
                                             input(readonly type='string' value=authMethod.config.profileEndpoint style='font-family: monospace;').form-control
                                             p.small Profile Endpoint
+
+                    if apiInfo.hasProtectedAuthMethods
+                        .panel.panel-success
+                            .panel-heading
+                                +panelTitle('Other Auth Methods', null, '#auth_other')
+                            div(id='auth_other').collapse.panel-collapse
+                                .panel-body
+                                    p.
+                                        This API also has other authentication methods. Please contact the API Portal administrator to get additional information
+                                        on the endpoint URLs, in case you need them.
                     
                     if apiInfo.auth == "oauth2"
                         label Authorization Flows (OAuth2):
@@ -103,6 +113,9 @@ block content
                                 li <a href="/help/oauth2_authorization_code" target="_blank">Autorization Code Grant</a> (three legged)
                             if apiInfo.settings && apiInfo.settings.enable_implicit_grant
                                 li <a href="/help/oauth2_implicit_grant" target="_blank">Implicit Grant</a> (three legged)
+
+                    if apiInfo.auth == "none"
+                        p This API does not require authorization. Review the documentation below for more information.
                     
                     if apiInfo.bundle
                         label API Bundle
@@ -117,10 +130,12 @@ block content
             #apidescription.collapse.panel-collapse.in
                 .panel-body
                     != apiDesc
-
-                    a(href="#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?url=#{encodeURIComponent(genericSwaggerUrl)}" role="button" target="_blank").btn.btn-default View Swagger definition &raquo;
+                    if apiInfo.auth == "none"
+                        a(href="#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?apikey=none&url=#{encodeURIComponent(genericSwaggerUrl)}" role="button" target="_blank").btn.btn-default View Swagger definition &raquo;
+                    else
+                        a(href="#{glob.network.schema}://#{glob.network.apiHost}/swagger-ui/?url=#{encodeURIComponent(genericSwaggerUrl)}" role="button" target="_blank").btn.btn-default View Swagger definition &raquo;
         
-        if !authUser
+        if !authUser && apiInfo.auth != "none"
             .panel.panel-danger
                 .panel-heading
                     h4.panel-title Not logged in
@@ -131,7 +146,7 @@ block content
                     p                    
                         a(href="/login?redirect=/apis/#{apiInfo.id}").btn.btn-default Log in &raquo;
 
-        else
+        else if apiInfo.auth != "none"
             .panel.panel-default
                 .panel-heading
                     +panelTitle('Applications', '/help/api')
