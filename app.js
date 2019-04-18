@@ -39,6 +39,8 @@ app.set('view engine', 'jade');
 // Correlation ID
 app.use(correlationIdHandler);
 
+const clarivate = require('./routes/clarivate');
+
 // Configure logger; log in JSON format.
 logger.token('user-id', function (req, res) {
     const userId = utils.getLoggedInUserId(req);
@@ -173,6 +175,8 @@ app.initialize = function (done) {
     app.use('/admin', admin);
     app.use('/swagger-ui', swaggerUi);
     app.use('/swagger-ui', express.static(path.join(__dirname, 'node_modules/swagger-ui-dist')));
+
+    app.use('/clarivate', clarivate);
 
     app.use('/help', help);
     app.use('/kill', kill);
