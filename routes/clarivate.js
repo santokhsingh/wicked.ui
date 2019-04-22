@@ -295,8 +295,8 @@ router.post('/validate/scopes/:api', function (req, res, next) {
           return;
       }
       const decoded = Buffer.from(profile[ENTITLEMENTS], 'base64').toString();
-      const authenticated_userid = profile[AUTHENTICATEDUSER]+":"+profile[ENTITLEMENTS];
-  
+      const authenticated_userid = `${profile[AUTHENTICATEDUSER]}:${profile[ENTITLEMENTS]}`;
+
       // Verify it's really a base64 string
       const encoded = Buffer.from(decoded).toString('base64');
       if (profile[ENTITLEMENTS] !== encoded)
